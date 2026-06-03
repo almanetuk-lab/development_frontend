@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-q0wc.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://intentional-server.onrender.com";
 
 console.log("api_url:", API_BASE_URL);
 
