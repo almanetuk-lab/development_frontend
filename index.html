@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+      <!-- Existing CSS files ke baad -->
+  <link rel="stylesheet" href="path/to/lumira-theme.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Intentional Connetions</title>
+    <script>
+      //  Fix for HashRouter OAuth Redirects
+      (function() {
+        var path = window.location.pathname;
+        if (path.includes('/auth/linkedin/callback')) {
+          var search = window.location.search;
+          var hash = window.location.hash;
+          var newUrl = window.location.origin + '/#/' + path.replace(/^\//, '') + search + hash;
+          console.log('🔄 Redirecting to hash route:', newUrl);
+          window.location.replace(newUrl);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+
+  </body>
+</html>

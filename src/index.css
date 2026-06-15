@@ -1,0 +1,251 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+/* Custom range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+  background: #e5e7eb;
+  height: 8px;
+  border-radius: 4px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #4f46e5;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* universal classes  */
+
+/* ============================================
+   LUMIRA BRAND THEME - UI COMPONENTS
+   Only UI changes, no functionality changes
+   Add this at the END of your existing index.css
+============================================ */
+
+/* BACKGROUND CLASSES */
+.bg-lumira-gradient {
+  background: linear-gradient(180deg, #4D6D9E 0%, #8F8DA5 50%, #E6A699 100%) !important;
+  background-attachment: fixed !important;
+}
+
+.bg-lumira-blue { background-color: #4D6D9E !important; }
+.bg-lumira-lavender { background-color: #8F8DA5 !important; }
+.bg-lumira-coral { background-color: #E6A699 !important; }
+.bg-lumira-pink { background-color: #FF66CC !important; }
+.bg-lumira-green { background-color: #808C82 !important; }
+.bg-lumira-gold { background-color: #B89C6F !important; }
+
+/* TEXT COLORS */
+.text-lumira-white { color: #F5F5F5 !important; }
+.text-lumira-gray { color: #BFBFBF !important; }
+.text-lumira-pink { color: #FF66CC !important; }
+.text-lumira-green { color: #808C82 !important; }
+.text-lumira-gold { color: #B89C6F !important; }
+
+/* BORDER COLORS */
+.border-lumira-white { border-color: #F5F5F5 !important; }
+.border-lumira-pink { border-color: #FF66CC !important; }
+.border-lumira-gold { border-color: #B89C6F !important; }
+
+/* BUTTON STYLES */
+.btn-lumira-primary {
+  background-color: #FF66CC !important;
+  color: #F5F5F5 !important;
+  border: 2px solid #FF66CC !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+.btn-lumira-primary:hover {
+  background-color: #ff4dc2 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(255, 102, 204, 0.3) !important;
+}
+
+.btn-lumira-secondary {
+  background-color: transparent !important;
+  color: #F5F5F5 !important;
+  border: 2px solid #F5F5F5 !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+.btn-lumira-secondary:hover {
+  background-color: rgba(245, 245, 245, 0.1) !important;
+  transform: translateY(-2px) !important;
+}
+
+.btn-lumira-outline {
+  background-color: transparent !important;
+  color: #FF66CC !important;
+  border: 2px solid #FF66CC !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+.btn-lumira-outline:hover {
+  background-color: rgba(255, 102, 204, 0.1) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* CARD STYLES */
+.lumira-card {
+  background: rgba(245, 245, 245, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(245, 245, 245, 0.2) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  transition: all 0.3s ease !important;
+}
+
+.lumira-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* INPUT FIELD STYLES */
+.lumira-input {
+  background: rgba(245, 245, 245, 0.1) !important;
+  border: 1px solid #8F8DA5 !important;
+  border-radius: 6px !important;
+  color: #F5F5F5 !important;
+  padding: 10px 16px !important;
+  width: 100% !important;
+  transition: all 0.3s ease !important;
+}
+
+.lumira-input:focus {
+  border-color: #FF66CC !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(255, 102, 204, 0.2) !important;
+}
+
+/* NAVBAR STYLES */
+.lumira-navbar {
+  background: rgba(77, 109, 158, 0.9) !important;
+  backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid rgba(245, 245, 245, 0.1) !important;
+  padding: 16px 24px !important;
+}
+
+/* FOOTER STYLES */
+.lumira-footer {
+  background: linear-gradient(180deg, #4D6D9E 0%, #2a3b57 100%) !important;
+  border-top: 1px solid rgba(184, 156, 111, 0.3) !important;
+  padding: 40px 24px !important;
+}
+
+/* UTILITY CLASSES */
+.rounded-lumira { border-radius: 12px !important; }
+.shadow-lumira { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important; }
+.transition-lumira { transition: all 0.3s ease !important; }
+
+/* SECTION SPACING */
+.section-py {
+  padding-top: 80px !important;
+  padding-bottom: 80px !important;
+}
+
+/* CONTAINER */
+.lumira-container {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 0 20px !important;
+}
+
+/* HEADINGS */
+h1.lumira-heading {
+  font-size: 3rem !important;
+  font-weight: 700 !important;
+  background: linear-gradient(90deg, #F5F5F5 0%, #FF66CC 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+h2.lumira-heading {
+  font-size: 2.5rem !important;
+  font-weight: 600 !important;
+  color: #F5F5F5 !important;
+}
+
+/* GRADIENT TEXT */
+.gradient-text {
+  background: linear-gradient(90deg, #FF66CC 0%, #4D6D9E 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+.editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+}
+
+.editor-content li {
+  margin: 0.25rem 0;
+}
+
+/* Headings visible & proper */
+.editor-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.editor-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.editor-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
