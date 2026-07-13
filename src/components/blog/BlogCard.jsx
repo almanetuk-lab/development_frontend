@@ -7,13 +7,13 @@ export default function BlogCard({ a }) {
   const dateString = !isNaN(createdDate) ? createdDate.toLocaleDateString() : "Unknown date";
   const category = a.category || "Uncategorized";
 
-  // Use shared utility to get a plain-text preview from possibly-encoded HTML
+  // Use shared utility to get a plain-text ddpreview from possibly-encoded HTML
   const contentPreview = getPlainText(a.content);
 
   // Dev: warn if preview still contains HTML-like angle brackets (helps detect edge cases)
   if (import.meta.env.DEV && /<[^>]+>/.test(contentPreview)) {
     // eslint-disable-next-line no-console
-    console.warn("BlogCard: preview still contains HTML-like markup for article", id, contentPreview.slice(0,120));
+    console.warn("BlogCard: preview still contains HTML-like markup for article", id, contentPreview.slice(0, 120));
   }
 
   return (
@@ -27,7 +27,7 @@ export default function BlogCard({ a }) {
             className="w-full h-full object-cover"
           />
         )}
-        
+
         {/* Category Badge */}
         <div className="absolute top-3 left-3 bg-yellow-400 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">
           {category}
