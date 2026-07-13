@@ -172,6 +172,25 @@ export const getAICompatibilityReport = async (targetUserId) => {
   }
 };
 
+// ==================== HANDSHAKE & STRESS SYNCHRONIZATION (Module 3) ====================
+
+/**
+ * Initiates the Structural Handshake Protocol between the logged-in user and a target user.
+ * Returns full compatibility markers AND Stress-Cycle Delta Synchronization data.
+ * @param {number|string} targetUserId
+ * @returns {object} { message, data: { compatibility_markers, risk_flags, handshake_summary, stressSynchronization, ... } }
+ */
+export const initiateHandshake = async (targetUserId) => {
+  try {
+    const response = await api.post(`/api/handshake/${targetUserId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error initiating handshake:", error);
+    throw error;
+  }
+};
+
+
 // ==================== QUERY REFINEMENT APIs (Point #7) ====================
 
 export const setRefinedQuery = async (selected_priorities, raw_query = "", emotional_state = "") => {

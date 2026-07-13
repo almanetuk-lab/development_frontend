@@ -43,7 +43,7 @@ const MemberPage = () => {
       fetchMembers();
     }
   }, [planLoading, planActive]);
-  
+
 
   // Search with debounce
   useEffect(() => {
@@ -108,36 +108,36 @@ const MemberPage = () => {
   const fetchCompleteProfile = async (userId) => {
     try {
       console.log(`🔍 Fetching COMPLETE profile for user ${userId} via /api/users/${userId}...`);
-      
+
       const response = await api.get(`/api/users/${userId}`);
-      
+
       console.log(`/api/users/${userId} response:`, response.data);
-      
+
       if (response.data) {
         // Check response format
         let completeProfile = {};
-        
+
         // Format 1: Data in response.data.data
         if (response.data.data) {
           completeProfile = {
             ...response.data.data,
             prompts: response.data.prompts || {}
           };
-        } 
+        }
         // Format 2: Direct data in response.data
         else {
           completeProfile = response.data;
-          
+
           // If prompts are separate, combine them
           if (response.data.prompts && !completeProfile.prompts) {
             completeProfile.prompts = response.data.prompts;
           }
         }
-        
+
         console.log(" Complete profile fetched:", completeProfile);
         console.log("Has prompts?", completeProfile.prompts);
         console.log("User ID in profile:", completeProfile.user_id || completeProfile.id);
-        
+
         // Verify this is the correct user
         const profileUserId = completeProfile.user_id || completeProfile.id;
         if (profileUserId == userId) {
@@ -148,9 +148,9 @@ const MemberPage = () => {
           return null;
         }
       }
-      
+
       return null;
-      
+
     } catch (error) {
       console.error("❌ Error fetching complete profile:", error);
       return null;
@@ -177,10 +177,10 @@ const MemberPage = () => {
 
       // 1. Fetch COMPLETE profile data using /api/users/{userId}
       const completeProfile = await fetchCompleteProfile(memberId);
-      
+
       if (completeProfile) {
         console.log(" SUCCESS: Complete profile data fetched");
-        
+
         // 2. Navigate with COMPLETE data
         navigate(`/dashboard/profile/${memberId}`, {
           state: {
@@ -192,7 +192,7 @@ const MemberPage = () => {
         });
       } else {
         console.log("⚠️ Complete profile not found, using partial data");
-        
+
         // Fallback: Use partial member data
         navigate(`/dashboard/profile/${memberId}`, {
           state: {
@@ -205,7 +205,7 @@ const MemberPage = () => {
       }
     } catch (error) {
       console.error("❌ Navigation error:", error);
-      
+
       // Final fallback: Navigate without state
       navigate(`/dashboard/profile/${memberId}`);
     } finally {
@@ -320,7 +320,7 @@ const MemberPage = () => {
   const handleSendMessage = async (memberId, memberName = "") => {
     try {
       console.log("💬 CHAT CLICKED for:", memberName, "ID:", memberId);
-      
+
       // Navigate to messages page with user info
       navigate(`/dashboard/messages`, {
         state: {
@@ -453,7 +453,7 @@ const MemberPage = () => {
           </div>
         </div>
       )}
-      
+
       {/* Search Section */}
       <div className="bg-gray-100 py-8">
         <div className="container mx-auto px-4">
@@ -569,7 +569,7 @@ const MemberPage = () => {
               {filteredMembers.slice(0, visibleCount).map((member) => {
                 const memberId = member.user_id || member.id;
                 const isLoading = loadingProfileId === memberId;
-                
+
                 return (
                   <div
                     key={member.id || member.user_id}
@@ -581,8 +581,8 @@ const MemberPage = () => {
                           member.image_url && member.image_url !== "Not provided"
                             ? member.image_url
                             : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                formatName(member)
-                              )}&background=random&size=400`
+                              formatName(member)
+                            )}&background=random&size=400`
                         }
                         alt={formatName(member)}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -648,14 +648,13 @@ const MemberPage = () => {
                             console.log("Member:", member);
                             console.log("Using user_id:", member.user_id);
                             console.log("Member Name:", formatName(member));
-                            
+
                             // ✅ Use updated handleViewProfile with complete data fetch
                             handleViewProfile(member);
                           }}
                           disabled={isLoading}
-                          className={`flex-1 bg-amber-500 text-white py-2.5 rounded-lg font-semibold hover:bg-amber-600 transition-all hover:-translate-y-0.5 active:translate-y-0 ${
-                            isLoading ? "opacity-70 cursor-wait" : ""
-                          }`}
+                          className={`flex-1 bg-amber-500 text-white py-2.5 rounded-lg font-semibold hover:bg-amber-600 transition-all hover:-translate-y-0.5 active:translate-y-0 ${isLoading ? "opacity-70 cursor-wait" : ""
+                            }`}
                         >
                           {isLoading ? (
                             <>
@@ -672,7 +671,7 @@ const MemberPage = () => {
                             console.log("💬 CHAT BUTTON CLICKED");
                             console.log("For user_id:", member.user_id);
                             console.log("Name:", formatName(member));
-                            
+
                             // ✅ Use user_id for chat
                             handleSendMessage(member.user_id, formatName(member));
                           }}

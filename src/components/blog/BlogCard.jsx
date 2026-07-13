@@ -11,7 +11,7 @@ export default function BlogCard({ a }) {
   const contentPreview = getPlainText(a.content);
 
   // Dev: warn if preview still contains HTML-like angle brackets (helps detect edge cases)
-  if (process.env.NODE_ENV !== 'production' && /<[^>]+>/.test(contentPreview)) {
+  if (import.meta.env.DEV && /<[^>]+>/.test(contentPreview)) {
     // eslint-disable-next-line no-console
     console.warn("BlogCard: preview still contains HTML-like markup for article", id, contentPreview.slice(0,120));
   }
