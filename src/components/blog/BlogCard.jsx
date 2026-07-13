@@ -7,7 +7,7 @@ export default function BlogCard({ a }) {
   const dateString = !isNaN(createdDate) ? createdDate.toLocaleDateString() : "Unknown date";
   const category = a.category || "Uncategorized";
 
-  // Use shared utility to get a plain-text ddpreview from possibly-encoded HTML
+  // Use shared utility ddtto get a plain-text ddpreview from possibly-encoded HTML
   const contentPreview = getPlainText(a.content);
 
   // Dev: warn if preview still contains HTML-like angle brackets (helps detect edge cases)
