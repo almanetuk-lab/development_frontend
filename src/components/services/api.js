@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://intentional-server.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
 console.log("api_url:", API_BASE_URL);
 
@@ -204,7 +204,7 @@ export const getUserProfile = async () => {
 
 //  Image Upload API HAI
 export const uploadImage = (formData) => {
-  return api.post('/upload', formData, {
+  return api.post('/api/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -213,7 +213,7 @@ export const uploadImage = (formData) => {
 
 // Save Profile Image API
 export const saveProfileImage = (user_id, imageUrl) => {
-  return api.post('/saveProfileImage', {
+  return api.post('/api/saveProfileImage', {
     user_id,
     imageUrl,
   });
@@ -221,7 +221,7 @@ export const saveProfileImage = (user_id, imageUrl) => {
 
 //  NEW: Remove Profile Image API
 export const removeProfileImage = (user_id) => {
-  return api.post('/remove/profile-picture', {
+  return api.post('/api/remove/profile-picture', {
     user_id,
   });
 };

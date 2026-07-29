@@ -1,7 +1,7 @@
 
 import axios from "axios";
 
-const BASE_URL = "https://backend-q0wc.onrender.com";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
 const REPORT_API_URL = `${BASE_URL}/api/admin/reports`;
 const USERS_API_URL = `${BASE_URL}/api/admin/users/handle`;

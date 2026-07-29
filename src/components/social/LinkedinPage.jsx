@@ -21,7 +21,7 @@ export default function LinkedInPage() {
   const handleLinkedInLogin = async () => {
     try {
       //  Fetch Auth URL from Backend
-      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://backend-q0wc.onrender.com';
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
       const apiUrl = `${backendUrl}/api/linkedin/auth-url`;
       
       console.log('🔗 Fetching LinkedIn auth URL:', apiUrl);

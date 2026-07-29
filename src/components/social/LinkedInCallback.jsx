@@ -28,7 +28,7 @@ useEffect(() => {
             setStatus('Verifying LinkedIn authentication...');
             
             //  CORRECT Backend URL
-            const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://backend-q0wc.onrender.com';
+            const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
             const apiUrl = `${backendUrl}/api/linkedin/callback?code=${code}`;
             
             console.log('🔗 Sending code to backend:', apiUrl);

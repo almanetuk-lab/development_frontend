@@ -8,7 +8,7 @@ const LinkedInLoginButton = () => {
     const handleLinkedInLogin = async () => {
         try {
             // Fetch Auth URL from Backend (Prevents hardcoded Client ID issues)
-            const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://backend-q0wc.onrender.com';
+            const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
             const response = await fetch(`${backendUrl}/api/linkedin/auth-url`);
             const data = await response.json();
 

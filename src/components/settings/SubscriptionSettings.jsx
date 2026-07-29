@@ -15,7 +15,7 @@ export default function SubscriptionSettings({ userData }) {
     const fetchPlanStatus = async () => {
       try {
         const token = localStorage.getItem("accessToken");
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://backend-q0wc.onrender.com";
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
         
         const res = await fetch(`${API_BASE_URL}/api/me/plan-status`, {
           headers: { Authorization: `Bearer ${token}` },

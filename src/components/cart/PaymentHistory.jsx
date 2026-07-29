@@ -10,19 +10,30 @@ export default function PaymentHistory({ onClose }) {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const user_id = localStorage.getItem("user_id");
-        const res = await fetch(`https://backend-q0wc.onrender.com/payments/${user_id}`);
+        let user_id = localStorage.getItem("user_id");
+        if (!user_id || user_id === "undefined" || user_id === "null") {
+          const currentUserStr = localStorage.getItem("currentUser");
+          if (currentUserStr) {
+            try {
+              const u = JSON.parse(currentUserStr);
+              user_id = u.user_id || u.id;
+            } catch (e) {}
+          }
+        }
+        if (!user_id) {
+          setLoading(false);
+          return;
+        }
+
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+        const res = await fetch(`${API_BASE_URL}/payments/${user_id}`);
         const data = await res.json();
 
-        setTimeout(() => {
-          setHistory(data);
-          setLoading(false);
-        }, 2000);
+        setHistory(Array.isArray(data) ? data : []);
+        setLoading(false);
       } catch (err) {
         console.error("Error loading history:", err);
-        setTimeout(() => {
-          setLoading(false);
-        }, 2000);
+        setLoading(false);
       }
     };
 

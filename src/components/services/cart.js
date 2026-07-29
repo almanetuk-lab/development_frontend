@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// This is the location of our backend server
-const BASE_URL = "https://backend-q0wc.onrender.com/api/cart";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+const BASE_URL = `${API_BASE}/api/cart`;
 
 /**
  * 🛠️ CONFIGURATION HELPER

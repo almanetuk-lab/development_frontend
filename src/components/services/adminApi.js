@@ -1,7 +1,7 @@
 // src/services/adminApi.js
 import axios from 'axios';
 
-const API_BASE_URL = 'https://backend-q0wc.onrender.com'; // Your backend URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
 
 // Axios instance with default config
 const api = axios.create({

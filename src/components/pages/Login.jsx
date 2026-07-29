@@ -64,7 +64,7 @@ const handleLinkedInLogin = async () => {
     try {
         console.log('🔗 Getting LinkedIn auth URL...');
         
-        const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://backend-q0wc.onrender.com';
+        const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
         const apiUrl = `${backendUrl}/api/linkedin/auth-url`;
         
         console.log('📞 Calling backend for LinkedIn URL:', apiUrl);
