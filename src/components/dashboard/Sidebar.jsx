@@ -84,15 +84,6 @@ export default function Sidebar({
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 h-screen flex flex-col overflow-hidden`}
       >
-         {/* <div className="flex-shrink-0 p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-         <span className="text-[#13161673]"> Intentional </span> <span className="text-[#f5176c]"> Connetions </span>
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">Find Your Perfect Match</p>
-        </div>  */}
-
- 
-
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-4">
           <nav className="space-y-1">
             <SidebarItem
@@ -193,24 +184,16 @@ export default function Sidebar({
                 setSidebarOpen(false);
               }}
             />
-              {/* <SidebarItem
-              icon="⚙️"
-              label="Settings"
-              onClick={() => {
-                // navigate("/dashboard/plans");
-                setSidebarOpen(false);
-              }}
-            /> */}
             
             <SidebarItem
-  icon="⚙️"
-  label="Settings"
-  active={activeSection === "settings"}
-  onClick={() => {
-    navigate("/dashboard/settings");
-    setSidebarOpen(false);
-  }}
-/>
+              icon="⚙️"
+              label="Settings"
+              active={activeSection === "settings"}
+              onClick={() => {
+                navigate("/dashboard/settings");
+                setSidebarOpen(false);
+              }}
+            />
           </nav>
         </div>
 
@@ -228,9 +211,6 @@ export default function Sidebar({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              {/* <p className="text-sm font-medium text-gray-800 truncate">
-                {profile?.full_name?.split(' ')[0] || 'User'}
-              </p> */}
               <p className="text-xs text-gray-500">Free Member</p>
             </div>
           </div>

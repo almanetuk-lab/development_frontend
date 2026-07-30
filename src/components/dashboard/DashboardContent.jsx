@@ -8,6 +8,7 @@ import SuggestedMatches from "../MatchSystem/SuggetionMatches";
 import { chatApi } from "../services/chatApi";
 import { getSuggestedMatches } from "../services/chatApi";
 import profileViewApi from "../services/profileViewApi";
+import ImageModal from "../comman/ImageModal";
 
 export default function DashboardHome({ profile }) {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ export default function DashboardHome({ profile }) {
   const [suggestedMatches, setSuggestedMatches] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Modal State for viewing image in big mode
+  const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
   // State for dynamic data
   const [profileViews, setProfileViews] = useState(0);
@@ -616,12 +620,31 @@ export default function DashboardHome({ profile }) {
                 {/* Profile Picture */}
                 <div className="flex-shrink-0">
                   {profile?.image_url ? (
-                    <img
-                      src={profile.image_url}
-                      alt="Profile"
-                      className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl sm:rounded-2xl object-cover border-4 border-white shadow-lg"
-                      loading="lazy"
-                    />
+                    <div
+                      className="relative cursor-pointer group"
+                      onClick={() =>
+                        setModalImage({
+                          isOpen: true,
+                          url: profile.image_url,
+                          title: profile.first_name
+                            ? `${profile.first_name} ${profile.last_name || ""}`
+                            : "My Profile Picture",
+                        })
+                      }
+                      title="Click to view image in big mode"
+                    >
+                      <img
+                        src={profile.image_url}
+                        alt="Profile"
+                        className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl sm:rounded-2xl object-cover border-4 border-white shadow-lg group-hover:scale-105 transition-all duration-300"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 rounded-xl sm:rounded-2xl bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-xs font-bold bg-black/60 px-2 py-1 rounded-full">
+                          🔍 View
+                        </span>
+                      </div>
+                    </div>
                   ) : (
                     <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-lg flex-col">
                       {profile?.first_name?.charAt(0)}
@@ -824,6 +847,14 @@ export default function DashboardHome({ profile }) {
           </div>
         </div>
       </div>
+
+      {/* Image Modal for big mode viewing */}
+      <ImageModal
+        isOpen={modalImage.isOpen}
+        imageUrl={modalImage.url}
+        title={modalImage.title}
+        onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
+      />
     </div>
   );
 }
