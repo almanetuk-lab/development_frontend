@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userAPI } from "../services/userApi";
 import api from "../services/api"; // Your axios instance
+import ImageModal from "../comman/ImageModal";
 
 const MemberPage = () => {
   const navigate = useNavigate();
@@ -11,13 +12,19 @@ const MemberPage = () => {
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGender, setSelectedGender] = useState("All");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [debounceTimer, setDebounceTimer] = useState(null);
   const [visibleCount, setVisibleCount] = useState(12);
   const [loadingProfileId, setLoadingProfileId] = useState(null); // Track which profile is loading
 
-  //  ADDED: PLAN STATUS STATE
+  // State for Image Modal
+  const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
+
+  // ADDED: PLAN STATUS STATE
   const [planActive, setPlanActive] = useState(false);
   const [planLoading, setPlanLoading] = useState(true);
 
@@ -69,10 +76,48 @@ const MemberPage = () => {
     };
   }, [searchTerm]);
 
-  // Filter by gender
+  // Filter members dynamically when filter states change
   useEffect(() => {
-    filterMembersByGender();
-  }, [selectedGender, members]);
+    applyAllFilters();
+  }, [selectedGender, selectedCity, minAge, maxAge, members]);
+
+  const applyAllFilters = () => {
+    let result = members.filter((member) => {
+      // 1. Gender Filter
+      if (selectedGender !== "All" && selectedGender !== "") {
+        const selected = selectedGender.toLowerCase();
+        const memberGender = (member.gender || "").toLowerCase();
+        const matchesGender =
+          memberGender === selected ||
+          (selected === "man" && memberGender === "male") ||
+          (selected === "woman" && memberGender === "female");
+        if (!matchesGender) return false;
+      }
+
+      // 2. City Filter
+      if (selectedCity && selectedCity.trim() !== "") {
+        const cityTerm = selectedCity.toLowerCase().trim();
+        const memberCity = (member.city || member.address || "").toLowerCase();
+        if (!memberCity.includes(cityTerm)) return false;
+      }
+
+      // 3. Min Age Filter
+      if (minAge !== "" && !isNaN(Number(minAge))) {
+        const age = Number(member.age);
+        if (isNaN(age) || age < Number(minAge)) return false;
+      }
+
+      // 4. Max Age Filter
+      if (maxAge !== "" && !isNaN(Number(maxAge))) {
+        const age = Number(member.age);
+        if (isNaN(age) || age > Number(maxAge)) return false;
+      }
+
+      return true;
+    });
+
+    setFilteredMembers(result);
+  };
 
   // Fetch initial members
   const fetchMembers = async () => {
@@ -92,13 +137,13 @@ const MemberPage = () => {
           : response.data.data || response.data.users || [];
 
         setMembers(membersData);
-        setFilteredMembers(membersData.slice(0, 12));
+        setFilteredMembers(membersData);
       }
     } catch (error) {
       console.error("Error fetching members:", error);
       // Fallback dummy data
       setMembers(getDummyMembers());
-      setFilteredMembers(getDummyMembers().slice(0, 12));
+      setFilteredMembers(getDummyMembers());
     } finally {
       setLoading(false);
     }
@@ -283,28 +328,23 @@ const MemberPage = () => {
 
   // Load More function
   const loadMoreMembers = () => {
-    const newVisibleCount = visibleCount + 12;
-    setVisibleCount(newVisibleCount);
+    setVisibleCount((prev) => prev + 12);
+  };
 
-    if (selectedGender === "All") {
-      if (searchTerm.trim()) {
-        const searchResults = members;
-        setFilteredMembers(searchResults.slice(0, newVisibleCount));
-      } else {
-        setFilteredMembers(members.slice(0, newVisibleCount));
-      }
-    } else {
-      const filtered = members.filter((member) => {
-        const memberGender = member.gender?.toLowerCase();
-        const selected = selectedGender.toLowerCase();
-        return (
-          memberGender === selected ||
-          (selected === "man" && memberGender === "male") ||
-          (selected === "woman" && memberGender === "female")
-        );
-      });
-      setFilteredMembers(filtered.slice(0, newVisibleCount));
-    }
+  // Reset all filters
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setSelectedGender("All");
+    setSelectedCity("");
+    setMinAge("");
+    setMaxAge("");
+    setVisibleCount(12);
+    fetchMembers();
+  };
+
+  // Calculate if there are more members to load
+  const hasMoreMembers = () => {
+    return filteredMembers.length > visibleCount;
   };
 
   // Handle search form submit
@@ -414,24 +454,6 @@ const MemberPage = () => {
     },
   ];
 
-  // Calculate if there are more members to load
-  const hasMoreMembers = () => {
-    if (selectedGender === "All") {
-      return members.length > visibleCount;
-    } else {
-      const filtered = members.filter((member) => {
-        const memberGender = member.gender?.toLowerCase();
-        const selected = selectedGender.toLowerCase();
-        return (
-          memberGender === selected ||
-          (selected === "man" && memberGender === "male") ||
-          (selected === "woman" && memberGender === "female")
-        );
-      });
-      return filtered.length > visibleCount;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/*  ADDED: PLAN CHECK MODAL */}
@@ -454,14 +476,14 @@ const MemberPage = () => {
         </div>
       )}
 
-      {/* Search Section */}
+      {/* Search & Filter Section */}
       <div className="bg-gray-100 py-8">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <form onSubmit={handleSearchSubmit}>
               <div className="bg-white rounded-2xl shadow-sm p-6">
-                <div className="flex flex-col md:flex-row gap-4 mb-6">
-                  {/* Search Input */}
+                {/* Search Bar */}
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
                   <div className="flex-1 relative">
                     <input
                       type="text"
@@ -469,7 +491,6 @@ const MemberPage = () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                      //  MODIFIED: Added plan check
                       disabled={!planActive || searchLoading}
                     />
                     <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -493,12 +514,25 @@ const MemberPage = () => {
                     </div>
                   </div>
 
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-amber-500 text-white font-medium rounded-xl hover:bg-amber-600 transition-all shadow-sm"
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {/* Filters Grid: Gender, City, Min Age, Max Age */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 pt-2 border-t border-gray-100">
                   {/* Gender Filter */}
-                  <div className="w-full md:w-48">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Gender
+                    </label>
                     <select
                       value={selectedGender}
                       onChange={(e) => setSelectedGender(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
                     >
                       <option value="All">All Genders</option>
                       <option value="Man">Men</option>
@@ -506,32 +540,76 @@ const MemberPage = () => {
                     </select>
                   </div>
 
-                  {/* Search Button */}
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-amber-500 text-white font-medium rounded-xl hover:bg-amber-600 transition-all"
-                  >
-                    Search
-                  </button>
+                  {/* City Filter */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Filter by City..."
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
+                    />
+                  </div>
+
+                  {/* Min Age Filter */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Min Age
+                    </label>
+                    <input
+                      type="number"
+                      min="18"
+                      max="100"
+                      placeholder="e.g. 21"
+                      value={minAge}
+                      onChange={(e) => setMinAge(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
+                    />
+                  </div>
+
+                  {/* Max Age Filter */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Max Age
+                    </label>
+                    <input
+                      type="number"
+                      min="18"
+                      max="100"
+                      placeholder="e.g. 40"
+                      value={maxAge}
+                      onChange={(e) => setMaxAge(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
+                    />
+                  </div>
                 </div>
 
-                {/* Results Count */}
-                <div className="text-center text-gray-600">
-                  {searchLoading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Searching...
-                    </div>
-                  ) : (
-                    <div>
-                      Showing {filteredMembers.length} of {members.length}{" "}
-                      members
-                      {searchTerm && (
-                        <span className="ml-2 text-sm text-amber-600">
-                          for "{searchTerm}"
-                        </span>
-                      )}
-                    </div>
+                {/* Results Count & Reset Button */}
+                <div className="flex flex-wrap items-center justify-between pt-3 border-t border-gray-100 text-sm text-gray-600 gap-2">
+                  <div>
+                    {searchLoading ? (
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Searching...
+                      </div>
+                    ) : (
+                      <div>
+                        Showing <span className="font-bold text-amber-600">{filteredMembers.length}</span> of <span className="font-bold">{members.length}</span> members
+                      </div>
+                    )}
+                  </div>
+
+                  {(selectedGender !== "All" || selectedCity || minAge || maxAge || searchTerm) && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="text-xs text-amber-600 hover:text-amber-800 font-semibold underline transition-all"
+                    >
+                      Reset All Filters ✕
+                    </button>
                   )}
                 </div>
               </div>
@@ -575,7 +653,16 @@ const MemberPage = () => {
                     key={member.id || member.user_id}
                     className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100 hover:border-amber-100"
                   >
-                    <div className="h-48 overflow-hidden bg-gray-100">
+                    <div
+                      className="h-48 overflow-hidden bg-gray-100 relative group cursor-pointer"
+                      onClick={() => {
+                        const imgSrc = member.image_url && member.image_url !== "Not provided"
+                          ? member.image_url
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(formatName(member))}&background=random&size=400`;
+                        setModalImage({ isOpen: true, url: imgSrc, title: formatName(member) });
+                      }}
+                      title="Click to view image in big mode"
+                    >
                       <img
                         src={
                           member.image_url && member.image_url !== "Not provided"
@@ -592,6 +679,11 @@ const MemberPage = () => {
                           )}&background=random&size=400`;
                         }}
                       />
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-1 shadow-md">
+                          🔍 View Big Image
+                        </span>
+                      </div>
                     </div>
 
                     <div className="p-6">
@@ -747,6 +839,14 @@ const MemberPage = () => {
           </div>
         )}
       </div>
+
+      {/* Image Modal for Big Mode viewing */}
+      <ImageModal
+        isOpen={modalImage.isOpen}
+        imageUrl={modalImage.url}
+        title={modalImage.title}
+        onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
+      />
     </div>
   );
 };

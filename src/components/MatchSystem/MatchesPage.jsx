@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSuggestedMatches } from "../services/chatApi";
 import api from "../services/api"; // Your axios instance
+import ImageModal from "../comman/ImageModal";
 
 export default function MatchesPage() {
   const navigate = useNavigate();
@@ -10,6 +11,16 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingProfileId, setLoadingProfileId] = useState(null); // Track which profile is loading
+
+  // Filter States
+  const [selectedGender, setSelectedGender] = useState("All");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Image Modal State
+  const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
   // SIMPLE LOAD MORE STATE
   const [visibleCount, setVisibleCount] = useState(20);
@@ -390,17 +401,69 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
   }, []);
 
   // ==============================
-  // CALCULATIONS
+  // CALCULATIONS & FILTERING
   // ==============================
 
-  const visibleMatches = matches.slice(0, visibleCount);
-  const hasMore = visibleCount < matches.length;
-  const remaining = matches.length - visibleCount;
+  const handleResetFilters = () => {
+    setSelectedGender("All");
+    setSelectedCity("");
+    setMinAge("");
+    setMaxAge("");
+    setSearchTerm("");
+    setVisibleCount(20);
+  };
+
+  const filteredMatches = matches.filter((match) => {
+    // 1. Gender Filter
+    if (selectedGender !== "All" && selectedGender !== "") {
+      const selected = selectedGender.toLowerCase();
+      const g = (match.gender || "").toLowerCase();
+      const matchesGender =
+        g === selected ||
+        (selected === "man" && g === "male") ||
+        (selected === "woman" && g === "female");
+      if (!matchesGender) return false;
+    }
+
+    // 2. City Filter
+    if (selectedCity && selectedCity.trim() !== "") {
+      const cityTerm = selectedCity.toLowerCase().trim();
+      const city = (match.city || match.state || match.country || match.address || "").toLowerCase();
+      if (!city.includes(cityTerm)) return false;
+    }
+
+    // 3. Min Age Filter
+    if (minAge !== "" && !isNaN(Number(minAge))) {
+      const age = Number(match.age);
+      if (isNaN(age) || age < Number(minAge)) return false;
+    }
+
+    // 4. Max Age Filter
+    if (maxAge !== "" && !isNaN(Number(maxAge))) {
+      const age = Number(match.age);
+      if (isNaN(age) || age > Number(maxAge)) return false;
+    }
+
+    // 5. Search Term Filter
+    if (searchTerm && searchTerm.trim() !== "") {
+      const term = searchTerm.toLowerCase().trim();
+      const name = getDisplayName(match).toLowerCase();
+      const prof = (match.profession || "").toLowerCase();
+      if (!name.includes(term) && !prof.includes(term)) return false;
+    }
+
+    return true;
+  });
+
+  const visibleMatches = filteredMatches.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredMatches.length;
+  const remaining = filteredMatches.length - visibleCount;
   const totalMatches = matches.length;
-  const onlineNow = matches.filter((match) => match.is_active === true).length;
-  const verifiedProfiles = matches.filter((match) => match.is_submitted === true).length;
-  const averageMatchScore = matches.length > 0
-    ? Math.round(matches.reduce((sum, match) => sum + (match.match_score || 0), 0) / matches.length)
+  const filteredTotal = filteredMatches.length;
+  const onlineNow = filteredMatches.filter((match) => match.is_active === true).length;
+  const verifiedProfiles = filteredMatches.filter((match) => match.is_submitted === true).length;
+  const averageMatchScore = filteredMatches.length > 0
+    ? Math.round(filteredMatches.reduce((sum, match) => sum + (match.match_score || 0), 0) / filteredMatches.length)
     : 0;
 
   // ==============================
@@ -469,10 +532,10 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white p-4 rounded-lg shadow-sm border">
-            <p className="text-2xl font-bold text-indigo-600">{totalMatches}</p>
-            <p className="text-gray-600 text-sm">Total Matches</p>
+            <p className="text-2xl font-bold text-indigo-600">{filteredTotal}</p>
+            <p className="text-gray-600 text-sm">Matching Members</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm border">
             <p className="text-2xl font-bold text-green-600">{onlineNow}</p>
@@ -485,6 +548,101 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
           <div className="bg-white p-4 rounded-lg shadow-sm border">
             <p className="text-2xl font-bold text-purple-600">{averageMatchScore * 10}%</p>
             <p className="text-gray-600 text-sm">Avg Match Score</p>
+          </div>
+        </div>
+
+        {/* Filter Section */}
+        <div className="bg-white rounded-xl shadow-sm border p-5 mb-8">
+          <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
+            <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+              <span>🔍</span> Filter Matches
+            </h3>
+            {(selectedGender !== "All" || selectedCity || minAge || maxAge || searchTerm) && (
+              <button
+                onClick={handleResetFilters}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline transition-all"
+              >
+                Reset All Filters ✕
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Search Input */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">
+                Name / Profession
+              </label>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              />
+            </div>
+
+            {/* Gender Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">
+                Gender
+              </label>
+              <select
+                value={selectedGender}
+                onChange={(e) => setSelectedGender(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              >
+                <option value="All">All Genders</option>
+                <option value="Man font-medium">Men</option>
+                <option value="Woman">Women</option>
+              </select>
+            </div>
+
+            {/* City Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">
+                City
+              </label>
+              <input
+                type="text"
+                placeholder="Filter by City..."
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              />
+            </div>
+
+            {/* Min Age Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">
+                Min Age
+              </label>
+              <input
+                type="number"
+                min="18"
+                max="100"
+                placeholder="e.g. 21"
+                value={minAge}
+                onChange={(e) => setMinAge(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              />
+            </div>
+
+            {/* Max Age Filter */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">
+                Max Age
+              </label>
+              <input
+                type="number"
+                min="18"
+                max="100"
+                placeholder="e.g. 40"
+                value={maxAge}
+                onChange={(e) => setMaxAge(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              />
+            </div>
           </div>
         </div>
 
@@ -545,11 +703,15 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
                     className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border border-gray-100"
                   >
                     {/* Profile Image */}
-                    <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+                    <div
+                      className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer group"
+                      onClick={() => setModalImage({ isOpen: true, url: profileImage, title: displayName })}
+                      title="Click to view image in big mode"
+                    >
                       <img
                         src={profileImage}
                         alt={displayName}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
                           e.target.onerror = null;
                           const nameForAvatar = displayName.replace(/[^a-zA-Z0-9 ]/g, "");
@@ -557,6 +719,11 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
                           e.target.src = `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&size=150`;
                         }}
                       />
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-1 shadow-md">
+                          🔍 View Big Image
+                        </span>
+                      </div>
 
                       {/* Online Status */}
                       {isOnline && (
@@ -746,6 +913,14 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
           </>
         )}
       </div>
+
+      {/* Image Modal for Big Mode viewing */}
+      <ImageModal
+        isOpen={modalImage.isOpen}
+        imageUrl={modalImage.url}
+        title={modalImage.title}
+        onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
+      />
     </div>
   );
 }

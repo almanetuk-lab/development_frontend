@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { adminAPI } from "../services/adminApi";
+import ImageModal from "../comman/ImageModal";
 
 // LifeRhythmsDisplay Component
 function LifeRhythmsDisplay({ data }) {
@@ -488,6 +489,7 @@ export default function AdminModelDetails() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
   useEffect(() => {
     fetchModelDetails();
@@ -727,11 +729,30 @@ export default function AdminModelDetails() {
         <div className="flex flex-col items-center gap-4 sm:gap-6 mb-6 p-4 sm:p-6 bg-gray-50 rounded-lg">
           <div className="relative">
             {model.image_url ? (
-              <img
-                src={model.image_url}
-                alt="Profile"
-                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-lg"
-              />
+              <div
+                className="relative cursor-pointer group"
+                onClick={() =>
+                  setModalImage({
+                    isOpen: true,
+                    url: model.image_url,
+                    title: model.first_name
+                      ? `${model.first_name} ${model.last_name || ""}`
+                      : "Profile Picture",
+                  })
+                }
+                title="Click to view image in big mode"
+              >
+                <img
+                  src={model.image_url}
+                  alt="Profile"
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-lg group-hover:scale-105 transition-all duration-300"
+                />
+                <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-xs font-bold bg-black/60 px-2 py-1 rounded-full">
+                    🔍 View
+                  </span>
+                </div>
+              </div>
             ) : (
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-lg">
                 <span className="text-2xl sm:text-4xl font-bold text-gray-400">
@@ -1128,6 +1149,14 @@ export default function AdminModelDetails() {
           overflow: hidden;
         }
       `}</style>
+
+      {/* Image Modal for big mode viewing */}
+      <ImageModal
+        isOpen={modalImage.isOpen}
+        imageUrl={modalImage.url}
+        title={modalImage.title}
+        onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
+      />
     </div>
   );
 }
