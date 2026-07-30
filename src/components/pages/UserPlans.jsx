@@ -57,7 +57,44 @@ export default function UserPlans() {
   };
 
   const handleBuy = async (plan) => {
-    console.log("Direct purchase initiated for:", plan);
+    try {
+      let user_id = localStorage.getItem("user_id");
+      if (!user_id || user_id === "undefined" || user_id === "null") {
+        const currentUserStr = localStorage.getItem("currentUser");
+        if (currentUserStr) {
+          try {
+            const u = JSON.parse(currentUserStr);
+            user_id = u.user_id || u.id;
+          } catch (e) {}
+        }
+      }
+
+      if (!user_id || user_id === "undefined") {
+        toast.error("User not logged in — cannot process payment.");
+        return;
+      }
+
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+      const response = await fetch(`${API_BASE_URL}/payments/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, user_id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create checkout session");
+      }
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url; // Redirect to Stripe
+      } else {
+        toast.error("No checkout URL returned from server");
+      }
+    } catch (err) {
+      console.error("❌ Payment error:", err);
+      toast.error("Payment could not be processed. Please try again.");
+    }
   };
 
   return (

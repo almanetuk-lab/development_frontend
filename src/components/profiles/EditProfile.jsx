@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "../context/UseProfileContext";
-import { updateUserProfile } from "../services/api";
+import { updateUserProfile, uploadImage, saveProfileImage, removeProfileImage } from "../services/api";
 import LifeRhythmsForm from "./LifeRhythmsForm";
 import axios from "axios";
 import InterestsForm from "./InterestsForm";
@@ -785,8 +785,6 @@ export default function EditProfilePage() {
       interested_in: profile.interested_in || "",
       relationship_goal: profile.relationship_goal || "",
 
-      interests_categories: interestsCategories,
-
       children_preference: mapToUIEnum(
         "children_preference",
         profile.children_preference,
@@ -1220,19 +1218,19 @@ export default function EditProfilePage() {
     try {
       const uploadFormData = new FormData();
       uploadFormData.append("image", file);
-      const uploadResponse = await axios.post(
-        "https://backend-q0wc.onrender.com/api/upload",
-        uploadFormData,
-        { headers: { "Content-Type": "multipart/form-data" } },
-      );
-      const saveResponse = await axios.post(
-        "https://backend-q0wc.onrender.com/api/saveProfileImage",
-        { user_id: profile.user_id, imageUrl: uploadResponse.data.imageUrl },
-      );
-      updateProfile(saveResponse.data.profiles);
-      setImagePreview(uploadResponse.data.imageUrl);
-      setFinalProfileImage(uploadResponse.data.imageUrl);
-      return uploadResponse.data.imageUrl;
+      const uploadResponse = await uploadImage(uploadFormData);
+      const imageUrl = uploadResponse.data.imageUrl;
+
+      if (profile?.user_id) {
+        const saveResponse = await saveProfileImage(profile.user_id, imageUrl);
+        if (saveResponse.data?.profiles) {
+          updateProfile(saveResponse.data.profiles);
+        }
+      }
+
+      setImagePreview(imageUrl);
+      setFinalProfileImage(imageUrl);
+      return imageUrl;
     } catch (error) {
       console.error("❌ Image upload error:", error);
       alert("Image upload failed.");
@@ -1266,6 +1264,9 @@ export default function EditProfilePage() {
       window.confirm("Are you sure you want to remove your profile picture?")
     ) {
       try {
+        if (profile?.user_id) {
+          await removeProfileImage(profile.user_id);
+        }
         // 1. UI se hatao
         setImagePreview(null);
 
@@ -1276,20 +1277,21 @@ export default function EditProfilePage() {
         updateProfile({
           ...profile,
           image_url: null,
+          profile_image: null,
         });
 
         alert("Profile picture removed!");
       } catch (error) {
         console.error("Error removing profile picture:", error);
+        alert("Failed to remove profile picture.");
       }
     }
   };
 
   const CAMERA_URL =
-    import.meta.env.MODE === "development"
-      ? "https://python-backend-oo6l.onrender.com"
-      : import.meta.env.VITE_FACE_CAMERA_URL ||
-      "https://python-backend-oo6l.onrender.com";
+    import.meta.env.VITE_FACE_CAMERA_URL ||
+    import.meta.env.VITE_PYTHON_API_URL ||
+    "http://localhost:8000";
 
   //  interests_categories से total interests calculate करो
   const totalCheckboxInterests =
@@ -1335,10 +1337,10 @@ export default function EditProfilePage() {
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === currentStep
-                      ? "bg-indigo-600 text-white"
-                      : step < currentStep
-                        ? "bg-indigo-100 text-indigo-600"
-                        : "bg-gray-200 text-gray-400"
+                    ? "bg-indigo-600 text-white"
+                    : step < currentStep
+                      ? "bg-indigo-100 text-indigo-600"
+                      : "bg-gray-200 text-gray-400"
                     }`}
                 >
                   {step}
@@ -1931,7 +1933,7 @@ export default function EditProfilePage() {
                         placeholder="Tell us about yourself..."
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       />
-                      
+
                       {profile?.intent_tags && (
                         <div className="mt-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl shadow-sm animate-fadeIn">
                           <div className="flex items-center gap-2 mb-3">

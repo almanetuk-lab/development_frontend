@@ -1,10 +1,9 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-const BASE_URL = "https://backend-q0wc.onrender.com/api/admin/plans";
-// import AddNewPlan from ''
-import AddNewPlan from "../admin/AddPlanForm";
-const CONFIG_URL = "https://backend-q0wc.onrender.com/api/admin/configurations";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+const BASE_URL = `${API_BASE_URL}/api/admin/plans`;
+const CONFIG_URL = `${API_BASE_URL}/api/admin/configurations`;
 
 export default function AdminAddNewPlan() {
     const navigate = useNavigate();

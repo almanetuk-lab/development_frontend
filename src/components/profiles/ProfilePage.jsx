@@ -3,6 +3,7 @@ import { useUserProfile } from "../context/UseProfileContext";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { adminAPI } from "../services/adminApi";
 import profileViewApi from "../services/profileViewApi";
+import ImageModal from "../comman/ImageModal";
 
 //  LifeRhythmsDisplay Component - Add kar diya
 function LifeRhythmsDisplay({ data }) {
@@ -87,6 +88,7 @@ export default function ProfilePage() {
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const hasTrackedRef = useRef(false);
   const [activeTab, setActiveTab] = useState(0); // 0: Basic, 1: Lifestyle, 2: Life Rhythms
+  const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
   useEffect(() => {
     if (!currentUserProfile) return;
@@ -289,11 +291,30 @@ export default function ProfilePage() {
         {/* Profile Header */}
         <div className="flex flex-col items-center md:flex-row md:items-start gap-6 mb-8 p-6 bg-gray-50 rounded-lg">
           {displayProfile.image_url ? (
-            <img
-              src={displayProfile.image_url}
-              alt="Profile"
-              className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-            />
+            <div
+              className="relative cursor-pointer group"
+              onClick={() =>
+                setModalImage({
+                  isOpen: true,
+                  url: displayProfile.image_url,
+                  title: displayProfile.first_name
+                    ? `${displayProfile.first_name} ${displayProfile.last_name || ""}`
+                    : "Profile Picture",
+                })
+              }
+              title="Click to view image in big mode"
+            >
+              <img
+                src={displayProfile.image_url}
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg group-hover:scale-105 transition-all duration-300"
+              />
+              <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span className="text-white text-xs font-bold bg-black/60 px-2 py-1 rounded-full">
+                  🔍 View
+                </span>
+              </div>
+            </div>
           ) : (
             <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-lg">
               <span className="text-4xl font-bold text-gray-400">
@@ -1182,6 +1203,14 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {/* Image Modal for big mode viewing */}
+      <ImageModal
+        isOpen={modalImage.isOpen}
+        imageUrl={modalImage.url}
+        title={modalImage.title}
+        onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
+      />
     </div>
   );
 }

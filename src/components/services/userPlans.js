@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Our backend address
-const BASE_URL = "https://backend-q0wc.onrender.com/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+const BASE_URL = `${API_BASE}/api`;
 
 /**
  * 🛠️ AUTHENTICATION HELPER

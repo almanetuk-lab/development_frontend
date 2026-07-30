@@ -14,33 +14,41 @@ export default function CartItem({ item, handleRemove /* OLD: , handleBuy */ }) 
   --------------------------------------------------------------*/
   const handleBuy = async (item) => {
     try {
-      const user_id = localStorage.getItem("user_id");
+      let user_id = localStorage.getItem("user_id");
+      if (!user_id || user_id === "undefined" || user_id === "null") {
+        const currentUserStr = localStorage.getItem("currentUser");
+        if (currentUserStr) {
+          try {
+            const u = JSON.parse(currentUserStr);
+            user_id = u.user_id || u.id;
+          } catch (e) {}
+        }
+      }
 
-      if (!user_id) {
+      if (!user_id || user_id === "undefined") {
         alert("User not logged in — cannot process payment.");
         return;
       }
 
-      console.log("Testing payment with user_id:", user_id, "plan:", item.plan);
+      console.log("Processing payment with user_id:", user_id, "plan:", item.plan);
 
-      const response = await fetch(
-        "https://backend-q0wc.onrender.com/payments/create-checkout-session",
-      
-      // const response = await fetch(
-      //   `${VITE_API_BASE_URL}/payments/create-checkout-session`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: item.plan, user_id }),
-        }
-      );
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+      const response = await fetch(`${API_BASE_URL}/payments/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: item.plan, user_id }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to create checkout session");
       }
 
       const data = await response.json();
-      window.location.href = data.url; // Redirect to Stripe
+      if (data.url) {
+        window.location.href = data.url; // Redirect to Stripe
+      } else {
+        throw new Error("No checkout URL returned from server");
+      }
     } catch (err) {
       console.error("Payment error:", err);
       alert("Payment could not be processed. Please try again.");
