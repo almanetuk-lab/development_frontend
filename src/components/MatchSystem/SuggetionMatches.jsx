@@ -241,10 +241,8 @@ const SuggestedMatches = () => {
 
   // Handle user card click
   const handleUserClick = (user) => {
-    const userId = user.user_id || user.id;
-    if (userId) {
-      // Navigate directly without fetching complete data
-      navigate(`/dashboard/profile/${userId}`);
+    if (user) {
+      handleViewProfile(user);
     }
   };
 

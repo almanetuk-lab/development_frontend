@@ -1,5 +1,5 @@
 // src/components/chatsystem/AdvancedSearch.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { adminAPI } from "../services/adminApi";
 import api from "../services/api";
 export default function AdvancedSearch() {
@@ -8,6 +8,9 @@ export default function AdvancedSearch() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLimitReached, setSearchLimitReached] = useState(false);
 
+  // radius and distance are kept in sync — both always hold the same numeric value.
+  // Default is 10 km. distance is used by the range slider; radius by the number input.
+  const DEFAULT_RADIUS = 10;
   const [filters, setFilters] = useState({
     basicSearch: "",
     first_name: "",
@@ -21,8 +24,8 @@ export default function AdvancedSearch() {
     state: "",
     min_age: "",
     max_age: "",
-    radius: "",
-    distance: "10",
+    radius: DEFAULT_RADIUS,
+    distance: DEFAULT_RADIUS,
     lat: "",
     lon: "",
   });
@@ -33,28 +36,44 @@ export default function AdvancedSearch() {
     daysLeft: 0,
   });
 
-  /* improved geolocation handling (alert removed earlier, now clean console logging) */
-  const getLiveLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Your browser does not support location access.");
-      return;
-    }
+  const [locationDenied, setLocationDenied] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  // Ref so the debounced performSearch always reads the live value (avoids stale closure)
+  const locationDeniedRef = useRef(false);
+  const filtersRef = useRef(filters);
+  useEffect(() => { filtersRef.current = filters; }, [filters]);
+  useEffect(() => { locationDeniedRef.current = locationDenied; }, [locationDenied]);
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        handleInputChange("lat", pos.coords.latitude);
-        handleInputChange("lon", pos.coords.longitude);
-        console.log(
-          "GPS location fetched:",
-          pos.coords.latitude,
-          pos.coords.longitude,
-        );
-      },
-      () => {
-        alert("Location permission denied. Please allow location access.");
-      },
-      { enableHighAccuracy: true, maximumAge: 60000, timeout: 10000 },
-    );
+  /* Request geolocation permission, fetch fresh lat/lon, and update profile DB */
+  const getLiveLocation = async () => {
+    setLocationLoading(true);
+    setLocationDenied(false);
+    try {
+      const { getUserLocation } = await import("../services/geolocationService");
+      const coords = await getUserLocation();
+      handleInputChange("lat", coords.latitude);
+      handleInputChange("lon", coords.longitude);
+      setLocationDenied(false);
+      console.log("GPS location fetched:", coords.latitude, coords.longitude);
+
+      // Update location in database profile
+      try {
+        await api.put("/api/profiles/location", {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
+        console.log("Updated user profile location in backend DB.");
+      } catch (dbErr) {
+        console.warn("Failed to update user location in profile DB:", dbErr);
+      }
+    } catch (err) {
+      console.error("Location permission denied or failed:", err);
+      setLocationDenied(true);
+      setFilters((prev) => ({ ...prev, lat: "", lon: "" }));
+      setSearchResults([]);
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -77,11 +96,30 @@ export default function AdvancedSearch() {
 
     fetchPlanStatus();
   }, []);
+
   useEffect(() => {
-    if (activeTab === "nearme" && !filters.lat && !filters.lon) {
+    if (activeTab === "nearme") {
       getLiveLocation();
     }
   }, [activeTab]);
+
+  // Auto-search trigger when parameters update, with a light 300ms debounce
+  useEffect(() => {
+    if (!plan.loading && plan.active) {
+      const delayDebounceFn = setTimeout(() => {
+        performSearch();
+      }, 300);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [
+    activeTab,
+    plan.loading,
+    plan.active,
+    filters.radius,
+    filters.lat,
+    filters.lon
+  ]);
 
   const handleTabChange = (tabId) => {
     if (!plan.loading && !plan.active) {
@@ -108,15 +146,30 @@ export default function AdvancedSearch() {
     }
 
     if (tabId !== "nearme") {
+      // Reset both distance and radius when leaving Near Me tab
       setFilters((prev) => ({
         ...prev,
-        radius: "",
+        radius: DEFAULT_RADIUS,
+        distance: DEFAULT_RADIUS,
+      }));
+    } else {
+      // Re-entering Near Me — restore radius/distance to default if somehow cleared
+      setFilters((prev) => ({
+        ...prev,
+        radius: prev.radius || DEFAULT_RADIUS,
+        distance: prev.distance || DEFAULT_RADIUS,
       }));
     }
   };
 
   const handleInputChange = (field, value) => {
-    const numFields = ["min_age", "max_age", "radius", "lat", "lon"];
+    // distance and radius are always kept in sync
+    if (field === "distance" || field === "radius") {
+      const normalized = value === "" || value === null ? DEFAULT_RADIUS : Math.max(1, Number(value));
+      setFilters((prev) => ({ ...prev, distance: normalized, radius: normalized }));
+      return;
+    }
+    const numFields = ["min_age", "max_age", "lat", "lon"];
     if (numFields.includes(field)) {
       const normalized = value === "" || value === null ? "" : Number(value);
       setFilters((prev) => ({ ...prev, [field]: normalized }));
@@ -247,13 +300,28 @@ export default function AdvancedSearch() {
       }
 
       if (activeTab === "nearme") {
+        const denied = locationDeniedRef.current;
+        const currentFilters = filtersRef.current;
+        if (denied || !currentFilters.lat || !currentFilters.lon) {
+          console.warn("[NearMe] Search blocked: Location permission is required.");
+          setSearchResults([]);
+          setLoading(false);
+          return;
+        }
+        // radius and distance are always in sync; use radius as authoritative source
+        const radVal = typeof currentFilters.radius === "number" && !isNaN(currentFilters.radius) && currentFilters.radius >= 1
+          ? currentFilters.radius
+          : DEFAULT_RADIUS;
         searchParams = {
           search_mode: "nearme",
-          radius: Number(filters.radius || filters.distance),
-          lat: filters.lat,
-          lon: filters.lon,
-          city: filters.city,
+          radius: radVal,
+          lat: currentFilters.lat,
+          lon: currentFilters.lon,
         };
+        if (currentFilters.city && typeof currentFilters.city === "string" && currentFilters.city.trim() !== "") {
+          searchParams.city = currentFilters.city.trim();
+        }
+        console.log("[NearMe] Search params:", searchParams);
       }
 
       const response = await api.get("/search", { params: searchParams });
@@ -633,66 +701,132 @@ export default function AdvancedSearch() {
                     Find Nearby Matches
                   </h3>
                   <p className="text-gray-600">
-                    Connect with people in your area
+                    Connect with people in your area using real-time GPS proximity
                   </p>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-3">
-                        Distance: Within {filters.distance} km
-                      </label>
-                      <input
-                        type="range"
-                        min="1"
-                        max="50"
-                        value={filters.distance}
-                        onChange={(e) =>
-                          handleInputChange("distance", e.target.value)
-                        }
-                        className="w-full"
-                        disabled={!filters.lat || !filters.lon}
-                      />
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>1 km</span>
-                        <span>25 km</span>
-                        <span>50 km</span>
+                {locationLoading ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center space-y-3">
+                    <div className="animate-spin text-3xl mx-auto text-blue-600">🎯</div>
+                    <h4 className="text-base font-semibold text-blue-900">
+                      Requesting location permission from browser...
+                    </h4>
+                    <p className="text-xs text-blue-700">
+                      Please allow location access when prompted by your browser.
+                    </p>
+                  </div>
+                ) : locationDenied || !filters.lat || !filters.lon ? (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center space-y-4">
+                    <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-sm">
+                      📍
+                    </div>
+                    <h3 className="text-xl font-bold text-red-900">
+                      Location Access Required
+                    </h3>
+                    <p className="text-sm text-red-700 max-w-md mx-auto leading-relaxed">
+                      To access <strong>Near Me</strong> search, you must enable location permissions in your browser. This is required to detect your coordinates and update your profile location.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={getLiveLocation}
+                      disabled={locationLoading}
+                      className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md inline-flex items-center gap-2"
+                    >
+                      <span>🎯</span>
+                      {locationLoading ? "Requesting..." : "Allow & Update Location"}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Location Detection Banner */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
+                      <div className="text-xs text-green-800 flex items-center gap-2">
+                        <span className="text-base">📍</span>
+                        <span className="font-medium">
+                          Location acquired & saved: {Number(filters.lat).toFixed(4)}, {Number(filters.lon).toFixed(4)}
+                        </span>
                       </div>
+                      <button
+                        type="button"
+                        onClick={getLiveLocation}
+                        className="px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 flex-shrink-0"
+                      >
+                        <span>🔄</span> Refresh Location
+                      </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
+
+                      {/* Radius slider — single source: filters.radius */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          City
-                        </label>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-sm font-semibold text-gray-700">
+                            Search Radius
+                          </label>
+                          <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">
+                            {filters.radius} km
+                          </span>
+                        </div>
                         <input
-                          type="text"
-                          placeholder="Enter city"
-                          value={filters.city}
-                          onChange={(e) =>
-                            handleInputChange("city", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Radius (km)
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="Search radius"
+                          type="range"
+                          min="1"
+                          max="100"
+                          step="1"
                           value={filters.radius}
-                          onChange={(e) =>
-                            handleInputChange("radius", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => handleInputChange("radius", e.target.value)}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1.5 font-medium">
+                          <span>1 km</span>
+                          <span>25 km</span>
+                          <span>50 km</span>
+                          <span>75 km</span>
+                          <span>100 km</span>
+                        </div>
                       </div>
+
+                      {/* Precise radius input + City */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Radius (km)
+                            <span className="ml-1.5 text-xs font-normal text-gray-400">— or type exact value</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="1"
+                              max="100"
+                              placeholder="e.g. 25"
+                              value={filters.radius}
+                              onChange={(e) => handleInputChange("radius", e.target.value)}
+                              className="w-full pl-3 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">km</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            City
+                            <span className="ml-1.5 text-xs font-normal text-gray-400">— optional filter</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Mumbai"
+                            value={filters.city}
+                            onChange={(e) => handleInputChange("city", e.target.value)}
+                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Info hint */}
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        💡 Real-time GPS location calculates exact physical distances to other profiles.
+                      </p>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </form>
             )}
           </div>
@@ -726,24 +860,26 @@ export default function AdvancedSearch() {
             <button
               type="button"
               onClick={handleSearch}
-              disabled={loading || searchLimitReached}
+              disabled={loading || searchLimitReached || (activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon))}
               className={`w-full py-3 bg-blue-600 text-white rounded-lg font-medium text-lg transition-colors ${
-                loading || searchLimitReached
+                loading || searchLimitReached || (activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon))
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-blue-700"
               }`}
             >
               {searchLimitReached
                 ? "🔒 Search limit over"
-                : loading
-                  ? "🔍 Searching..."
-                  : `🔍 Search ${
-                      activeTab === "basic"
-                        ? "Matches"
-                        : activeTab === "advanced"
-                          ? "Advanced"
-                          : "Nearby"
-                    }`}
+                : activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon)
+                  ? "📍 Location Permission Required"
+                  : loading
+                    ? "🔍 Searching..."
+                    : `🔍 Search ${
+                        activeTab === "basic"
+                          ? "Matches"
+                          : activeTab === "advanced"
+                            ? "Advanced"
+                            : "Nearby"
+                      }`}
             </button>
           </div>
 
@@ -786,9 +922,16 @@ export default function AdvancedSearch() {
                           {profile.first_name} {profile.last_name}
                         </h4>
 
-                        <p className="text-gray-600 text-sm mt-1">
-                          {profile.profession} • {profile.city}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="text-gray-600 text-sm">
+                            {profile.profession} • {profile.city}
+                          </span>
+                          {activeTab === "nearme" && profile.distance_meters !== undefined && profile.distance_meters !== null && (
+                            <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-100 flex items-center gap-0.5 shadow-sm">
+                              📍 {(profile.distance_meters / 1000).toFixed(1)} km away
+                            </span>
+                          )}
+                        </div>
 
                         <p className="text-gray-500 text-sm mt-2 line-clamp-2">
                           {profile.about}

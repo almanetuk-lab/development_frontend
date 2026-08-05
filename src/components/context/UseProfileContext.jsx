@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getUserProfile } from "../services/api";
+import io from "socket.io-client";
+import { chatApi } from "../services/chatApi";
 
 const UserProfileContext = createContext();
 
@@ -38,17 +40,17 @@ export const UserProfileProvider = ({ children }) => {
 
         //   Remove mixed format
         let cleanPrompts = {};
-        
+
         if (userProfile.prompts && typeof userProfile.prompts === "object") {
           console.log("🔍 Cleaning prompts:", userProfile.prompts);
-          
+
           for (const [key, value] of Object.entries(userProfile.prompts)) {
             // Skip 'question-key' wrapper
             if (key !== "question-key") {
               cleanPrompts[key] = value;
             }
           }
-          
+
           console.log("✅ Cleaned prompts:", cleanPrompts);
         }
 
@@ -99,10 +101,10 @@ export const UserProfileProvider = ({ children }) => {
           education: userProfile.education || "",
           headline: userProfile.headline || "",
           education_institution_name: userProfile.education_institution_name || "",
-          
+
           //  CLEAN PROMPTS
           prompts: cleanPrompts,
-          
+
           work_environment: userProfile.work_environment || "",
           interaction_style: userProfile.interaction_style || "",
           work_rhythm: userProfile.work_rhythm || "",
@@ -149,6 +151,8 @@ export const UserProfileProvider = ({ children }) => {
           profilePhoto: userProfile.profilePhoto || "",
           image_url: userProfile.image_url || "",
           intent_tags: userProfile.intent_tags || null,
+          latitude: userProfile.latitude || null,
+          longitude: userProfile.longitude || null,
           last_updated: new Date().toISOString(),
         };
 
@@ -200,7 +204,7 @@ export const UserProfileProvider = ({ children }) => {
 
   const updateProfile = (newProfileData) => {
     console.log("🔄 Updating profile with:", newProfileData);
-    
+
     const updatedProfile = {
       ...profile,
       ...newProfileData,
@@ -215,8 +219,109 @@ export const UserProfileProvider = ({ children }) => {
     localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
   };
 
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [socket, setSocket] = useState(null);
+
+  // Fetch all notifications from API
+  const fetchNotifications = async () => {
+    if (!profile?.user_id) return;
+    setNotificationsLoading(true);
+    try {
+      const res = await chatApi.getUserNotifications(profile.user_id);
+      const data = res.data || [];
+      const mappedData = data.map((n) => ({
+        ...n,
+        is_reaction: n.type === "reaction",
+      }));
+      setNotifications(mappedData);
+      const unread = mappedData.filter((n) => !n.is_read).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error("❌ Error fetching notifications:", error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  // Mark single notification as read
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await chatApi.markChatAsRead(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("❌ Error marking notification as read:", error);
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllNotificationsAsRead = async () => {
+    if (!profile?.user_id) return;
+    try {
+      await chatApi.markAllNotificationsAsRead(profile.user_id);
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("❌ Error marking all notifications as read:", error);
+    }
+  };
+
+  // Setup single global websocket connection
+  useEffect(() => {
+    if (!profile?.user_id) {
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+      }
+      return;
+    }
+
+    console.log("🔌 Initializing global socket for user:", profile.user_id);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+    const newSocket = io(API_BASE_URL, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+    });
+
+    newSocket.on("connect", () => {
+      console.log("🔌 Global Socket connected. Registering user:", profile.user_id);
+      newSocket.emit("register_user", profile.user_id);
+    });
+
+    newSocket.on("new_notification", (notif) => {
+      console.log("🔔 Global socket received notification:", notif);
+      const mappedNotif = {
+        ...notif,
+        is_reaction: notif.type === "reaction",
+      };
+      setNotifications((prev) => [mappedNotif, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+    });
+
+    setSocket(newSocket);
+
+    // Fetch initial notifications once when the user opens the app or logs in
+    fetchNotifications();
+
+    return () => {
+      console.log("🔌 Disconnecting global socket for user:", profile.user_id);
+      newSocket.disconnect();
+    };
+  }, [profile?.user_id]);
+
   const clearProfile = () => {
     console.log("🚪 Clearing ALL user data");
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
+    setNotifications([]);
+    setUnreadCount(0);
     setProfile(null);
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -246,6 +351,13 @@ export const UserProfileProvider = ({ children }) => {
     refreshProfile,
     loading,
     hasCompleteProfile: hasCompleteProfile(),
+    notifications,
+    unreadCount,
+    notificationsLoading,
+    fetchNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    socket,
   };
 
   return (

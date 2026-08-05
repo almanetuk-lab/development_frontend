@@ -31,7 +31,7 @@ api.interceptors.response.use(
       // Auto logout if token expired
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminData');
-      window.location.href = '/admin-login';
+      window.location.href = '/#/admin-login';
     }
     return Promise.reject(error);
   }

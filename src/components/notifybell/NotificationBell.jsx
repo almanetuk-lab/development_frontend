@@ -1,194 +1,22 @@
-
 // components/NotificationBell.jsx 
 import React, { useState, useEffect, useRef } from "react";
-import { adminAPI } from "../services/adminApi";
-import { chatApi } from "../services/chatApi";
 import { FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useUserProfile } from "../context/UseProfileContext";
 
 const NotificationBell = () => {
-  const [notifications, setNotifications] = useState([]);
+  const {
+    notifications,
+    unreadCount,
+    notificationsLoading: loading,
+    fetchNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead
+  } = useUserProfile();
+
   const [showDropdown, setShowDropdown] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
-
-  const getUserId = () => {
-    try {
-      const storedUser = localStorage.getItem("currentUser");
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        return userData.user_id || userData.id;
-      }
-    } catch (error) {}
-    
-    const userId = localStorage.getItem("user_id") || localStorage.getItem("userId");
-    if (userId) return userId;
-    
-    return "62";
-  };
-
-  const extractSenderInfo = (notification) => {
-    let senderId = null;
-    let senderName = "User";
-    
-    if (notification.sender_name) {
-      senderName = notification.sender_name;
-      senderId = notification.sender_id;
-    }
-    else if (notification.from_user_name) {
-      senderName = notification.from_user_name;
-      senderId = notification.from_user_id;
-    }
-    else if (notification.metadata) {
-      try {
-        const metadata = typeof notification.metadata === 'string' 
-          ? JSON.parse(notification.metadata) 
-          : notification.metadata;
-        senderId = metadata.sender_id || metadata.user_id;
-        senderName = metadata.sender_name || metadata.name || "User";
-      } catch (error) {}
-    }
-    else {
-      const message = notification.message || notification.content || "";
-      if (message.includes("sent you a new message")) {
-        const match = message.match(/^(.*?)\s+sent you a new message/);
-        if (match && match[1]) {
-          senderName = match[1].trim();
-        }
-      }
-    }
-    
-    return { senderId, senderName };
-  };
-
-  const cleanUserName = (name) => {
-    if (!name) return "User";
-    return name.replace(/\d+$/, "").trim() || name;
-  };
-
-  const extractReactionEmoji = (notification) => {
-    const message = notification.message || notification.content || "";
-    if (message.includes("❤️")) return "❤️";
-    if (message.includes("😂")) return "😂";
-    if (message.includes("👍")) return "👍";
-    if (message.includes("🔥")) return "🔥";
-    return "❤️";
-  };
-
-  //  FIXED: Only show type:null for ADMIN notifications
-  const fetchNotifications = async () => {
-    const userId = getUserId();
-    
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      
-      let userNotifications = [];
-      let adminNotifications = [];
-      
-      // 1. CHAT NOTIFICATIONS (User Messages)
-      try {
-        const response = await chatApi.getUserNotifications(userId);
-        
-        if (response.data) {
-          let chatNotifs = [];
-          
-          if (Array.isArray(response.data)) {
-            chatNotifs = response.data;
-          } else if (response.data.notifications && Array.isArray(response.data.notifications)) {
-            chatNotifs = response.data.notifications;
-          } else if (response.data.messages && Array.isArray(response.data.messages)) {
-            chatNotifs = response.data.messages;
-          }
-          
-          //  FILTER: Sirf type: "Message" ya "reaction" wale rakho
-          chatNotifs = chatNotifs.filter(notif => {
-            // Admin ke messages mat dikhao
-            if (notif.type === null) return false; 
-            if (notif.title === "Account Approved" || notif.title === "Account On Hold") return false;
-            
-            return true;
-          });
-          
-          const formattedChatNotifs = chatNotifs.map(notif => {
-            const { senderId, senderName } = extractSenderInfo(notif);
-            const isReaction = notif.type === "reaction" || (notif.message || "").includes("reacted");
-            
-            return {
-              id: notif.id,
-              type: isReaction ? 'reaction' : 'user',
-              source: 'user',
-              sender_id: senderId || notif.sender_id || notif.from_user_id,
-              sender_name: cleanUserName(senderName),
-              message: notif.message || notif.content || "sent you a message",
-              created_at: notif.created_at || notif.timestamp,
-              is_read: notif.is_read || false,
-              is_reaction: isReaction,
-              reaction_emoji: isReaction ? extractReactionEmoji(notif) : null
-            };
-          });
-          
-          userNotifications = [...userNotifications, ...formattedChatNotifs];
-        }
-      } catch (chatError) {}
-
-      // 2. ADMIN NOTIFICATIONS (type: null wale)
-      try {
-        const adminResponse = await chatApi.getUserNotifications(userId); // Same API se
-        
-        if (adminResponse.data && Array.isArray(adminResponse.data)) {
-          const adminMsgs = adminResponse.data.filter(notif => 
-            notif.type === null || 
-            notif.title === "Account Approved" || 
-            notif.title === "Account On Hold"
-          );
-          
-          const formattedAdminNotifs = adminMsgs.map(notif => ({
-            id: notif.id,
-            type: 'admin',
-            source: 'admin',
-            sender_name: "Admin",
-            message: notif.message || notif.content || "System notification",
-            created_at: notif.created_at || notif.timestamp,
-            is_read: true, // Admin always read
-            title: notif.title || "Admin Notification"
-          }));
-          
-          adminNotifications = formattedAdminNotifs;
-        }
-      } catch (adminError) {}
-      
-      // Combine both
-      const allNotifications = [...adminNotifications, ...userNotifications]
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      
-      setNotifications(allNotifications);
-      
-      // Count unread (only user messages)
-      const unread = userNotifications.filter(n => !n.is_read).length;
-      setUnreadCount(unread);
-      
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const markAsRead = async (notification) => {
-    if (notification.source === 'admin') return;
-    
-    try {
-      await chatApi.markNotificationAsRead(notification.id);
-      setNotifications(prev =>
-        prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {}
-  };
 
   const handleNotificationClick = (notification) => {
     if (notification.source === 'admin') {
@@ -196,7 +24,7 @@ const NotificationBell = () => {
       return;
     }
     
-    markAsRead(notification);
+    markNotificationAsRead(notification.id);
     
     if (notification.sender_id) {
       navigate("/dashboard/messages", {
@@ -212,13 +40,6 @@ const NotificationBell = () => {
     }
     
     setShowDropdown(false);
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(n => n.source !== 'admin' ? { ...n, is_read: true } : n)
-    );
-    setUnreadCount(0);
   };
 
   const toggleDropdown = () => {
@@ -276,17 +97,11 @@ const NotificationBell = () => {
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-800">Notifications</h3>
               {unreadCount > 0 && (
-                <button onClick={markAllAsRead} className="text-sm text-amber-600">
+                <button onClick={markAllNotificationsAsRead} className="text-sm text-amber-600 hover:text-amber-700 font-medium">
                   Mark all read
                 </button>
               )}
             </div>
-          </div>
-
-          {/* WELCOME MESSAGE */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 border-b border-gray-200">
-            {/* <p className="font-medium text-gray-800">Welcome back, {currentUser?.name || "User"}!</p> */}
-            {/* <p className="text-sm text-gray-600">Ready to find your perfect match?</p> */}
           </div>
 
           {/* NOTIFICATIONS LIST */}
@@ -393,221 +208,3 @@ const NotificationBell = () => {
 };
 
 export default NotificationBell;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-

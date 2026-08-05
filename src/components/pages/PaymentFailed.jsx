@@ -2,7 +2,7 @@ import React from "react";
 
 export default function PaymentFailed() {
   const handleRetry = () => {
-    window.location.href = "/dashboard/plans";
+    window.location.href = "/#/dashboard/plans";
   };
 
   return (
