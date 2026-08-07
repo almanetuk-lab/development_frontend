@@ -218,7 +218,7 @@ export default function Sidebar({
           <button
             onClick={() => {
               localStorage.clear();
-              window.location.href = "#/login";
+              window.location.href = "/#/login";
             }}
             className="flex items-center w-full px-4 py-3 text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-all duration-200 font-medium"
           >

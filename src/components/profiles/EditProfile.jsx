@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "../context/UseProfileContext";
-import { updateUserProfile, uploadImage, saveProfileImage, removeProfileImage } from "../services/api";
+import { updateUserProfile, uploadImage, saveProfileImage, removeProfileImage, updateUserLocation } from "../services/api";
 import LifeRhythmsForm from "./LifeRhythmsForm";
 import axios from "axios";
 import InterestsForm from "./InterestsForm";
@@ -466,6 +466,7 @@ export default function EditProfilePage() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const isLocationSavingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -524,6 +525,8 @@ export default function EditProfilePage() {
     love_language_affection: "",
     life_rhythms: {},
     prompts: {},
+    latitude: "",
+    longitude: "",
   });
 
   // ================== QUESTIONS HANDLER ==================
@@ -812,6 +815,8 @@ export default function EditProfilePage() {
 
       love_language_affection: profile.love_language_affection || null,
 
+      latitude: profile.latitude || "",
+      longitude: profile.longitude || "",
       life_rhythms: profile.life_rhythms || {},
       prompts: loadedPrompts,
     });
@@ -820,6 +825,54 @@ export default function EditProfilePage() {
       setImagePreview(profile.profile_image);
     }
   }, [profile?.user_id]);
+
+  useEffect(() => {
+    if (profile) {
+      const autoDetectAndSaveLocation = async () => {
+        if (isLocationSavingRef.current) return;
+        try {
+          const { getUserLocation } = await import("../services/geolocationService");
+          const coords = await getUserLocation();
+          const lat = Number(coords.latitude.toFixed(6));
+          const lon = Number(coords.longitude.toFixed(6));
+
+          // Check if coordinates are different or not set yet to avoid redundant API calls
+          if (
+            profile.latitude === null ||
+            profile.longitude === null ||
+            profile.latitude === "" ||
+            profile.longitude === "" ||
+            Number(profile.latitude).toFixed(6) !== coords.latitude.toFixed(6) ||
+            Number(profile.longitude).toFixed(6) !== coords.longitude.toFixed(6)
+          ) {
+            console.log("📍 Saving new location coordinates to database in background:", { lat, lon });
+            isLocationSavingRef.current = true;
+            
+            // 1. Save to DB using the API
+            await updateUserLocation(lat, lon);
+            
+            // 2. Update context so it doesn't trigger again
+            updateProfile({
+              latitude: lat,
+              longitude: lon
+            });
+            
+            // 3. Update local form state
+            setFormData(prev => ({
+              ...prev,
+              latitude: lat.toString(),
+              longitude: lon.toString()
+            }));
+          }
+        } catch (err) {
+          console.warn("Background auto-detect/save location failed:", err.message);
+        } finally {
+          isLocationSavingRef.current = false;
+        }
+      };
+      autoDetectAndSaveLocation();
+    }
+  }, [profile?.user_id, profile?.latitude, profile?.longitude]);
 
   // ================== PROGRESS & STEP HANDLING ==================
   const progressPercentage = (currentStep / totalSteps) * 100;
@@ -944,6 +997,8 @@ export default function EditProfilePage() {
         height_ft: height_ft,
         height_in: height_in,
         ai_detected_at: formData.ai_detected_at || null,
+        latitude: formData.latitude !== "" ? Number(formData.latitude) : null,
+        longitude: formData.longitude !== "" ? Number(formData.longitude) : null,
         life_rhythms: formData.life_rhythms,
         company_type: formData.company_type || null,
         education_institution_name: formData.education_institution_name || null,
@@ -1723,6 +1778,8 @@ export default function EditProfilePage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
+
+
               </div>
             </div>
           )}

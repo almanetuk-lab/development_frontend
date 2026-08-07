@@ -42,7 +42,7 @@ api.interceptors.response.use(
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
-          window.location.href = '/login';
+          window.location.href = '/#/login';
           return Promise.reject(error);
         }
 
@@ -80,7 +80,7 @@ api.interceptors.response.use(
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
-        window.location.href = '/login';
+        window.location.href = '/#/login';
         
         return Promise.reject(refreshError);
       }
@@ -167,6 +167,30 @@ export const updateUserProfile = async (profileData) => {
     return res.data.profile;  //  Already returns {..., prompts: {...}}
   } catch (err) {
     console.error("Update Profile Error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// Update user location in DB (via Express backend)
+export const updateUserLocation = async (latitude, longitude) => {
+  try {
+    const res = await api.put("/api/profiles/location", { latitude, longitude });
+    return res.data;
+  } catch (err) {
+    console.error("Update Location Error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// Fetch nearby profiles (via Express backend)
+export const getNearbyProfiles = async (latitude, longitude, radiusInKm = 50) => {
+  try {
+    const res = await api.get("/api/profiles/nearby", {
+      params: { latitude, longitude, radiusInKm }
+    });
+    return res.data.data;
+  } catch (err) {
+    console.error("Get Nearby Profiles Error:", err.response?.data || err.message);
     throw err;
   }
 };

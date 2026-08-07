@@ -640,13 +640,14 @@ export default function AISuggestions() {
                         <img
                           src={profileImage}
                           alt={match.name}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-purple-100 group-hover:border-purple-500 transition-colors duration-200"
+                          onClick={() => handleViewProfile(match)}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-purple-100 group-hover:border-purple-500 transition-colors duration-200 cursor-pointer"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(match.name)}&background=random&color=fff&size=150`;
                           }}
                         />
-                        <div>
+                        <div className="cursor-pointer" onClick={() => handleViewProfile(match)}>
                           <h4 className="font-bold text-slate-800 text-lg group-hover:text-purple-700 transition-colors">
                             {match.name}
                           </h4>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSuggestedMatches } from "../services/chatApi";
-import api from "../services/api"; // Your axios instance
+import api, { updateUserLocation, getNearbyProfiles } from "../services/api"; // Your axios instance
+import { getUserLocation } from "../services/geolocationService";
 import ImageModal from "../comman/ImageModal";
 
 export default function MatchesPage() {
@@ -11,6 +12,8 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingProfileId, setLoadingProfileId] = useState(null); // Track which profile is loading
+
+
 
   // Filter States
   const [selectedGender, setSelectedGender] = useState("All");
@@ -35,12 +38,8 @@ export default function MatchesPage() {
       setLoading(true);
       setError(null);
 
-      console.log("🔄 Fetching matches...");
-
+      console.log("🔄 Fetching normal matches...");
       const apiData = await getSuggestedMatches();
-      console.log("📦 getSuggestedMatches Response:", apiData);
-
-      // Check response format
       let matchesData = [];
 
       if (apiData && Array.isArray(apiData)) {
@@ -52,13 +51,6 @@ export default function MatchesPage() {
       }
 
       console.log(`✅ Found ${matchesData.length} matches`);
-
-      // DEBUG: Check what fields are coming
-      if (matchesData.length > 0) {
-        const firstUser = matchesData[0];
-        console.log("🔍 First user fields:", Object.keys(firstUser));
-      }
-
       setMatches(matchesData);
     } catch (err) {
       console.error("❌ Error fetching matches:", err);
@@ -551,6 +543,7 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
           </div>
         </div>
 
+
         {/* Filter Section */}
         <div className="bg-white rounded-xl shadow-sm border p-5 mb-8">
           <div className="flex items-center justify-between mb-4 border-b border-gray-100 pb-3">
@@ -758,8 +751,8 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
                     {/* Profile Info */}
                     <div className="p-4">
                       <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg text-gray-800">{displayName}</h3>
+                        <div className="flex-1 cursor-pointer" onClick={() => handleViewProfile(match)}>
+                          <h3 className="font-bold text-lg text-gray-800 hover:text-indigo-600 transition-colors">{displayName}</h3>
 
                           {match.profession && (
                             <p className="text-gray-600 font-medium text-sm mt-1">{match.profession}</p>
@@ -776,6 +769,8 @@ const fetchCompleteProfile = async (userId, currentUserId) => {
                           ♡
                         </button>
                       </div>
+
+
 
                       {/* Location */}
                       {location !== "Location not set" && (

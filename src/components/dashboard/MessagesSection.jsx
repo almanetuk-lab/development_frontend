@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { chatApi } from "../services/chatApi";
-import io from "socket.io-client";
 import { useLocation } from "react-router-dom";
 import EmojiPicker from "emoji-picker-react";
+import { useUserProfile } from "../context/UseProfileContext";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
@@ -31,9 +31,9 @@ export default function MessagesSection() {
   const emojiButtonRef = useRef(null);
 
   // Scroll position maintain 
-const messagesContainerRef = useRef(null);
-const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-const [userScrolled, setUserScrolled] = useState(false);
+  const messagesContainerRef = useRef(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [userScrolled, setUserScrolled] = useState(false);
 
   //  PROFILE PICTURES STATES
   const [userProfilePictures, setUserProfilePictures] = useState({});
@@ -50,27 +50,27 @@ const [userScrolled, setUserScrolled] = useState(false);
     daysLeft: 0,
   });
 
-  const socketRef = useRef(null);
+  const { socket, fetchNotifications } = useUserProfile();
   const fileInputRef = useRef();
   const messagesEndRef = useRef();
   const [socketConnected, setSocketConnected] = useState(false);
   const location = useLocation();
 
   // User ne manually scroll kiya to auto-scroll band karo - YEH NAYA FUNCTION
-const handleScroll = () => {
-  if (messagesContainerRef.current) {
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-    
-    if (!isAtBottom && !userScrolled) {
-      setUserScrolled(true);
-      setShouldAutoScroll(false);
-    } else if (isAtBottom) {
-      setUserScrolled(false);
-      setShouldAutoScroll(true);
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+
+      if (!isAtBottom && !userScrolled) {
+        setUserScrolled(true);
+        setShouldAutoScroll(false);
+      } else if (isAtBottom) {
+        setUserScrolled(false);
+        setShouldAutoScroll(true);
+      }
     }
-  }
-};
+  };
 
   // Close emoji picker when clicking outside - NEW
   useEffect(() => {
@@ -206,15 +206,15 @@ const handleScroll = () => {
   }, [location.state, currentUserId]);
 
   // Jab naya user select ho to scroll top se start karo - YEH NAYA EFFECT
-useEffect(() => {
-  if (selectedUser) {
-    setShouldAutoScroll(true);
-    setUserScrolled(false);
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = 0;
+  useEffect(() => {
+    if (selectedUser) {
+      setShouldAutoScroll(true);
+      setUserScrolled(false);
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = 0;
+      }
     }
-  }
-}, [selectedUser]);
+  }, [selectedUser]);
 
   // Fetch recent chats
   const fetchRecentChats = async () => {
@@ -360,35 +360,12 @@ useEffect(() => {
 
   // SOCKET WITH REACTION HANDLING
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId || !socket) return;
 
-    console.log("🔌 Initializing socket for user:", currentUserId);
-
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-    }
-
-    const socket = io(API_BASE_URL, {
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionAttempts: 5,
-    });
-
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      console.log(" Socket connected");
-      setSocketConnected(true);
-      socket.emit("join", { userId: currentUserId });
-    });
-
-    socket.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
-      setSocketConnected(false);
-    });
+    console.log("🔌 Subscribing to global socket events for user:", currentUserId);
 
     // HANDLE NEW REACTIONS VIA SOCKET
-    socket.on("new_reaction", (reactionData) => {
+    const handleNewReaction = (reactionData) => {
       console.log(" New reaction received via socket:", reactionData);
       if (reactionData && selectedUser) {
         setReactions((prev) => {
@@ -401,7 +378,7 @@ useEffect(() => {
           if (exists) {
             return prev.map((r) =>
               r.message_id === reactionData.message_id &&
-              r.user_id === reactionData.user_id
+                r.user_id === reactionData.user_id
                 ? reactionData
                 : r,
             );
@@ -409,7 +386,7 @@ useEffect(() => {
           return [...prev, reactionData];
         });
       }
-    });
+    };
 
     // Handle incoming messages
     const handleIncomingMessage = (message) => {
@@ -437,17 +414,26 @@ useEffect(() => {
 
           return [...filtered, message];
         });
+
+        // Mark this incoming message and associated notification as read immediately
+        chatApi.getMessages(selectedUser.id, currentUserId)
+          .then(() => {
+            if (fetchNotifications) {
+              fetchNotifications();
+            }
+          })
+          .catch((err) => console.error("❌ Error marking incoming message as read:", err));
       }
     };
 
+    socket.on("new_reaction", handleNewReaction);
     socket.on("new_message", handleIncomingMessage);
 
     return () => {
       socket.off("new_message", handleIncomingMessage);
-      socket.off("new_reaction");
-      socket.disconnect();
+      socket.off("new_reaction", handleNewReaction);
     };
-  }, [currentUserId, selectedUser]);
+  }, [currentUserId, selectedUser, socket]);
 
   // // Auto-scroll
   // useEffect(() => {
@@ -457,11 +443,11 @@ useEffect(() => {
   // }, [messages]);
 
   // Auto-scroll - YEH UPDATE KARO (purane ko replace karo)
-useEffect(() => {
-  if (messagesEndRef.current && shouldAutoScroll && messages.length > 0) {
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }
-}, [messages, shouldAutoScroll]);
+  useEffect(() => {
+    if (messagesEndRef.current && shouldAutoScroll && messages.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, shouldAutoScroll]);
 
   // FUNCTION TO REMOVE NUMBERS FROM USERNAME
   const cleanUserName = (name) => {
@@ -529,6 +515,11 @@ useEffect(() => {
 
       console.log(` Loaded ${conversationMessages.length} messages`);
       setMessages(conversationMessages);
+      
+      // Refresh global notifications count since messages and matching notifications are marked as read
+      if (fetchNotifications) {
+        fetchNotifications();
+      }
     } catch (err) {
       console.error("❌ Load messages error:", err);
       setMessages([]);
@@ -742,8 +733,8 @@ useEffect(() => {
         }, 500);
       }
 
-      if (socketRef.current && response.data) {
-        socketRef.current.emit("send_reaction", response.data);
+      if (socket && response.data) {
+        socket.emit("send_reaction", response.data);
       }
 
       setShowReactionPicker(null);
@@ -768,8 +759,8 @@ useEffect(() => {
 
   // RECONNECT SOCKET
   const reconnectSocket = () => {
-    if (socketRef.current) {
-      socketRef.current.connect();
+    if (socket) {
+      socket.connect();
     }
   };
 
@@ -940,21 +931,20 @@ useEffect(() => {
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6"
-     ref={messagesContainerRef} 
-  onScroll={handleScroll}    
-  
-  style={{ maxHeight: "350px" }}
+      ref={messagesContainerRef}
+      onScroll={handleScroll}
+
+      style={{ maxHeight: "350px" }}
     >
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Messages</h2>
 
       {/* PLAN STATUS BANNER - TOP ME ADD KIYA HAI */}
       {!planStatus.loading && (
         <div
-          className={`mb-4 p-3 text-sm text-center rounded-lg border ${
-            planStatus.active
+          className={`mb-4 p-3 text-sm text-center rounded-lg border ${planStatus.active
               ? "bg-green-50 text-green-700 border-green-200"
               : "bg-red-50 text-red-700 border-red-200"
-          }`}
+            }`}
         >
           {planStatus.active ? (
             <>
@@ -1008,12 +998,11 @@ useEffect(() => {
             ) : null}
 
             <div
-              className={`mobile-fallback-avatar w-8 h-8 ${getGradientColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                selectedUser.profile_picture_url ||
-                userProfilePictures[selectedUser.id]
+              className={`mobile-fallback-avatar w-8 h-8 ${getGradientColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${selectedUser.profile_picture_url ||
+                  userProfilePictures[selectedUser.id]
                   ? "hidden"
                   : "flex"
-              }`}
+                }`}
             >
               {selectedUser.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
@@ -1081,11 +1070,10 @@ useEffect(() => {
                   <div
                     key={chat.user_id}
                     onClick={() => handleRecentChatSelect(chat)}
-                    className={`p-3 cursor-pointer transition border-b border-gray-100 ${
-                      selectedUser?.id === chat.user_id
+                    className={`p-3 cursor-pointer transition border-b border-gray-100 ${selectedUser?.id === chat.user_id
                         ? "bg-indigo-50 border-indigo-200"
                         : "hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       {/* ✅ PROFILE PICTURE WITH FALLBACK */}
@@ -1116,12 +1104,11 @@ useEffect(() => {
                       ) : null}
 
                       <div
-                        className={`chat-fallback-avatar w-10 h-10 ${getGradientColor(chat.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                          chat.profile_picture_url ||
-                          userProfilePictures[chat.user_id]
+                        className={`chat-fallback-avatar w-10 h-10 ${getGradientColor(chat.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${chat.profile_picture_url ||
+                            userProfilePictures[chat.user_id]
                             ? "hidden"
                             : "flex"
-                        }`}
+                          }`}
                       >
                         {cleanUserName(chat.name)?.charAt(0)?.toUpperCase() ||
                           "U"}
@@ -1172,11 +1159,10 @@ useEffect(() => {
                 <div
                   key={user.id}
                   onClick={() => handleUserSelect(user)}
-                  className={`p-3 cursor-pointer transition border-b border-gray-100 ${
-                    selectedUser?.id === user.id
+                  className={`p-3 cursor-pointer transition border-b border-gray-100 ${selectedUser?.id === user.id
                       ? "bg-indigo-50 border-indigo-200"
                       : "hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     {/*  PROFILE PICTURE WITH FALLBACK */}
@@ -1207,11 +1193,10 @@ useEffect(() => {
                     ) : null}
 
                     <div
-                      className={`user-fallback-avatar w-12 h-12 ${getGradientColor(user.name)} rounded-full flex items-center justify-center text-white font-bold ${
-                        user.profile_picture_url || userProfilePictures[user.id]
+                      className={`user-fallback-avatar w-12 h-12 ${getGradientColor(user.name)} rounded-full flex items-center justify-center text-white font-bold ${user.profile_picture_url || userProfilePictures[user.id]
                           ? "hidden"
                           : "flex"
-                      }`}
+                        }`}
                     >
                       {user.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
@@ -1262,12 +1247,11 @@ useEffect(() => {
                 ) : null}
 
                 <div
-                  className={`desktop-fallback-avatar w-10 h-10 ${getGradientColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold ${
-                    selectedUser.profile_picture_url ||
-                    userProfilePictures[selectedUser.id]
+                  className={`desktop-fallback-avatar w-10 h-10 ${getGradientColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold ${selectedUser.profile_picture_url ||
+                      userProfilePictures[selectedUser.id]
                       ? "hidden"
                       : "flex"
-                  }`}
+                    }`}
                 >
                   {selectedUser.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
@@ -1304,24 +1288,20 @@ useEffect(() => {
                     {messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex ${
-                          message.sender_id === currentUserId
+                        className={`flex ${message.sender_id === currentUserId
                             ? "justify-end"
                             : "justify-start"
-                        }`}
+                          }`}
                       >
                         <div
-                          className={`max-w-[85%] xs:max-w-xs sm:max-w-md relative message-bubble ${
-                            message.sender_id === currentUserId
+                          className={`max-w-[85%] xs:max-w-xs sm:max-w-md relative message-bubble ${message.sender_id === currentUserId
                               ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
                               : "bg-white text-gray-800 shadow-sm border border-gray-200"
-                          } rounded-2xl p-3 sm:p-4 ${
-                            message.isTemporary
+                            } rounded-2xl p-3 sm:p-4 ${message.isTemporary
                               ? "opacity-70 border-2 border-dashed border-yellow-400"
                               : ""
-                          } ${
-                            deletingMessageId === message.id ? "opacity-50" : ""
-                          }`}
+                            } ${deletingMessageId === message.id ? "opacity-50" : ""
+                            }`}
                         >
                           {/* MORE OPTIONS BUTTON - Only show for user's own messages */}
                           {message.sender_id === currentUserId && (
@@ -1380,11 +1360,10 @@ useEffect(() => {
                           {/* Message Footer - Timestamp + Reaction Button */}
                           <div className="flex justify-between items-center mt-2">
                             <p
-                              className={`text-xs ${
-                                message.sender_id === currentUserId
+                              className={`text-xs ${message.sender_id === currentUserId
                                   ? "text-indigo-200"
                                   : "text-gray-500"
-                              }`}
+                                }`}
                             >
                               {formatTime(message.created_at)}
                               {message.isTemporary && " • Sending..."}
@@ -1402,11 +1381,10 @@ useEffect(() => {
                                     : message.id,
                                 );
                               }}
-                              className={`text-xs p-1 rounded-full reaction-btn ${
-                                message.sender_id === currentUserId
+                              className={`text-xs p-1 rounded-full reaction-btn ${message.sender_id === currentUserId
                                   ? "bg-white/20 hover:bg-white/30 text-white"
                                   : "bg-gray-200 hover:bg-gray-300 text-gray-600"
-                              } transition`}
+                                } transition`}
                               title="Add reaction"
                             >
                               😊
@@ -1496,9 +1474,8 @@ useEffect(() => {
                     }
                     onKeyPress={handleKeyPress}
                     disabled={!planStatus.active}
-                    className={`flex-1 px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-xl text-sm sm:text-base bg-white ${
-                      planStatus.active ? "cursor-text" : "cursor-not-allowed"
-                    }`}
+                    className={`flex-1 px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-xl text-sm sm:text-base bg-white ${planStatus.active ? "cursor-text" : "cursor-not-allowed"
+                      }`}
                   />
 
                   <button
