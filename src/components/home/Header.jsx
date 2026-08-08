@@ -1,21 +1,17 @@
-// src/components/home/Header.jsx (Fixed Version)
+// src/components/home/Header.jsx (Refined, Premium UI Design)
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useUserProfile } from "../context/UseProfileContext";
 import NotificationBell from "../notifybell/NotificationBell";
+import Logo from "../comman/Logo";
 
-import bglogo from "../../assets/alternate.png";
-import { FaLinkedin, FaFacebook, FaTwitter } from "react-icons/fa";
-
-// Main Header Component
-function Header() {
+export default function Header() {
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const { profile, clearProfile } = useUserProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef(null);
 
-  // FIXED: Original login status check preserved
   const checkLoginStatus = () => {
     const userToken = localStorage.getItem("accessToken");
     const adminToken = localStorage.getItem("adminToken");
@@ -24,7 +20,6 @@ function Header() {
 
   const isLoggedIn = checkLoginStatus();
 
-  // FIXED: Original logout function preserved
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -40,7 +35,6 @@ function Header() {
     }, 100);
   };
 
-  // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -58,7 +52,6 @@ function Header() {
   }, []);
 
   useEffect(() => {
-    // Function to get cart count
     const getCartCount = () => {
       try {
         const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -68,95 +61,56 @@ function Header() {
       }
     };
 
-    // Update cart count
     const updateCartCount = () => {
       const count = getCartCount();
       setCartCount(count);
-      console.log("🛒 Cart count:", count);
     };
 
-    // Initial update
     updateCartCount();
-
-    // Listen for cart updates
     window.addEventListener("cartUpdated", updateCartCount);
 
-    // Cleanup
     return () => {
       window.removeEventListener("cartUpdated", updateCartCount);
     };
   }, []);
 
-  // useEffect(() => {
-  //   const updateCartCount = () => {
-  //     try {
-  //       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  //       setCartCount(cart.length);
-  //     } catch (error) {
-  //       console.error("Error updating cart count:", error);
-  //       setCartCount(0);
-  //     }
-  //   };
-
-  //   updateCartCount();
-  //   window.addEventListener("storage", updateCartCount);
-  //   window.addEventListener("cartUpdated", updateCartCount);
-  //   window.addEventListener("load", updateCartCount);
-  //   window.addEventListener("focus", updateCartCount);
-
-  //   return () => {
-  //     window.removeEventListener("storage", updateCartCount);
-  //     window.removeEventListener("cartUpdated", updateCartCount);
-  //     window.removeEventListener("load", updateCartCount);
-  //     window.removeEventListener("focus", updateCartCount);
-  //   };
-  // }, []);
-
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100 sticky top-0 z-50 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Main Header Row */}
-        <div className="flex justify-between items-center py-5">
+        <div className="flex justify-between items-center py-4">
           {/* Logo */}
           <div className="flex items-center z-50">
-            <Link to="/" className="">
-              <img
-                src={bglogo}
-                alt="Logo"
-                className="h-5 object-contain"
-              />
-            </Link>
+            <Logo size="text-xl" />
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex flex-1 justify-center">
-            <ul className="flex gap-8">
+            <ul className="flex gap-6">
               <li>
                 <Link
                   to="/"
-                  className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200"
+                  className="text-slate-600 hover:text-[#002060] hover:bg-slate-50 px-3 py-2 rounded-lg font-semibold transition-all duration-200"
                 >
                   Home
                 </Link>
               </li>
 
-              {/* ADDED: About Us Link */}
               <li>
                 <Link
                   to="/about"
-                  className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200"
+                  className="text-slate-600 hover:text-[#002060] hover:bg-slate-50 px-3 py-2 rounded-lg font-semibold transition-all duration-200"
                 >
                   About Us
                 </Link>
               </li>
 
-              {/* FIXED: Original navigation links preserved */}
               {isLoggedIn && (
                 <>
                   <li>
                     <Link
                       to="/dashboard"
-                      className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200"
+                      className="text-slate-600 hover:text-[#002060] hover:bg-slate-50 px-3 py-2 rounded-lg font-semibold transition-all duration-200"
                     >
                       Dashboard
                     </Link>
@@ -164,7 +118,7 @@ function Header() {
                   <li>
                     <Link
                       to="/members"
-                      className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200"
+                      className="text-slate-600 hover:text-[#002060] hover:bg-slate-50 px-3 py-2 rounded-lg font-semibold transition-all duration-200"
                     >
                       Members
                     </Link>
@@ -172,7 +126,7 @@ function Header() {
                   <li>
                     <Link
                       to="/edit-profile"
-                      className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200"
+                      className="text-slate-600 hover:text-[#002060] hover:bg-slate-50 px-3 py-2 rounded-lg font-semibold transition-all duration-200"
                     >
                       Edit Profile
                     </Link>
@@ -183,7 +137,7 @@ function Header() {
               <li>
                 <Link
                   to="/contact"
-                  className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200"
+                  className="text-slate-600 hover:text-[#002060] hover:bg-slate-50 px-3 py-2 rounded-lg font-semibold transition-all duration-200"
                 >
                   Contact Us
                 </Link>
@@ -192,91 +146,59 @@ function Header() {
               <li>
                 <Link
                   to="/blog"
-                  className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200"
+                  className="text-slate-600 hover:text-[#002060] hover:bg-slate-50 px-3 py-2 rounded-lg font-semibold transition-all duration-200"
                 >
                   Blogs
                 </Link>
               </li>
-              {/* 
-              {/* Social Links /}
-              <li className="flex items-center gap-4 ml-4">
-                <a 
-                  href="#" 
-                  className="text-gray-500 hover:text-[#4D6D9E] transition-colors"
-                  aria-label="LinkedIn"
-                >
-                  <FaLinkedin size={18} />
-                </a>
-                <a 
-                  href="#" 
-                  className="text-gray-500 hover:text-[#4D6D9E] transition-colors"
-                  aria-label="Facebook"
-                >
-                  <FaFacebook size={18} />
-                </a>
-                <a 
-                  href="#" 
-                  className="text-gray-500 hover:text-[#4D6D9E] transition-colors"
-                  aria-label="Twitter"
-                >
-                  <FaTwitter size={18} />
-                </a> 
-              </li> */}
             </ul>
           </nav>
 
-          {/* Desktop Auth Section - ORIGINAL LOGIC PRESERVED */}
+          {/* Desktop Auth Section */}
           <div className="hidden lg:flex items-center gap-4">
             {isLoggedIn ? (
               <>
                 {/* Cart with Counter */}
-                <div className="relative">
+                <div className="relative mr-2">
                   <Link
                     to="/cart"
-                    className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200 flex items-center"
+                    className="text-slate-600 hover:text-[#002060] font-semibold transition-colors duration-200 flex items-center gap-1"
                   >
-                    Cart 🛒
+                    <span>Cart</span>
+                    <span>🛒</span>
                   </Link>
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-3 bg-[#FF66CC] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    <span className="absolute -top-2 -right-3 bg-[#FF2A6D] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-sm animate-pulse">
                       {cartCount}
                     </span>
                   )}
                 </div>
 
-                {/* Notification Bell - Original preserved */}
+                {/* Notification Bell */}
                 {localStorage.getItem("accessToken") && <NotificationBell />}
 
-                {/* Logout Button - Original preserved */}
+                {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="bg-[#727bf1] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#041cfa] transition-all duration-200"
+                  className="border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl font-semibold transition-all duration-200"
                 >
                   Logout
                 </button>
               </>
             ) : (
               <div className="flex items-center gap-3">
-                {/* FIXED: Original login links preserved */}
-               <Link
+                <Link
                   to="/login"
-                  className="bg-[#727bf1] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#041cfa] transition-all duration-200"
+                  className="text-slate-600 hover:text-slate-800 hover:bg-slate-50 px-4 py-2 rounded-xl font-semibold transition-all duration-200"
                 >
                   Login
                 </Link>
 
-                {/* <Link
-                  to="/admin-login"
-                  className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200 px-3 py-1"
-                >
-                  Admin Login
-                </Link> */}
-
                 <Link
                   to="/register"
-                  className="bg-[#727bf1] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#041cfa] transition-all duration-200"
+                  className="bg-[#FF2A6D] hover:bg-[#e0105a] text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                 >
-                  Register 
+                  Register
                 </Link>
               </div>
             )}
@@ -284,16 +206,15 @@ function Header() {
 
           {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center gap-4">
-            {/* Cart for mobile - Original preserved */}
             {isLoggedIn && (
               <div className="relative mr-2">
                 <Link
                   to="/cart"
-                  className="text-gray-700 hover:text-[#4D6D9E] font-medium transition-colors duration-200 flex items-center"
+                  className="text-slate-600 hover:text-slate-800 transition-colors duration-200 flex items-center"
                 >
-                  🛒
+                  <span>🛒</span>
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-3 bg-[#FF66CC] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    <span className="absolute -top-2 -right-3 bg-[#FF2A6D] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-sm">
                       {cartCount}
                     </span>
                   )}
@@ -301,221 +222,123 @@ function Header() {
               </div>
             )}
 
-            {/* Notification Bell for mobile - Original preserved */}
             {isLoggedIn && localStorage.getItem("accessToken") && (
               <div className="mr-2">
-               <NotificationBell />
-                 
+                <NotificationBell />
               </div>
             )}
 
-            {/* Hamburger Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-50 transition-colors"
             >
               {isMobileMenuOpen ? (
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
-        {isMobileMenuOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-          ></div>
-        )}
-
-        {/* Mobile Menu Content - ORIGINAL LOGIC PRESERVED */}
+        {/* Mobile Menu Dropdown */}
         <div
           ref={mobileMenuRef}
-          className={`lg:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50 transition-all duration-300 ease-in-out ${
-            isMobileMenuOpen
-              ? "max-h-screen opacity-100"
-              : "max-h-0 opacity-0 overflow-hidden"
+          className={`lg:hidden absolute top-full left-0 right-0 bg-white border-b border-slate-100 shadow-xl z-50 transition-all duration-300 ease-in-out overflow-hidden rounded-b-2xl ${
+            isMobileMenuOpen ? "max-h-[500px] opacity-100 py-4" : "max-h-0 opacity-0 pointer-events-none"
           }`}
         >
-          <div className="container mx-auto px-4 py-4">
-            {/* Mobile Navigation Links */}
-            <nav className="mb-6">
-              <ul className="space-y-2">
-                <li>
-                  <Link
-                    to="/"
-                    className="block py-3 px-4 text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Home
-                  </Link>
-                </li>
+          <div className="px-4 space-y-1">
+            <Link
+              to="/"
+              className="block py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              to="/about"
+              className="block py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              About Us
+            </Link>
+            {isLoggedIn && (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="block py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/members"
+                  className="block py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Members
+                </Link>
+                <Link
+                  to="/edit-profile"
+                  className="block py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Edit Profile
+                </Link>
+              </>
+            )}
+            <Link
+              to="/contact"
+              className="block py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Contact Us
+            </Link>
+            <Link
+              to="/blog"
+              className="block py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Blogs
+            </Link>
 
-                {/* ADDED: About Us Link in Mobile */}
-                <li>
-                  <Link
-                    to="/about"
-                    className="block py-3 px-4 text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    About Us
-                  </Link>
-                </li>
-
-                {/* FIXED: Original mobile navigation preserved */}
-                {isLoggedIn && (
-                  <>
-                    <li>
-                      <Link
-                        to="/dashboard"
-                        className="block py-3 px-4 text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Dashboard
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/members"
-                        className="block py-3 px-4 text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Members
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/edit-profile"
-                        className="block py-3 px-4 text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        Edit Profile
-                      </Link>
-                    </li>
-                  </>
-                )}
-
-                <li>
-                  <Link
-                    to="/contact"
-                    className="block py-3 px-4 text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Contact Us
-                  </Link>
-                </li>
-
-                <li>
-                  <Link
-                    to="/blog"
-                    className="block py-3 px-4 text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg transition-colors font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Blog
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-
-            {/* Social Links in Mobile Menu */}
-            <div className="flex justify-center gap-4 mb-6">
-              <a
-                href="#"
-                className="text-gray-500 hover:text-[#4D6D9E] transition-colors"
-                aria-label="LinkedIn"
-              >
-                <FaLinkedin size={20} />
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-[#4D6D9E] transition-colors"
-                aria-label="Facebook"
-              >
-                <FaFacebook size={20} />
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-[#4D6D9E] transition-colors"
-                aria-label="Twitter"
-              >
-                <FaTwitter size={20} />
-              </a>
-            </div>
-
-            {/* Mobile Auth Section - ORIGINAL LOGIC PRESERVED */}
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-slate-100 pt-4 pb-2 mt-2">
               {isLoggedIn ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-4 py-2">
-                    <span className="text-sm text-gray-600">
-                      {localStorage.getItem("adminToken")
-                        ? "Admin User"
-                        : profile?.first_name && profile?.last_name
-                        ? `Hello, ${profile.first_name} ${profile.last_name}`
-                        : `Hello, ${
-                            profile?.first_name || profile?.name || "User"
-                          }`}
-                    </span>
-                  </div>
+                <div className="flex items-center justify-between px-4">
+                  <span className="text-xs text-slate-400 font-semibold truncate max-w-[160px]">
+                    {localStorage.getItem("adminToken")
+                      ? "Admin User"
+                      : profile?.first_name && profile?.last_name
+                      ? `${profile.first_name} ${profile.last_name}`
+                      : profile?.first_name || profile?.name || "User"}
+                  </span>
                   <button
                     onClick={handleLogout}
-                    className="w-full bg-[#FF66CC] text-white py-3 rounded-lg font-semibold hover:bg-[#ff4dc2] transition-colors"
+                    className="bg-[#FF2A6D] hover:bg-[#e0105a] text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm animate-pulse"
                   >
                     Logout
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {/* FIXED: Original Admin Login preserved */}
-                  {/* <Link
-                    to="/admin-login"
-                    className="block py-3 px-4 text-center text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Admin Login
-                  </Link> */}
-
+                <div className="flex gap-3 px-2">
                   <Link
                     to="/login"
-                    className="block py-3 px-4 text-center text-gray-700 hover:text-[#4D6D9E] hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors font-medium"
+                    className="flex-1 py-2.5 text-center text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs transition"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Login
                   </Link>
-
                   <Link
                     to="/register"
-                    className="block py-3 px-4 text-center bg-[#FF66CC] text-white rounded-lg font-semibold hover:bg-[#ff4dc2] transition-colors"
+                    className="flex-1 py-2.5 text-center bg-[#FF2A6D] hover:bg-[#e0105a] text-white rounded-xl font-bold text-xs transition shadow-sm hover:shadow-md"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    Register 
+                    Register
                   </Link>
                 </div>
               )}
@@ -526,105 +349,3 @@ function Header() {
     </header>
   );
 }
-
-export default Header;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

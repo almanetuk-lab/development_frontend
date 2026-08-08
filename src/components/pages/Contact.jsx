@@ -1,4 +1,6 @@
+// src/components/pages/Contact.jsx (Refined, Premium UI Design with Popups)
 import React, { useState } from 'react';
+import { FiPhone, FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +11,9 @@ const ContactPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  
+  // State for active FAQ popup
+  const [activeFaq, setActiveFaq] = useState(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -34,189 +39,302 @@ const ContactPage = () => {
     }, 3000);
   };
 
+  // FAQ Modal Data
+  const faqContent = {
+    profile: {
+      title: "How to Create a Perfect Profile",
+      icon: <FiInfo className="text-xl sm:text-2xl" />,
+      badgeClass: "bg-pink-50 text-[#FF1493] border-pink-100",
+      tips: [
+        { label: "Be Genuine & Authentic", text: "Fill in your answers truthfully. Real compatibility relies on alignment, not simulation." },
+        { label: "High-Quality Pictures", desc: "Select 3-5 clear, friendly photos showing you in your natural, everyday environments." },
+        { label: "Fill Out the Prompts", desc: "Completing daily rhythm details directly helps our matching engine calculate higher alignment scores." }
+      ]
+    },
+    safety: {
+      title: "Privacy & Safety Guidelines",
+      icon: <FiShield className="text-xl sm:text-2xl" />,
+      badgeClass: "bg-blue-50 text-[#4D6D9E] border-blue-100",
+      tips: [
+        { label: "Keep Contact Details Private", desc: "Do not disclose phone numbers, home addresses, or business coordinates early on." },
+        { label: "Public First Dates", desc: "Always organize initial meetings in highly populated, public locations. Arrange your own transit." },
+        { label: "Report Flagged Accounts", desc: "If someone exhibits aggressive, toxic, or promotional behavior, immediately flag them using the report button." }
+      ]
+    },
+    billing: {
+      title: "Billing & Subscription Help",
+      icon: <FiCreditCard className="text-xl sm:text-2xl" />,
+      badgeClass: "bg-purple-50 text-purple-600 border-purple-100",
+      tips: [
+        { label: "Flexible Plan Upgrades", desc: "Modify, upgrade, or pause your membership details in Profile Settings > Account & Billing." },
+        { label: "Highly Secure Gateway", desc: "Transactions are processed using end-to-end industry standard bank-level encryption protocols." },
+        { label: "Direct Billing Support", desc: "Need assistance with invoices, payouts, or subscription refunds? Email us directly at billing@neratech.com." }
+      ]
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-7xl mx-auto">
+        
         {/* Header Section */}
         <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-800 mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#FF2A6D] bg-pink-50 px-3.5 py-1.5 rounded-full mb-4 inline-block">
+            Support Center
+          </span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#002060] mb-4 tracking-tight">
             Get In Touch
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+          <div className="h-1 w-20 bg-[#FF2A6D] mx-auto mb-6 rounded-full"></div>
+          <p className="text-base sm:text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+            We'd love to hear from you. Send us a message and our dedicated support team will respond as soon as possible.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          {/* Contact Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 animate-slide-up">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Send us a Message</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
+          {/* Contact Form Card */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-10 animate-slide-up relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-pink-50/20 rounded-full blur-3xl z-0"></div>
             
-            {isSubmitted ? (
-              <div className="text-center py-8 animate-bounce-in">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+            <div className="relative z-10">
+              <h2 className="text-2xl font-bold text-slate-800 mb-6 tracking-tight">Send us a Message</h2>
+              
+              {isSubmitted ? (
+                <div className="text-center py-12 animate-bounce-in">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-500 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">Message Sent Successfully!</h3>
+                  <p className="text-sm text-slate-500">We appreciate you reaching out. We will get back to you soon.</p>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Message Sent!</h3>
-                <p className="text-gray-600">We'll get back to you soon.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Name *
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                        Your Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    
+                    <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                      Subject *
                     </label>
                     <input
                       type="text"
-                      name="name"
-                      value={formData.name}
+                      name="subject"
+                      value={formData.subject}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                      placeholder="Enter your full name"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
+                      placeholder="What's this about?"
                     />
                   </div>
-                  
-                  <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address *
+
+                  <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                      Message *
                     </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
+                    <textarea
+                      name="message"
+                      value={formData.message}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                      placeholder="your@email.com"
+                      rows={5}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400 resize-none"
+                      placeholder="Tell us more about your inquiry..."
                     />
                   </div>
-                </div>
 
-                <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject *
-                  </label>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
-                    placeholder="What's this about?"
-                  />
-                </div>
-
-                <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Message *
-                  </label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
-                    rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 resize-none"
-                    placeholder="Tell us more about your inquiry..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition duration-200 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-700 hover:to-purple-700'
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Sending...
-                    </div>
-                  ) : (
-                    'Send Message'
-                  )}
-                </button>
-              </form>
-            )}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full py-3.5 px-6 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm flex items-center justify-center ${
+                      isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Sending Message...
+                      </div>
+                    ) : (
+                      'Send Message'
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
 
-          {/* Contact Information */}
-          <div className="space-y-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            {/* Contact Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition duration-200 border border-gray-100">
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
+          {/* Contact Info & Help Panel */}
+          <div className="space-y-6 md:space-y-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            {/* Contact Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 bg-pink-50 text-[#FF2A6D] border border-pink-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
+                  <FiPhone size={20} />
                 </div>
-                <h3 className="font-semibold text-gray-800 mb-2">Call Us</h3>
-                <p className="text-gray-600">07424 844073</p>
-                <p className="text-sm text-gray-500 mt-1">Mon-Fri from 9am to 6pm</p>
+                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Call Us</h3>
+                <p className="text-slate-600 text-sm">07424 844073</p>
+                <p className="text-xs text-slate-400 mt-2 font-medium">Mon-Fri from 9am to 6pm</p>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition duration-200 border border-gray-100">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 bg-blue-50 text-[#4D6D9E] border border-blue-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
+                  <FiMail size={20} />
                 </div>
-                <h3 className="font-semibold text-gray-800 mb-2">Email Us</h3>
-                <p className="text-gray-600">info@neratech.com</p>
-                <p className="text-sm text-gray-500 mt-1">We'll reply within 24 hours</p>
+                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Email Us</h3>
+                <p className="text-slate-600 text-sm">info@neratech.com</p>
+                <p className="text-xs text-slate-400 mt-2 font-medium">We'll reply within 24 hours</p>
               </div>
             </div>
 
-            {/* Office Location */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            {/* Visit Office Card */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm transition-all duration-300">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                <div className="w-12 h-12 bg-purple-50 text-purple-600 border border-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner">
+                  <FiMapPin size={20} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-800 mb-2">Visit Our Office</h3>
-                  <p className="text-gray-600">
-                    123 Dating Street<br />
-                    Suite 100<br />
-                    Uk
+                  <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Visit Our Office</h3>
+                  <p className="text-slate-500 text-sm leading-relaxed">
+                    123 Dating Street, Suite 100<br />
+                    London, UK
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* FAQ Section */}
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
-              <h3 className="font-semibold text-lg mb-4">Quick Help</h3>
+            {/* Quick Help Accordion-like Card */}
+            <div className="bg-gradient-to-br from-[#002060] to-[#1e3a8a] rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+              <div className="absolute -right-16 -top-16 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
+              
+              <h3 className="font-bold text-lg mb-5 tracking-tight font-sans">Quick Help & FAQs</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition duration-200 cursor-pointer">
-                  <span>💡</span>
-                  <span className="text-sm">How to create a perfect profile?</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition duration-200 cursor-pointer">
-                  <span>🔒</span>
-                  <span className="text-sm">Privacy and safety guidelines</span>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition duration-200 cursor-pointer">
-                  <span>💳</span>
-                  <span className="text-sm">Billing and subscription help</span>
-                </div>
+                <button 
+                  onClick={() => setActiveFaq('profile')}
+                  className="w-full flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer text-left"
+                >
+                  <div className="text-slate-200 bg-white/15 p-1.5 rounded-lg">
+                    <FiInfo size={16} />
+                  </div>
+                  <span className="text-sm font-medium">How to create a perfect profile?</span>
+                </button>
+                <button 
+                  onClick={() => setActiveFaq('safety')}
+                  className="w-full flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer text-left"
+                >
+                  <div className="text-slate-200 bg-white/15 p-1.5 rounded-lg">
+                    <FiShield size={16} />
+                  </div>
+                  <span className="text-sm font-medium">Privacy and safety guidelines</span>
+                </button>
+                <button 
+                  onClick={() => setActiveFaq('billing')}
+                  className="w-full flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer text-left"
+                >
+                  <div className="text-slate-200 bg-white/15 p-1.5 rounded-lg">
+                    <FiCreditCard size={16} />
+                  </div>
+                  <span className="text-sm font-medium">Billing and subscription help</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add these styles for animations */}
-      <style jsx>{`
+      {/* Interactive FAQ Popup Modal */}
+      {activeFaq && faqContent[activeFaq] && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => setActiveFaq(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button 
+              onClick={() => setActiveFaq(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100"
+              aria-label="Close modal"
+            >
+              <FiX size={18} />
+            </button>
+
+            {/* Modal Header */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-inner ${faqContent[activeFaq].badgeClass}`}>
+                {faqContent[activeFaq].icon}
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 tracking-tight">
+                {faqContent[activeFaq].title}
+              </h3>
+            </div>
+
+            {/* Modal Content - List of Tips */}
+            <div className="space-y-4">
+              {faqContent[activeFaq].tips.map((tip, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5 border border-emerald-100 shadow-sm">
+                    <FiCheck size={12} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 tracking-tight mb-0.5">
+                      {tip.label}
+                    </h4>
+                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                      {tip.desc || tip.text}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Action Footer */}
+            <div className="mt-8">
+              <button
+                onClick={() => setActiveFaq(null)}
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all duration-200"
+              >
+                Got it, thanks!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Embedded Animations */}
+      <style>{`
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -231,6 +349,10 @@ const ContactPage = () => {
           70% { transform: scale(0.9); }
           100% { transform: scale(1); }
         }
+        @keyframes scale-up {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
         .animate-fade-in {
           animation: fade-in 0.6s ease-out forwards;
         }
@@ -240,13 +362,12 @@ const ContactPage = () => {
         .animate-bounce-in {
           animation: bounce-in 0.6s ease-out forwards;
         }
+        .animate-scale-up {
+          animation: scale-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
       `}</style>
     </div>
   );
 };
 
 export default ContactPage;
-
-
-
-

@@ -2,14 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
-import { FaLinkedin } from "react-icons/fa";
-//import LinkedInLoginButton from "../social/LinkedInLoginButton";
-import LinkedInLoginButton from "../social/LinkedInLoginButton";
+import { FaLinkedin, FaApple, FaGoogle } from "react-icons/fa";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import Logo from "../comman/Logo";
+
 export default function Login() {
   const navigate = useNavigate();
   const { updateProfile, refreshProfile } = useUserProfile();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [linkedinLoading, setLinkedinLoading] = useState(false);
@@ -28,22 +30,17 @@ export default function Login() {
       localStorage.setItem("accessToken", token);
       if (refresh) localStorage.setItem("refreshToken", refresh);
 
-      //  FIXED: Save user data to localStorage for chat module
       if (user) {
-        console.log(" Login successful, updating profile context");
+        console.log("Login successful, updating profile context");
         updateProfile(user);
-
-        //  YEH LINE ADD KI HAI - Chat module ke liye
         localStorage.setItem("currentUser", JSON.stringify(user));
         console.log("💾 User data saved to localStorage for chat:", user);
       }
 
-      // Auto refresh profile data from API
       setTimeout(() => {
         refreshProfile();
       }, 500);
 
-      // alert("Login successful!");
       navigate("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
@@ -58,44 +55,37 @@ export default function Login() {
     }
   };
 
-
-const handleLinkedInLogin = async () => {
+  const handleLinkedInLogin = async () => {
     setLinkedinLoading(true);
     try {
-        console.log('🔗 Getting LinkedIn auth URL...');
-        
-        const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
-        const apiUrl = `${backendUrl}/api/linkedin/auth-url`;
-        
-        console.log('📞 Calling backend for LinkedIn URL:', apiUrl);
-        
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-            throw new Error(`Backend error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('✅ Backend LinkedIn response:', data);
-        
-        //  IMPORTANT: Backend { url: '...' } 
-        if (data.url) {
-            console.log('🚀 Redirecting to LinkedIn login...');
-            window.location.href = data.url;
-        } else {
-            throw new Error('No LinkedIn URL received from backend');
-        }
-        
-    } catch (error) {
-        console.error('❌ LinkedIn login error:', error);
-        alert(`Login failed: ${error.message}. Please try again.`);
-    } finally {
-        setLinkedinLoading(false);
-    }
-};
+      console.log('🔗 Getting LinkedIn auth URL...');
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
+      const apiUrl = `${backendUrl}/api/linkedin/auth-url`;
+      console.log('📞 Calling backend for LinkedIn URL:', apiUrl);
 
-//  Agar user already logged in hai to directly dashboard redirect karo
-  React.useEffect(() => {
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Backend LinkedIn response:', data);
+
+      if (data.url) {
+        console.log('🚀 Redirecting to LinkedIn login...');
+        window.location.href = data.url;
+      } else {
+        throw new Error('No LinkedIn URL received from backend');
+      }
+    } catch (error) {
+      console.error('❌ LinkedIn login error:', error);
+      alert(`Login failed: ${error.message}. Please try again.`);
+    } finally {
+      setLinkedinLoading(false);
+    }
+  };
+
+  useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
       console.log("🔄 User already logged in, redirecting to dashboard");
@@ -104,27 +94,72 @@ const handleLinkedInLogin = async () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white/90 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-blue-100 animate-fade-in">
-        {/* UI CHANGE: Header with Intentional Connections - HOME PAGE STYLE */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold">
-            <span className="text-grey-400">Intentional</span>
-            <span className="text-pink-500"> Connections</span>
-          </h1>
-          <p className="text-gray-600 mt-2">Login to continue your journey</p>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8 sm:py-12 md:py-16 relative overflow-hidden">
+      {/* Flat solid geometric stripes (pink and blue) running in the background */}
+      <div className="absolute top-0 left-[-15%] sm:left-[-10%] w-[55%] sm:w-[30%] h-full bg-[#E3F2FD] transform -skew-x-12 z-0 pointer-events-none opacity-60 sm:opacity-100"></div>
+      <div className="absolute top-0 right-[-15%] sm:right-[-10%] w-[55%] sm:w-[30%] h-full bg-pink-100/50 transform -skew-x-12 z-0 pointer-events-none opacity-60 sm:opacity-100"></div>
+
+      <div className="w-full max-w-md bg-white border border-slate-100/80 shadow-xl rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 relative z-10 animate-fade-in">
+        {/* Logo / Header */}
+        <div className="text-center mb-6 sm:mb-8">
+          <Logo size="text-2xl sm:text-3xl" className="justify-center" />
+          <p className="text-xs sm:text-sm text-slate-500 mt-2">Login to continue your journey</p>
         </div>
 
         {error && (
-          <div className="bg-red-100 text-red-700 px-3 py-2 rounded-md mb-4 text-sm text-center">
+          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-2.5 sm:py-3 rounded-xl mb-5 sm:mb-6 text-xs sm:text-sm text-center font-medium animate-pulse">
             {error}
           </div>
         )}
 
-        {/* UI CHANGE: Form layout with BLUE theme */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Social Authentication */}
+        <div className="space-y-2.5 sm:space-y-3 mb-5 sm:mb-6">
+          <button
+            onClick={handleLinkedInLogin}
+            disabled={linkedinLoading}
+            className="w-full py-2.5 sm:py-3 px-3 sm:px-4 bg-[#0077B5] hover:bg-[#00669c] text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 sm:gap-3 font-semibold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {linkedinLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Connecting to LinkedIn...</span>
+              </>
+            ) : (
+              <>
+                <FaLinkedin size={18} />
+                <span>Continue with LinkedIn</span>
+              </>
+            )}
+          </button>
+
+          <Link
+            to="/Coming-soon"
+            className="w-full py-2.5 sm:py-3 px-3 sm:px-4 bg-neutral-900 hover:bg-black text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 sm:gap-3 font-semibold text-xs sm:text-sm"
+          >
+            <FaApple size={18} />
+            <span>Continue with Apple</span>
+          </Link>
+
+          <Link
+            to="/coming-soon"
+            className="w-full py-2.5 sm:py-3 px-3 sm:px-4 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 sm:gap-3 font-semibold text-xs sm:text-sm"
+          >
+            <FaGoogle size={18} className="text-red-500" />
+            <span>Continue with Google</span>
+          </Link>
+        </div>
+
+        {/* OR Divider */}
+        <div className="flex items-center mb-5 sm:mb-6">
+          <div className="flex-grow border-t border-slate-100"></div>
+          <span className="mx-3 sm:mx-4 text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-widest">or</span>
+          <div className="flex-grow border-t border-slate-100"></div>
+        </div>
+
+        {/* Credentials Form */}
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">
               Email Address
             </label>
             <input
@@ -132,90 +167,70 @@ const handleLinkedInLogin = async () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
+              className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] outline-none transition bg-white text-slate-800 placeholder-slate-400 text-sm shadow-inner"
               placeholder="Enter your email"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
-              placeholder="Enter your password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-3.5 pr-12 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] outline-none transition bg-white text-slate-800 placeholder-slate-400 text-sm shadow-inner"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+              >
+                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
           </div>
 
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex justify-between items-center text-xs sm:text-sm pt-1 sm:pt-2">
             <div className="flex items-center">
               <input
                 type="checkbox"
                 id="remember"
-                className="mr-2 h-4 w-4 text-blue-600 border-blue-300 rounded focus:ring-blue-500"
+                className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#FF2A6D] border-slate-300 rounded focus:ring-[#FF2A6D] transition cursor-pointer"
               />
-              <label htmlFor="remember" className="text-gray-700">
+              <label htmlFor="remember" className="ml-1.5 sm:ml-2 text-slate-500 cursor-pointer select-none">
                 Remember me
               </label>
             </div>
             <Link
               to="/forgot-password"
-              className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition"
+              className="text-[#FF2A6D] hover:text-[#e0105a] font-semibold transition"
             >
               Forgot Password?
             </Link>
           </div>
 
-          {/* UI CHANGE: BLUE BUTTON like home page */}
+          {/* Email Sign-In Submit */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 mt-4 font-bold text-white rounded-lg shadow-md transition duration-200 ${
-              loading
-                ? "bg-blue-600 cursor-not-allowed opacity-90"
-                : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg"
-            }`}
+            className="w-full py-2.5 sm:py-3 mt-2 font-bold text-white bg-[#FF2A6D] hover:bg-[#e0105a] rounded-xl hover:shadow-lg transition-all duration-200 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {loading ? "Logging in..." : "Login to Your Account"}
           </button>
         </form>
-        <div className="text-center">
-      
-          <button
-            onClick={handleLinkedInLogin}
-            disabled={linkedinLoading}
-            className="w-120  mx-auto mt-5 py-3 px-4 bg-blue-600 hover:bg-[#00669C] text-white rounded-lg shadow-sm hover:shadow-md transition duration-200 flex items-center justify-center gap-3 font-medium"
-          >
-            {linkedinLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                <span>Connecting to LinkedIn...</span>
-              </>
-            ) : (
-              <>
-                <FaLinkedin className="text-2xl" />
-                <span>Continue with LinkedIn</span>
-              </>
-            )}
-          </button>
 
-          <p className="text-gray-500 text-xs mt-3">
-            Secure login via LinkedIn. We'll never post without permission.
-          </p>
-        </div>
-            {/* <LinkedInLoginButton/> */}
-
-        {/* UI CHANGE: Create account section with blue text */}
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
+        {/* Footer Link */}
+        <div className="mt-6 sm:mt-8 text-center pt-3 sm:pt-4 border-t border-slate-100">
+          <p className="text-slate-500 text-xs sm:text-sm">
             Don't have an account?{" "}
             <Link
               to="/register"
-              className="font-bold text-blue-600 hover:text-blue-800 hover:underline"
+              className="font-bold text-[#FF2A6D] hover:text-[#e0105a] transition"
             >
               Create Account
             </Link>
@@ -226,24 +241,17 @@ const handleLinkedInLogin = async () => {
   );
 }
 
-//  Alag Logout Component for Header/Other pages
 export function LogoutButton() {
   const { clearProfile } = useUserProfile();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     console.log("🚪 Logging out...");
-
-    // Clear authentication only, keep profile data
     clearProfile();
-
-    //  FIXED: Also remove chat user data from localStorage
     localStorage.removeItem("currentUser");
-    localStorage.removeItem("cart"); //ik add to cart remove to localstorage
+    localStorage.removeItem("cart");
     alert("Logged out successfully!");
     navigate("/login");
-
-    // Optional: Page refresh for clean state
     setTimeout(() => {
       window.location.reload();
     }, 100);

@@ -216,7 +216,14 @@ export default function App() {
         <Route path="/admin-plans-new" element={<PlanFormWrapper />} />
         <Route path="/admin/blogs/create" element={<CreateArticle />} />
         <Route path="/admin/blogs/edit/:id" element={<EditArticle />} />
-        <Route path="/blogs/:id" element={<ArticleDetails />} />
+        <Route
+          path="/blogs/:id"
+          element={
+            <MainLayout>
+              <ArticleDetails />
+            </MainLayout>
+          }
+        />
 
         {/* Public Routes WITH Header & Footer */}
         <Route
