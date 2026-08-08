@@ -1,9 +1,11 @@
 // src/components/chatsystem/AdvancedSearch.jsx
 import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { adminAPI } from "../services/adminApi";
 import api from "../services/api";
 export default function AdvancedSearch() {
-  const [activeTab, setActiveTab] = useState("basic");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || "basic");
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searchLimitReached, setSearchLimitReached] = useState(false);
@@ -43,6 +45,12 @@ export default function AdvancedSearch() {
   const filtersRef = useRef(filters);
   useEffect(() => { filtersRef.current = filters; }, [filters]);
   useEffect(() => { locationDeniedRef.current = locationDenied; }, [locationDenied]);
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
 
   /* Request geolocation permission, fetch fresh lat/lon, and update profile DB */
   const getLiveLocation = async () => {

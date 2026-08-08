@@ -202,17 +202,17 @@ export default function Sidebar({
       {/* User Profile Section - Fixed Height */}
       <div className="flex-shrink-0 p-3 sm:p-4 border-t border-gray-200 bg-white">
         <div className="flex items-center gap-3 mb-3 p-2 sm:p-3 bg-gray-50 rounded-xl">
-          {profile?.profile_picture_url || profile?.profilePhoto ? (
-            <img
-              src={profile.profile_picture_url || profile.profilePhoto}
-              alt="Profile"
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-indigo-500"
-            />
-          ) : (
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm sm:text-base">
-              {profile?.full_name?.charAt(0) || "U"}
-            </div>
-          )}
+            {profile?.image_url || profile?.profile_picture_url || profile?.profilePhoto || profile?.profile_image ? (
+              <img
+                src={profile.image_url || profile.profile_picture_url || profile.profilePhoto || profile.profile_image}
+                alt="Profile"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-[#FF2A6D]"
+              />
+            ) : (
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-[#002060] to-[#FF2A6D] flex items-center justify-center text-white font-bold text-sm sm:text-base">
+                {profile?.first_name?.charAt(0) || profile?.name?.charAt(0) || profile?.full_name?.charAt(0) || "U"}
+              </div>
+            )}
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-medium text-gray-800 truncate">
               {profile?.full_name?.split(" ")[0] || "User"}

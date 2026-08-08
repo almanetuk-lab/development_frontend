@@ -34,7 +34,7 @@ const SuggestedMatches = () => {
         if (matches && Array.isArray(matches)) {
           console.log(" Setting matches to state:", matches.length);
           setSuggestedMatches(matches);
-          return;b 
+          return; 
         }
       } catch (firstError) {
         console.log("⚠️ getSuggestedMatches failed, trying adminAPI...");

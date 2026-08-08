@@ -252,9 +252,6 @@ export function LogoutButton() {
     localStorage.removeItem("cart");
     alert("Logged out successfully!");
     navigate("/login");
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
   };
 
   return (

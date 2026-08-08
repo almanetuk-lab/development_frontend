@@ -25,6 +25,16 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ==================== CHAT APIS ====================
 
 export const chatApi = {
@@ -33,7 +43,7 @@ export const chatApi = {
     return api.get(`/api/users?search=${encodeURIComponent(searchQuery)}`);
   },
 
-  getPlanStatus: () => userApi.get("/api/me/plan-status"),
+  getPlanStatus: () => api.get("/api/me/plan-status"),
 
   // SEARCH PROFILES
   searchProfiles: (searchParams) =>

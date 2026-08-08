@@ -2,6 +2,7 @@
 // src/components/dashboard/Sidebar.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUserProfile } from "../context/UseProfileContext";
 
 const SidebarItem = ({
   icon,
@@ -67,6 +68,7 @@ export default function Sidebar({
 }) {
   const navigate = useNavigate();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const { clearProfile } = useUserProfile();
 
   return (
     <>
@@ -194,20 +196,29 @@ export default function Sidebar({
                 setSidebarOpen(false);
               }}
             />
+            <SidebarItem
+              icon="📰"
+              label="Blogs"
+              active={activeSection === "blogs"}
+              onClick={() => {
+                navigate("/blog");
+                setSidebarOpen(false);
+              }}
+            />
           </nav>
         </div>
 
         <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
           <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-xl">
-            {profile?.profile_picture_url || profile?.profilePhoto ? (
+            {profile?.image_url || profile?.profile_picture_url || profile?.profilePhoto || profile?.profile_image ? (
               <img
-                src={profile.profile_picture_url || profile.profilePhoto}
+                src={profile.image_url || profile.profile_picture_url || profile.profilePhoto || profile.profile_image}
                 alt="Profile"
-                className="w-10 h-10 rounded-full object-cover border-2 border-indigo-500"
+                className="w-10 h-10 rounded-full object-cover border-2 border-[#FF2A6D]"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold">
-                {profile?.full_name?.charAt(0) || "U"}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#002060] to-[#FF2A6D] flex items-center justify-center text-white font-bold">
+                {profile?.first_name?.charAt(0) || profile?.name?.charAt(0) || profile?.full_name?.charAt(0) || "U"}
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -217,8 +228,8 @@ export default function Sidebar({
 
           <button
             onClick={() => {
-              localStorage.clear();
-              window.location.href = "/#/login";
+              clearProfile();
+              navigate("/login");
             }}
             className="flex items-center w-full px-4 py-3 text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-all duration-200 font-medium"
           >
