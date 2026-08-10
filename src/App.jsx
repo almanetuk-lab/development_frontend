@@ -1,9 +1,10 @@
 
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { UserProfileProvider } from "./components/context/UseProfileContext";
+import React, { useState } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { UserProfileProvider, useUserProfile } from "./components/context/UseProfileContext";
 import Header from "./components/home/Header";
 import Footer from "./components/home/Footer";
+import Sidebar from "./components/dashboard/Sidebar";
 
 // Import your new AdminDashboard component (the one I just modified)
 // import AdminDashboard from "./components/admin/AdminDashboard";
@@ -70,13 +71,60 @@ const PublicRoute = ({ children }) => {
 };
 
 // Main Layout Component
-const MainLayout = ({ children }) => (
-  <div className="flex flex-col min-h-screen">
-    <Header />
-    <main className="flex-grow">{children}</main>
-    <Footer />
-  </div>
-);
+const MainLayout = ({ children }) => {
+  const token = localStorage.getItem("accessToken");
+  const { profile } = useUserProfile();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Get active section from URL
+  const getActiveSection = () => {
+    const path = location.pathname;
+    if (path === "/dashboard" || path === "/dashboard/") return "dashboard";
+    if (path.includes("profile")) return "profile";
+    if (path.includes("messages")) return "messages";
+    if (path.includes("search")) return "search";
+    if (path.includes("ai-suggestions")) return "ai-suggestions";
+    if (path.includes("matches")) return "matches";
+    if (path.includes("members")) return "members";
+    if (path.includes("plans")) return "plans";
+    if (path.includes("settings")) return "settings";
+    if (path.includes("blog")) return "blogs";
+    return "";
+  };
+
+  const activeSection = getActiveSection();
+
+  if (token) {
+    return (
+      <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <div className="flex flex-grow overflow-hidden relative">
+          <Sidebar
+            profile={profile}
+            activeSection={activeSection}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
+          <main className="flex-1 overflow-y-auto flex flex-col justify-between">
+            <div className="flex-grow">
+              {children}
+            </div>
+            <Footer />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-grow">{children}</main>
+      <Footer />
+    </div>
+  );
+};
 
 // ✅ PlanForm component alag banayein
 const PlanFormWrapper = () => {
