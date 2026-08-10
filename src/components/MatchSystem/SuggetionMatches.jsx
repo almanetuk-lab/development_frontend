@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSuggestedMatches } from "../services/chatApi";
 import api from "../services/api"; 
+import { FiMapPin, FiRefreshCw, FiArrowRight } from "react-icons/fi"; 
 
 const SuggestedMatches = () => {
   const navigate = useNavigate();
@@ -253,152 +254,113 @@ const SuggestedMatches = () => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-xs p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-xl font-bold text-gray-800">
+            <h3 className="text-xl font-bold text-slate-800 tracking-tight">
               Suggested Matches
             </h3>
-            <p className="text-sm text-gray-500 mt-1">People you might like</p>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Recommended profiles for you</p>
           </div>
-          <div className="px-2 py-1 bg-indigo-100 text-indigo-600 rounded-sm text-sm font-medium">
-            {suggestedMatches.length} matches
+          <div className="px-3 py-1 bg-pink-50 text-[#FF2A6D] rounded-full text-xs font-bold border border-pink-100">
+            {suggestedMatches.length} Matches
           </div>
         </div>
 
         {/* Loading State */}
         {loading ? (
           <div className="space-y-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="flex items-center p-4 animate-pulse">
-                <div className="w-12 h-12 bg-gray-200 rounded-full mr-4"></div>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center p-4 animate-pulse bg-slate-50/50 rounded-2xl">
+                <div className="w-12 h-12 bg-slate-200 rounded-full mr-4"></div>
                 <div className="flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-slate-200 rounded w-1/2 mb-2"></div>
                 </div>
-                <div className="w-16 h-8 bg-gray-200 rounded-full"></div>
+                <div className="w-20 h-8 bg-slate-200 rounded-xl"></div>
               </div>
             ))}
           </div>
         ) : error ? (
-          // Error State
-          <div className="text-center py-6">
-            <div className="text-red-500 mb-3">
-              <div className="text-lg mb-1">⚠️</div>
-              {error}
-            </div>
+          /* Error State */
+          <div className="text-center py-8 bg-slate-50/50 rounded-2xl p-4">
+            <p className="text-slate-500 text-sm mb-3">{error}</p>
             <button
               onClick={fetchMatches}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              className="px-4 py-2 bg-[#002060] text-white rounded-xl text-xs font-semibold hover:bg-[#001848] transition cursor-pointer"
             >
               Try Again
             </button>
           </div>
         ) : suggestedMatches.length === 0 ? (
-          // No Matches State
-          <div className="text-center py-8">
-            <div className="text-gray-400 mb-4 text-4xl">👥</div>
-            <p className="text-gray-600 mb-2">No suggested matches found</p>
+          /* No Matches State */
+          <div className="text-center py-8 bg-slate-50/50 rounded-2xl p-4">
+            <p className="text-slate-500 text-sm mb-3">No suggested matches available right now.</p>
             <button
               onClick={fetchMatches}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition cursor-pointer"
             >
-              Refresh
+              Refresh List
             </button>
           </div>
         ) : (
-          //  SHOW MATCHES (SIRF 3 FIELDS)
+          /* SHOW MATCHES */
           <div className="space-y-3">
             {suggestedMatches.slice(0, 5).map((user, index) => {
               const fullName = getFullName(user);
-              const city = getLocation(user); // SIRF CITY
+              const city = getLocation(user);
               const profession = getProfession(user);
               const profileImage = getProfileImage(user);
               const memberId = user.user_id || user.id;
               const isLoading = loadingProfileId === memberId;
 
-              console.log(`User ${index}:`, {
-                fullName,
-                city,
-                profession,
-                userData: user,
-              });
-
               return (
                 <div
                   key={user.id || index}
-                  className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-200 border border-gray-100"
+                  className="flex items-center p-3.5 bg-slate-50/60 hover:bg-slate-100/70 rounded-2xl transition-all duration-200 border border-slate-100/80 group"
                 >
                   {/* Profile Image */}
                   <div
-                    className="relative mr-4 cursor-pointer"
+                    className="relative mr-3.5 cursor-pointer shrink-0"
                     onClick={() => handleUserClick(user)}
                   >
                     <img
                       src={profileImage}
                       alt={fullName}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                      className="w-12 h-12 rounded-xl object-cover border border-slate-200 group-hover:scale-105 transition-transform"
                       onError={(e) => {
                         e.target.onerror = null;
                         const nameForAvatar = fullName.replace(/[^a-zA-Z0-9 ]/g, "");
                         const encodedName = encodeURIComponent(nameForAvatar || "User");
-                        e.target.src = `https://ui-avatars.com/api/?name=${encodedName}&background=random&color=fff&size=150`;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodedName}&background=002060&color=fff&size=150`;
                       }}
                     />
                   </div>
                   
-                  {/* User Info - SIRF 3 FIELDS */}
+                  {/* User Info */}
                   <div
-                    className="flex-1 cursor-pointer"
+                    className="flex-1 min-w-0 cursor-pointer"
                     onClick={() => handleUserClick(user)}
                   >
-                    <h4 className="font-semibold text-gray-800 text-lg">
+                    <h4 className="font-bold text-slate-800 text-sm truncate group-hover:text-[#002060] transition-colors">
                       {fullName}
                     </h4>
-
-                    <p className="text-gray-600 font-medium">{profession}</p>
-
-                    <div className="flex items-center text-gray-500 text-sm mt-1">
-                      <svg
-                        className="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
+                    <p className="text-xs text-slate-500 font-medium truncate">{profession}</p>
+                    <div className="flex items-center text-slate-400 text-xs mt-0.5 font-medium truncate">
+                      <FiMapPin className="w-3 h-3 text-slate-400 shrink-0 mr-1" />
                       <span>{city}</span>
                     </div>
                   </div>
 
                   {/* View Profile Button */}
                   <button
-                    className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition ${
+                    className={`ml-2 px-3 py-1.5 bg-[#002060] hover:bg-[#001848] text-white text-xs font-semibold rounded-xl transition shadow-2xs shrink-0 cursor-pointer ${
                       isLoading ? "opacity-70 cursor-wait" : ""
                     }`}
                     onClick={() => handleViewProfile(user)}
                     disabled={isLoading}
                   >
-                    {isLoading ? (
-                      <>
-                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Loading...
-                      </>
-                    ) : (
-                      "View Profile"
-                    )}
+                    {isLoading ? "Loading..." : "View"}
                   </button>
                 </div>
               );
@@ -410,32 +372,21 @@ const SuggestedMatches = () => {
         {!loading && !error && suggestedMatches.length > 0 && (
           <button
             onClick={handleViewAll}
-            className="w-full mt-6 py-3 text-center text-blue-600 font-medium border-t border-gray-200 hover:text-blue-700 transition"
+            className="w-full mt-5 py-2.5 text-center text-[#FF2A6D] hover:text-[#e0105a] font-bold text-xs sm:text-sm border-t border-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"
           >
-            View All Matches ({suggestedMatches.length})
+            <span>View All Matches ({suggestedMatches.length})</span>
+            <FiArrowRight className="w-4 h-4" />
           </button>
         )}
 
         {/* Refresh Button */}
-        <div className="text-center mt-4">
+        <div className="text-center mt-2">
           <button
             onClick={fetchMatches}
-            className="text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center mx-auto"
+            className="text-xs text-slate-400 hover:text-slate-600 font-medium inline-flex items-center gap-1.5 mx-auto cursor-pointer"
           >
-            <svg
-              className="w-4 h-4 mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Refresh
+            <FiRefreshCw className="w-3 h-3" />
+            <span>Refresh</span>
           </button>
         </div>
       </div>

@@ -32,7 +32,7 @@ export default function UserDashboard() {
   // Loading state
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex justify-center items-center h-screen bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-3"></div>
           <p className="text-gray-600">Loading your dashboard...</p>
@@ -44,7 +44,7 @@ export default function UserDashboard() {
   // No profile state
   if (!profile) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex justify-center items-center h-screen bg-slate-50">
         <div className="bg-white p-6 rounded-xl shadow-lg text-center max-w-md">
           <div className="text-gray-400 text-3xl mb-3">👤</div>
           <h3 className="text-gray-800 text-lg mb-2">Create Your Profile</h3>
