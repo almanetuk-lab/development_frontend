@@ -1,13 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { chatApi } from "../services/chatApi";
-import { useLocation } from "react-router-dom";
+import api from "../services/api";
+import { useLocation, useNavigate } from "react-router-dom";
 import EmojiPicker from "emoji-picker-react";
 import { useUserProfile } from "../context/UseProfileContext";
+import {
+  FiArrowLeft,
+  FiPaperclip,
+  FiSmile,
+  FiSend,
+  FiTrash2,
+  FiSearch,
+  FiFile,
+  FiLock,
+  FiUploadCloud,
+  FiCheckCircle,
+  FiXCircle,
+  FiMessageSquare
+} from "react-icons/fi";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
 export default function MessagesSection() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -435,19 +451,7 @@ export default function MessagesSection() {
     };
   }, [currentUserId, selectedUser, socket]);
 
-  // // Auto-scroll
-  // useEffect(() => {
-  //   if (messagesEndRef.current && messages.length > 0) {
-  //     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-  //   }
-  // }, [messages]);
 
-  // Auto-scroll - YEH UPDATE KARO (purane ko replace karo)
-  useEffect(() => {
-    if (messagesEndRef.current && shouldAutoScroll && messages.length > 0) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, shouldAutoScroll]);
 
   // FUNCTION TO REMOVE NUMBERS FROM USERNAME
   const cleanUserName = (name) => {
@@ -515,7 +519,7 @@ export default function MessagesSection() {
 
       console.log(` Loaded ${conversationMessages.length} messages`);
       setMessages(conversationMessages);
-      
+
       // Refresh global notifications count since messages and matching notifications are marked as read
       if (fetchNotifications) {
         fetchNotifications();
@@ -575,6 +579,64 @@ export default function MessagesSection() {
 
     await loadMessages(user.id);
     await loadReactions(user.id);
+  };
+
+  // NAVIGATE TO USER PROFILE - fetches full profile data before navigating
+  // so ProfilePage shows all fields (same pattern as MemberPage & MatchesPage).
+  const handleViewProfile = async () => {
+    if (!selectedUser) return;
+
+    try {
+      // Fetch the complete profile from the public user endpoint
+      const response = await api.get(`/api/users/${selectedUser.id}`);
+      let completeProfile = null;
+
+      if (response.data) {
+        completeProfile = response.data.data || response.data;
+      }
+
+      const profilePicUrl =
+        selectedUser.profile_picture_url ||
+        userProfilePictures[selectedUser.id] ||
+        null;
+
+      navigate(`/dashboard/profile/${selectedUser.id}`, {
+        state: {
+          userProfile: completeProfile
+            ? { ...completeProfile, image_url: completeProfile.image_url || profilePicUrl }
+            : {
+              user_id: selectedUser.id,
+              id: selectedUser.id,
+              name: selectedUser.name,
+              email: selectedUser.email,
+              image_url: profilePicUrl,
+              profile_picture_url: profilePicUrl,
+            },
+          memberId: selectedUser.id,
+          name: selectedUser.name,
+          from: "messages_section",
+        },
+      });
+    } catch (err) {
+      // Fallback: navigate with minimal data
+      navigate(`/dashboard/profile/${selectedUser.id}`, {
+        state: {
+          userProfile: {
+            user_id: selectedUser.id,
+            id: selectedUser.id,
+            name: selectedUser.name,
+            email: selectedUser.email,
+            image_url:
+              selectedUser.profile_picture_url ||
+              userProfilePictures[selectedUser.id] ||
+              null,
+          },
+          memberId: selectedUser.id,
+          name: selectedUser.name,
+          from: "messages_section",
+        },
+      });
+    }
   };
 
   // DELETE MESSAGE FUNCTION
@@ -891,23 +953,23 @@ export default function MessagesSection() {
         href={message.attachment_url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg border border-gray-300 hover:bg-gray-200 transition mt-2"
+        className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-105/80 transition-colors mt-2 text-slate-700 font-semibold text-xs"
       >
-        <span>📎</span>
-        <span className="text-sm">Download File</span>
+        <FiFile className="w-4 h-4 text-slate-500" />
+        <span>Download File</span>
       </a>
     );
   };
 
-  //  SIMPLE FUNCTION FOR GRADIENT COLOR
-  const getGradientColor = (name) => {
+  //  SIMPLE FUNCTION FOR SOLID COLOR
+  const getSolidColor = (name) => {
     const nameChar = name?.charAt(0) || "U";
     const colors = [
-      "bg-gradient-to-br from-indigo-400 to-purple-500",
-      "bg-gradient-to-br from-green-400 to-blue-500",
-      "bg-gradient-to-br from-pink-400 to-red-500",
-      "bg-gradient-to-br from-yellow-400 to-orange-500",
-      "bg-gradient-to-br from-teal-400 to-cyan-500",
+      "bg-[#002060]",
+      "bg-[#FF2A6D]",
+      "bg-emerald-600",
+      "bg-indigo-600",
+      "bg-teal-600",
     ];
     const index = nameChar.charCodeAt(0) % colors.length;
     return colors[index];
@@ -916,102 +978,83 @@ export default function MessagesSection() {
   // Show login message if no user
   if (!currentUserId) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Messages</h2>
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🔒</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
-            Please Login First
-          </h3>
-          <p className="text-gray-500">You need to login to access messages</p>
+      <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs text-center py-16">
+        <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+          <FiLock className="w-8 h-8" />
         </div>
+        <h3 className="text-xl font-extrabold text-slate-800 mb-1">
+          Please Login First
+        </h3>
+        <p className="text-slate-400 text-sm">You need to sign in to access your direct messages.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6"
-      ref={messagesContainerRef}
-      onScroll={handleScroll}
+    <div className="overflow-hidden md:overflow-visible md:bg-white md:rounded-3xl md:border md:border-slate-100 md:p-4 md:shadow-xs">
+      <h2 className="hidden md:block text-2xl font-black text-slate-800 mb-4 tracking-tight">Messages</h2>
 
-      style={{ maxHeight: "350px" }}
-    >
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Messages</h2>
 
-      {/* PLAN STATUS BANNER - TOP ME ADD KIYA HAI */}
-      {!planStatus.loading && (
-        <div
-          className={`mb-4 p-3 text-sm text-center rounded-lg border ${planStatus.active
-              ? "bg-green-50 text-green-700 border-green-200"
-              : "bg-red-50 text-red-700 border-red-200"
-            }`}
-        >
-          {planStatus.active ? (
-            <>
-              ✅ <strong>Plan Active</strong> — {planStatus.daysLeft} day
-              {planStatus.daysLeft !== 1 && "s"} remaining
-            </>
-          ) : (
-            <>
-              ❌ <strong>Plan Expired</strong> — Upgrade to continue chatting
-            </>
-          )}
-        </div>
-      )}
 
-      {/* RESPONSIVE CHAT CONTAINER - HEIGHT REDUCED */}
-      <div className="bg-white rounded-2xl shadow-lg h-[55vh] sm:h-[500px] flex flex-col md:flex-row border border-gray-200 relative">
+      {/* RESPONSIVE CHAT CONTAINER */}
+      <div className="bg-white md:rounded-2xl h-[85dvh] flex flex-col md:flex-row md:border md:border-slate-100 relative overflow-hidden">
         {/*  MOBILE HEADER FOR CHAT */}
         {selectedUser && !showSidebar && (
-          <div className="md:hidden p-4 border-b border-gray-200 bg-white flex items-center gap-3">
+          <div className="md:hidden p-4 border-b border-slate-150 bg-white flex items-center gap-3">
             <button
               onClick={() => setShowSidebar(true)}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="p-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+              aria-label="Back"
             >
-              ← Back
+              <FiArrowLeft className="w-5 h-5" />
             </button>
-            {/*  PROFILE PICTURE WITH FALLBACK */}
-            {selectedUser.profile_picture_url ? (
-              <img
-                src={selectedUser.profile_picture_url}
-                alt={selectedUser.name}
-                className="w-8 h-8 rounded-full object-cover border-2 border-white shadow"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.parentElement.querySelector(
-                    ".mobile-fallback-avatar",
-                  ).style.display = "flex";
-                }}
-              />
-            ) : userProfilePictures[selectedUser.id] ? (
-              <img
-                src={userProfilePictures[selectedUser.id]}
-                alt={selectedUser.name}
-                className="w-8 h-8 rounded-full object-cover border-2 border-white shadow"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                  e.target.parentElement.querySelector(
-                    ".mobile-fallback-avatar",
-                  ).style.display = "flex";
-                }}
-              />
-            ) : null}
-
             <div
-              className={`mobile-fallback-avatar w-8 h-8 ${getGradientColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${selectedUser.profile_picture_url ||
+              onClick={handleViewProfile}
+              className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity flex-1 min-w-0"
+            >
+              {/*  PROFILE PICTURE WITH FALLBACK */}
+              {selectedUser.profile_picture_url ? (
+                <img
+                  src={selectedUser.profile_picture_url}
+                  alt={selectedUser.name}
+                  className="w-8 h-8 rounded-full object-cover border-2 border-white shadow"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.parentElement.querySelector(
+                      ".mobile-fallback-avatar",
+                    ).style.display = "flex";
+                  }}
+                />
+              ) : userProfilePictures[selectedUser.id] ? (
+                <img
+                  src={userProfilePictures[selectedUser.id]}
+                  alt={selectedUser.name}
+                  className="w-8 h-8 rounded-full object-cover border-2 border-white shadow"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.parentElement.querySelector(
+                      ".mobile-fallback-avatar",
+                    ).style.display = "flex";
+                  }}
+                />
+              ) : null}
+
+              <div
+                className={`mobile-fallback-avatar w-8 h-8 ${getSolidColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${selectedUser.profile_picture_url ||
                   userProfilePictures[selectedUser.id]
                   ? "hidden"
                   : "flex"
-                }`}
-            >
-              {selectedUser.name?.charAt(0)?.toUpperCase() || "U"}
-            </div>
+                  }`}
+              >
+                {selectedUser.name?.charAt(0)?.toUpperCase() || "U"}
+              </div>
 
-            <div>
-              <p className="font-medium text-gray-800 text-sm">
-                {selectedUser.name}
-              </p>
-              <p className="text-xs text-gray-500">Online</p>
+              <div>
+                <p className="font-semibold text-slate-800 text-sm truncate">
+                  {selectedUser.name}
+                </p>
+                <p className="text-[10px] font-bold text-slate-400">Online</p>
+              </div>
             </div>
           </div>
         )}
@@ -1021,30 +1064,33 @@ export default function MessagesSection() {
           className={`
           ${showSidebar ? "flex" : "hidden"} 
           md:flex
-          w-full md:w-1/3 lg:w-1/4 
-          border-r border-gray-200 
+          w-full md:w-80 flex-shrink-0
+          border-r border-slate-100 
           flex-col 
           absolute md:relative 
           h-full bg-white z-10
         `}
         >
           {/* Search Header */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-3.5 border-b border-slate-100">
             <div className="flex items-center gap-2">
               {/* Mobile back button */}
               <button
                 onClick={() => setShowSidebar(false)}
-                className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="md:hidden p-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors cursor-pointer"
               >
-                ←
+                <FiArrowLeft className="w-5 h-5" />
               </button>
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-              />
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-hidden focus:border-[#002060] focus:ring-1 focus:ring-[#002060] text-sm transition-all duration-200"
+                />
+              </div>
             </div>
           </div>
 
@@ -1056,7 +1102,7 @@ export default function MessagesSection() {
               </h3>
             </div>
 
-            <div className="max-h-48 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               {recentChatsLoading ? (
                 <div className="p-3 text-center text-gray-500 text-sm">
                   Loading recent chats...
@@ -1070,9 +1116,9 @@ export default function MessagesSection() {
                   <div
                     key={chat.user_id}
                     onClick={() => handleRecentChatSelect(chat)}
-                    className={`p-3 cursor-pointer transition border-b border-gray-100 ${selectedUser?.id === chat.user_id
-                        ? "bg-indigo-50 border-indigo-200"
-                        : "hover:bg-gray-50"
+                    className={`p-3 cursor-pointer transition-all duration-200 border-b border-slate-50 ${selectedUser?.id === chat.user_id
+                      ? "bg-[#002060]/5 border-slate-100"
+                      : "hover:bg-slate-50/70"
                       }`}
                   >
                     <div className="flex items-center gap-3">
@@ -1104,10 +1150,10 @@ export default function MessagesSection() {
                       ) : null}
 
                       <div
-                        className={`chat-fallback-avatar w-10 h-10 ${getGradientColor(chat.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${chat.profile_picture_url ||
-                            userProfilePictures[chat.user_id]
-                            ? "hidden"
-                            : "flex"
+                        className={`chat-fallback-avatar w-10 h-10 ${getSolidColor(chat.name)} rounded-full flex items-center justify-center text-white font-bold text-sm ${chat.profile_picture_url ||
+                          userProfilePictures[chat.user_id]
+                          ? "hidden"
+                          : "flex"
                           }`}
                       >
                         {cleanUserName(chat.name)?.charAt(0)?.toUpperCase() ||
@@ -1116,10 +1162,10 @@ export default function MessagesSection() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center">
-                          <p className="font-medium text-gray-800 truncate text-sm">
+                          <p className="font-semibold text-slate-800 truncate text-sm">
                             {cleanUserName(chat.name)}
                           </p>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-[10px] font-bold text-slate-400">
                             {new Date(
                               chat.last_message_time,
                             ).toLocaleTimeString([], {
@@ -1128,12 +1174,12 @@ export default function MessagesSection() {
                             })}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center mt-1">
-                          <p className="text-xs text-gray-600 truncate">
+                        <div className="flex justify-between items-center mt-0.5">
+                          <p className="text-xs text-slate-500 truncate">
                             {chat.last_message || "No messages yet"}
                           </p>
                           {chat.unread_count > 0 && (
-                            <span className="bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                            <span className="bg-[#FF2A6D] text-white text-[10px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
                               {chat.unread_count}
                             </span>
                           )}
@@ -1159,9 +1205,9 @@ export default function MessagesSection() {
                 <div
                   key={user.id}
                   onClick={() => handleUserSelect(user)}
-                  className={`p-3 cursor-pointer transition border-b border-gray-100 ${selectedUser?.id === user.id
-                      ? "bg-indigo-50 border-indigo-200"
-                      : "hover:bg-gray-50"
+                  className={`p-3 cursor-pointer transition-all duration-200 border-b border-slate-50 ${selectedUser?.id === user.id
+                    ? "bg-[#002060]/5 border-slate-100"
+                    : "hover:bg-slate-50/70"
                     }`}
                 >
                   <div className="flex items-center gap-3">
@@ -1193,9 +1239,9 @@ export default function MessagesSection() {
                     ) : null}
 
                     <div
-                      className={`user-fallback-avatar w-12 h-12 ${getGradientColor(user.name)} rounded-full flex items-center justify-center text-white font-bold ${user.profile_picture_url || userProfilePictures[user.id]
-                          ? "hidden"
-                          : "flex"
+                      className={`user-fallback-avatar w-12 h-12 ${getSolidColor(user.name)} rounded-full flex items-center justify-center text-white font-bold ${user.profile_picture_url || userProfilePictures[user.id]
+                        ? "hidden"
+                        : "flex"
                         }`}
                     >
                       {user.name?.charAt(0)?.toUpperCase() || "U"}
@@ -1213,18 +1259,21 @@ export default function MessagesSection() {
           </div>
         </div>
 
-        {/* CHAT AREA - Responsive with reduced height */}
-        <div className="flex-1 flex flex-col">
+        {/* CHAT AREA */}
+        <div className="flex-1 flex flex-col bg-white">
           {selectedUser ? (
             <>
               {/*  Desktop Header with Profile Picture */}
-              <div className="hidden md:flex p-4 border-b border-gray-200 bg-white items-center gap-3">
+              <div
+                onClick={handleViewProfile}
+                className="hidden md:flex p-4 border-b border-slate-100 bg-white items-center gap-3 cursor-pointer hover:bg-slate-50/50 transition-colors"
+              >
                 {/*  PROFILE PICTURE WITH FALLBACK */}
                 {selectedUser.profile_picture_url ? (
                   <img
                     src={selectedUser.profile_picture_url}
                     alt={selectedUser.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-xs"
                     onError={(e) => {
                       e.target.style.display = "none";
                       e.target.parentElement.querySelector(
@@ -1236,7 +1285,7 @@ export default function MessagesSection() {
                   <img
                     src={userProfilePictures[selectedUser.id]}
                     alt={selectedUser.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-xs"
                     onError={(e) => {
                       e.target.style.display = "none";
                       e.target.parentElement.querySelector(
@@ -1247,39 +1296,46 @@ export default function MessagesSection() {
                 ) : null}
 
                 <div
-                  className={`desktop-fallback-avatar w-10 h-10 ${getGradientColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold ${selectedUser.profile_picture_url ||
-                      userProfilePictures[selectedUser.id]
-                      ? "hidden"
-                      : "flex"
+                  className={`desktop-fallback-avatar w-10 h-10 ${getSolidColor(selectedUser.name)} rounded-full flex items-center justify-center text-white font-bold ${selectedUser.profile_picture_url ||
+                    userProfilePictures[selectedUser.id]
+                    ? "hidden"
+                    : "flex"
                     }`}
                 >
                   {selectedUser.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
 
                 <div>
-                  <p className="font-medium text-gray-800">
+                  <p className="font-bold text-slate-800 text-sm">
                     {selectedUser.name}
                   </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Now</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Messages Area - Height reduced */}
+              {/* Messages Area */}
               <div
-                className="flex-1 p-3 sm:p-4 overflow-y-auto bg-gray-50"
-                style={{ maxHeight: "350px" }}
+                ref={messagesContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-50/50"
               >
                 {loading ? (
                   <div className="flex items-center justify-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    <span className="ml-3 text-gray-600">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#002060]"></div>
+                    <span className="ml-3 text-slate-500 text-sm font-semibold">
                       Loading messages...
                     </span>
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center text-gray-500 py-8">
-                    <div className="text-4xl mb-2">💬</div>
-                    <p className="font-medium">No messages yet</p>
-                    <p className="text-sm">
+                  <div className="text-center text-slate-400 py-16 flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 mb-3.5 shadow-2xs">
+                      <FiMessageSquare className="w-5 h-5 text-[#002060]" />
+                    </div>
+                    <p className="font-extrabold text-slate-700">No messages yet</p>
+                    <p className="text-[11px] text-slate-400 mt-1">
                       Start the conversation with {selectedUser.name}
                     </p>
                   </div>
@@ -1289,14 +1345,14 @@ export default function MessagesSection() {
                       <div
                         key={message.id}
                         className={`flex ${message.sender_id === currentUserId
-                            ? "justify-end"
-                            : "justify-start"
+                          ? "justify-end"
+                          : "justify-start"
                           }`}
                       >
                         <div
                           className={`max-w-[85%] xs:max-w-xs sm:max-w-md relative message-bubble ${message.sender_id === currentUserId
-                              ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
-                              : "bg-white text-gray-800 shadow-sm border border-gray-200"
+                            ? "bg-[#002060] text-white"
+                            : "bg-white text-slate-800 shadow-2xs border border-slate-100/95"
                             } rounded-2xl p-3 sm:p-4 ${message.isTemporary
                               ? "opacity-70 border-2 border-dashed border-yellow-400"
                               : ""
@@ -1314,34 +1370,35 @@ export default function MessagesSection() {
                                     : message.id,
                                 );
                               }}
-                              className="absolute top-2 right-2 more-options-btn text-white/70 hover:text-white text-sm"
-                              title="More options"
+                              className="absolute top-2 right-2 more-options-btn text-white/60 hover:text-white transition-colors cursor-pointer"
+                              title="Delete message"
                             >
-                              <span className="text-sm color-white-500">
-                                🗑️
-                              </span>
+                              <FiTrash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
 
                           {/* DELETE OPTION DROPDOWN */}
                           {showDeleteOption === message.id &&
                             message.sender_id === currentUserId && (
-                              <div className="absolute top-8 right-2 bg-white border border-gray-200 rounded-lg shadow-lg p-1 delete-option z-20">
+                              <div className="absolute top-8 right-2 bg-white border border-slate-100 rounded-xl shadow-lg p-1.5 delete-option z-20 min-w-36">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDeleteMessage(message.id);
                                   }}
                                   disabled={deletingMessageId === message.id}
-                                  className="flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium w-full disabled:opacity-50"
+                                  className="flex items-center justify-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold w-full disabled:opacity-50 cursor-pointer transition-colors"
                                 >
                                   {deletingMessageId === message.id ? (
                                     <>
                                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
-                                      Deleting...
+                                      <span>Deleting...</span>
                                     </>
                                   ) : (
-                                    <>🗑️ Delete Message</>
+                                    <>
+                                      <FiTrash2 className="w-3.5 h-3.5" />
+                                      <span>Delete</span>
+                                    </>
                                   )}
                                 </button>
                               </div>
@@ -1349,7 +1406,7 @@ export default function MessagesSection() {
 
                           {/* Message content */}
                           {message.content && (
-                            <p className="break-words whitespace-pre-wrap text-sm sm:text-base">
+                            <p className="break-words whitespace-pre-wrap text-sm leading-relaxed">
                               {message.content}
                             </p>
                           )}
@@ -1358,11 +1415,11 @@ export default function MessagesSection() {
                           {renderAttachment(message)}
 
                           {/* Message Footer - Timestamp + Reaction Button */}
-                          <div className="flex justify-between items-center mt-2">
+                          <div className="flex justify-between items-center mt-2.5 gap-4">
                             <p
-                              className={`text-xs ${message.sender_id === currentUserId
-                                  ? "text-indigo-200"
-                                  : "text-gray-500"
+                              className={`text-[10px] font-medium ${message.sender_id === currentUserId
+                                ? "text-slate-300"
+                                : "text-slate-400"
                                 }`}
                             >
                               {formatTime(message.created_at)}
@@ -1381,13 +1438,13 @@ export default function MessagesSection() {
                                     : message.id,
                                 );
                               }}
-                              className={`text-xs p-1 rounded-full reaction-btn ${message.sender_id === currentUserId
-                                  ? "bg-white/20 hover:bg-white/30 text-white"
-                                  : "bg-gray-200 hover:bg-gray-300 text-gray-600"
-                                } transition`}
+                              className={`p-1 rounded-full reaction-btn ${message.sender_id === currentUserId
+                                ? "bg-white/10 hover:bg-white/20 text-white"
+                                : "bg-slate-100 hover:bg-slate-200 text-slate-500"
+                                } transition cursor-pointer flex items-center justify-center`}
                               title="Add reaction"
                             >
-                              😊
+                              <FiSmile className="w-3.5 h-3.5" />
                             </button>
                           </div>
                           {/* REACTIONS DISPLAY */}
@@ -1436,14 +1493,19 @@ export default function MessagesSection() {
                 )}
               </div>
               {/* Input Area */}
-              <div className="p-3 sm:p-4 border-t border-gray-200 bg-white">
-                <div className="flex gap-2">
+              <div className="p-2.5 sm:p-3.5 border-t border-slate-100 bg-white shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={fileUploading || !planStatus.active}
-                    className="px-3 py-2 sm:px-4 sm:py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 disabled:opacity-50 text-sm"
+                    className="shrink-0 w-9 h-9 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                    title="Upload File"
                   >
-                    {fileUploading ? "📤" : "📎"}
+                    {fileUploading ? (
+                      <FiUploadCloud className="w-4 h-4 animate-bounce" />
+                    ) : (
+                      <FiPaperclip className="w-4 h-4" />
+                    )}
                   </button>
                   <input
                     type="file"
@@ -1452,15 +1514,15 @@ export default function MessagesSection() {
                     className="hidden"
                     accept="*/*"
                   />
-                  {/* Emoji Button - NEW */}
+                  {/* Emoji Button */}
                   <button
                     ref={emojiButtonRef}
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     disabled={!planStatus.active}
-                    className="px-3 py-2 sm:px-4 sm:py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 disabled:opacity-50 text-lg"
-                    title="Add emoji"
+                    className="shrink-0 w-9 h-9 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-colors disabled:opacity-50 flex items-center justify-center cursor-pointer"
+                    title="Add Emoji"
                   >
-                    😊
+                    <FiSmile className="w-4 h-4" />
                   </button>
 
                   <input
@@ -1470,11 +1532,11 @@ export default function MessagesSection() {
                     placeholder={
                       planStatus.active
                         ? `Message ${selectedUser.name}...`
-                        : "Upgrade plan to send messages..."
+                        : "Upgrade to send messages"
                     }
                     onKeyPress={handleKeyPress}
                     disabled={!planStatus.active}
-                    className={`flex-1 px-3 py-2 sm:px-4 sm:py-3 border border-gray-300 rounded-xl text-sm sm:text-base bg-white ${planStatus.active ? "cursor-text" : "cursor-not-allowed"
+                    className={`flex-1 min-w-0 px-3 py-2.5 border border-slate-200 focus:outline-hidden focus:border-[#002060] focus:ring-1 focus:ring-[#002060] rounded-xl text-sm bg-white transition-all duration-200 ${planStatus.active ? "cursor-text" : "cursor-not-allowed"
                       }`}
                   />
 
@@ -1485,21 +1547,22 @@ export default function MessagesSection() {
                       !planStatus.active ||
                       messageLimitReached
                     }
-                    className="px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 font-medium disabled:opacity-50 text-sm sm:text-base"
+                    className="shrink-0 w-9 h-9 sm:w-auto sm:px-4 sm:gap-1.5 bg-[#002060] hover:bg-[#FF2A6D] text-white rounded-xl font-bold disabled:opacity-50 transition-all duration-300 flex items-center justify-center cursor-pointer shadow-xs hover:shadow-md"
                   >
-                    Send
+                    <FiSend className="w-4 h-4" />
+                    <span className="hidden sm:inline text-sm">Send</span>
                   </button>
-                  {/* Emoji Picker Popup - NEW */}
+                  {/* Emoji Picker Popup */}
                   {showEmojiPicker && (
                     <div
                       ref={emojiPickerRef}
-                      className="absolute bottom-16 left-0 z-50 shadow-2xl"
+                      className="absolute bottom-16 left-0 right-0 z-50 shadow-2xl flex justify-start"
                     >
                       <EmojiPicker
                         onEmojiClick={onEmojiClick}
                         autoFocusSearch={false}
-                        width={300}
-                        height={400}
+                        width={Math.min(300, window.innerWidth - 16)}
+                        height={350}
                         previewConfig={{ showPreview: false }}
                         searchPlaceholder="Search emojis..."
                         skinTonesDisabled={true}
@@ -1510,17 +1573,21 @@ export default function MessagesSection() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-50">
-              <div className="text-center">
-                <div className="text-4xl sm:text-6xl mb-4">💬</div>
-                <p className="text-lg font-medium">
-                  Select a user to start chatting
+            <div className="flex-1 flex items-center justify-center text-slate-400 bg-slate-50/50">
+              <div className="text-center max-w-sm px-4">
+                <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-[#002060] mx-auto mb-4 shadow-2xs">
+                  <FiSmile className="w-7 h-7" />
+                </div>
+                <p className="text-base font-extrabold text-slate-700">
+                  Select a chat to start direct messaging
                 </p>
-                <p className="text-sm mt-2">Search for users in the sidebar</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Choose a user from your recent conversations or search in the sidebar.
+                </p>
                 {/* Mobile sidebar toggle */}
                 <button
                   onClick={() => setShowSidebar(true)}
-                  className="md:hidden mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  className="md:hidden mt-5 px-5 py-2.5 bg-[#002060] hover:bg-[#FF2A6D] text-white rounded-xl text-xs font-bold transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer"
                 >
                   Open Contacts
                 </button>
