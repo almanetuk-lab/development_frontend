@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../services/api";
+import { loginUser, googleAuth } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
 import { FaLinkedin, FaApple, FaGoogle } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -15,6 +15,39 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [linkedinLoading, setLinkedinLoading] = useState(false);
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    try {
+      const credential = credentialResponse?.credential;
+      if (!credential) throw new Error("No credential received from Google");
+
+      const { token, refresh, user } = await googleAuth(credential);
+      if (!token) throw new Error("No token received from server");
+
+      localStorage.setItem("accessToken", token);
+      if (refresh) localStorage.setItem("refreshToken", refresh);
+
+      if (user) {
+        updateProfile(user);
+        localStorage.setItem("currentUser", JSON.stringify(user));
+      }
+
+      setTimeout(() => {
+        refreshProfile();
+      }, 500);
+
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google login error:", err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Google login failed";
+      setError(msg);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -223,6 +256,7 @@ export default function Login() {
             {loading ? "Logging in..." : "Login to Your Account"}
           </button>
         </form>
+
 
         {/* Footer Link */}
         <div className="mt-6 sm:mt-8 text-center pt-3 sm:pt-4 border-t border-slate-100">

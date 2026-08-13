@@ -151,6 +151,26 @@ export const registerUser = async (formData) => {
   }
 };
 
+// Google Sign-In / Sign-Up API (used by both Login and Register pages)
+export const googleAuth = async (credential) => {
+  try {
+    const res = await api.post("/api/auth/google", { credential });
+    const data = res.data;
+
+    if (data.accessToken || data.token) {
+      localStorage.setItem("accessToken", data.accessToken || data.token);
+    }
+
+    if (data.refreshToken || data.refresh_token) {
+      localStorage.setItem("refreshToken", data.refreshToken || data.refresh_token);
+    }
+
+    return normalizeAuthResponse(data);
+  } catch (err) {
+    throw err;
+  }
+};
+
 // Update Profile API -  YEHA SE YAHA TAK KA CODE SAME HAI
 // export const updateUserProfile = async (profileData) => {
 //   try {

@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerUser } from "../services/api";
+import { registerUser, googleAuth } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { FaLinkedin, FaApple, FaGoogle } from "react-icons/fa";
 import Logo from "../comman/Logo";
 
+
 export default function Register() {
   const navigate = useNavigate();
-  const { updateProfile } = useUserProfile() || { updateProfile: () => {} };
+  const { updateProfile, refreshProfile } = useUserProfile() || {
+    updateProfile: () => {},
+    refreshProfile: () => {},
+  };
 
   const [form, setForm] = useState({
     first_name: "",
@@ -54,6 +58,39 @@ export default function Register() {
       alert(`Login failed: ${error.message}. Please try again.`);
     } finally {
       setLinkedinLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    try {
+      const credential = credentialResponse?.credential;
+      if (!credential) throw new Error("No credential received from Google");
+
+      const { token, refresh, user } = await googleAuth(credential);
+      if (!token) throw new Error("No token received from server");
+
+      localStorage.setItem("accessToken", token);
+      if (refresh) localStorage.setItem("refreshToken", refresh);
+
+      if (user) {
+        updateProfile(user);
+        localStorage.setItem("currentUser", JSON.stringify(user));
+      }
+
+      setTimeout(() => {
+        refreshProfile();
+      }, 500);
+
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google sign-up error:", err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Google sign-up failed";
+      setError(msg);
     }
   };
 
