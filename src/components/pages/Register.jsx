@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import { registerUser, googleAuth } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -30,6 +31,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [linkedinLoading, setLinkedinLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleLinkedInLogin = async () => {
     setLinkedinLoading(true);
@@ -61,13 +63,14 @@ export default function Register() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const handleGoogleSuccess = async (codeResponse) => {
     setError("");
+    setGoogleLoading(true);
     try {
-      const credential = credentialResponse?.credential;
-      if (!credential) throw new Error("No credential received from Google");
+      const code = codeResponse?.code;
+      if (!code) throw new Error("No authorization code received from Google");
 
-      const { token, refresh, user } = await googleAuth(credential);
+      const { token, refresh, user } = await googleAuth(code);
       if (!token) throw new Error("No token received from server");
 
       localStorage.setItem("accessToken", token);
@@ -91,7 +94,35 @@ export default function Register() {
         err?.message ||
         "Google sign-up failed";
       setError(msg);
+    } finally {
+      setGoogleLoading(false);
     }
+  };
+
+  const handleGoogleError = (errorResponse) => {
+    console.error("Google sign-up error:", errorResponse?.error || errorResponse);
+    setError("Google sign-up failed. Please try again.");
+    setGoogleLoading(false);
+  };
+
+  const handleGoogleNonOAuthError = (nonOAuthError) => {
+    if (nonOAuthError?.type !== "popup_closed") {
+      setError("Google sign-up failed. Please try again.");
+    }
+    setGoogleLoading(false);
+  };
+
+  const googleLogin = useGoogleLogin({
+    flow: "auth-code",
+    onSuccess: handleGoogleSuccess,
+    onError: handleGoogleError,
+    onNonOAuthError: handleGoogleNonOAuthError,
+  });
+
+  const handleGoogleClick = () => {
+    setError("");
+    setGoogleLoading(true);
+    googleLogin();
   };
 
   const handleChange = (e) => {
@@ -201,13 +232,24 @@ export default function Register() {
             <span>Register with Apple</span>
           </Link>
 
-          <Link
-            to="/coming-soon"
-            className="w-full py-2.5 sm:py-3 px-3 sm:px-4 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 sm:gap-3 font-semibold text-xs sm:text-sm"
+          <button
+            type="button"
+            onClick={handleGoogleClick}
+            disabled={googleLoading}
+            className="w-full py-2.5 sm:py-3 px-3 sm:px-4 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 sm:gap-3 font-semibold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FaGoogle size={18} className="text-red-500" />
-            <span>Register with Google</span>
-          </Link>
+            {googleLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400"></div>
+                <span>Connecting to Google...</span>
+              </>
+            ) : (
+              <>
+                <FaGoogle size={18} className="text-red-500" />
+                <span>Register with Google</span>
+              </>
+            )}
+          </button>
         </div>
 
         {/* OR Divider */}

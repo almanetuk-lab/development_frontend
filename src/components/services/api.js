@@ -152,9 +152,10 @@ export const registerUser = async (formData) => {
 };
 
 // Google Sign-In / Sign-Up API (used by both Login and Register pages)
-export const googleAuth = async (credential) => {
+// `code` is the one-time authorization code from the OAuth popup (auth-code flow)
+export const googleAuth = async (code) => {
   try {
-    const res = await api.post("/api/auth/google", { credential });
+    const res = await api.post("/api/auth/google", { code });
     const data = res.data;
 
     if (data.accessToken || data.token) {
