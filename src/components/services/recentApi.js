@@ -57,8 +57,8 @@ const viewApi = {
   getDashboardSummary: async (userId) => {
     try {
       const [viewersData, profileData] = await Promise.all([
-        recentApi.getRecentViewers(userId),
-        recentApi.getUserProfile(userId),
+        viewApi.getRecentViewers(userId),
+        viewApi.getUserProfile(userId),
       ]);
 
       const today = new Date().toDateString();

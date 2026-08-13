@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { theme } from "../comman/theme";
+
+const inputClass = `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-slate-700 font-semibold placeholder-slate-400 focus:outline-hidden focus:border-[#002060] focus:ring-4 focus:ring-[#002060]/5 transition-all text-sm resize-none ${theme.tailwind.focusPink}`;
 
 // Complete list of 8 questions
 export const PROFILE_QUESTIONS = [
@@ -144,22 +147,22 @@ const ProfileQuestions = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-3 md:p-4">
-      <div className="bg-white rounded-lg sm:rounded-xl shadow-2xl w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl h-[95vh] sm:h-[90vh] flex flex-col mx-auto">
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-3xl lg:max-w-4xl h-[95vh] sm:h-[90vh] flex flex-col mx-auto modal-form-custom">
         
         {/* Header */}
-        <div className="sticky top-0 bg-white p-4 sm:p-5 md:p-6 border-b">
+        <div className="sticky top-0 bg-white p-4 sm:p-5 md:p-6 border-b border-slate-100">
           <div className="flex justify-between items-start gap-3">
             <div className="flex-1">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
                 Tell Us More About Yourself
               </h2>
-              <p className="text-gray-600 text-sm sm:text-base mt-1">
+              <p className="text-slate-500 text-xs font-semibold mt-1">
                 Answer these prompts to help others know you better
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-2xl text-gray-500 hover:text-gray-700 -mt-1"
+              className="text-2xl text-slate-400 hover:text-slate-600 -mt-1 cursor-pointer"
             >
               ×
             </button>
@@ -167,23 +170,23 @@ const ProfileQuestions = ({
         </div>
 
         {/* Content - Questions */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-6">
           {PROFILE_QUESTIONS.map((question, index) => (
             <div 
               key={question.key}
-              className="mb-4 sm:mb-6 p-3 sm:p-4 border border-gray-200 rounded-lg bg-white"
+              className="p-5 border border-slate-100 rounded-3xl bg-slate-50/45 shadow-2xs"
             >
               {/* Question Header */}
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-start">
-                  <span className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 bg-blue-100 text-blue-600 rounded-full text-xs sm:text-sm font-bold mr-2 sm:mr-3">
+                  <span className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 bg-white border border-slate-100 text-[#002060] rounded-xl text-xs sm:text-sm font-black shadow-3xs mr-2 sm:mr-3 shrink-0">
                     {index + 1}
                   </span>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-800">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-700 leading-snug">
                     {question.label}
                   </h3>
                 </div>
-                <span className="text-xs sm:text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                <span className="text-[10px] font-bold text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-md shadow-3xs">
                   {characterCounts[question.key] || 0}/500
                 </span>
               </div>
@@ -194,16 +197,16 @@ const ProfileQuestions = ({
                 onChange={(e) => handleAnswerChange(question.key, e.target.value)}
                 placeholder={question.placeholder}
                 rows="3"
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                className={inputClass}
                 maxLength={500}
               />
 
               {/* Character Counter */}
               <div className="flex justify-end mt-2">
-                <div className={`text-xs sm:text-sm ${
+                <div className={`text-[11px] font-bold ${
                   (characterCounts[question.key] || 0) > 450 
-                    ? "text-red-600 font-medium" 
-                    : "text-gray-500"
+                    ? "text-red-500" 
+                    : "text-slate-400"
                 }`}>
                   {500 - (characterCounts[question.key] || 0)} characters remaining
                 </div>
@@ -211,16 +214,16 @@ const ProfileQuestions = ({
 
               {/* Answer Preview */}
               {answers[question.key] && answers[question.key].trim() !== '' && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-100 rounded-md">
+                <div className="mt-4 p-4 bg-emerald-50/40 border border-emerald-100/50 rounded-2xl shadow-2xs">
                   <div className="flex items-center mb-2">
-                    <span className="text-green-600 mr-2">
+                    <span className="text-emerald-600 mr-2 text-sm font-bold">
                       ✓
                     </span>
-                    <span className="font-medium text-green-800 text-sm">
+                    <span className="font-extrabold text-emerald-800 text-xs uppercase tracking-wider">
                       Your Answer
                     </span>
                   </div>
-                  <p className="text-gray-700 text-sm sm:text-base">
+                  <p className="text-slate-700 font-semibold text-sm leading-relaxed">
                     {answers[question.key]}
                   </p>
                 </div>
@@ -230,12 +233,14 @@ const ProfileQuestions = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white p-3 sm:p-4 md:p-6 border-t">
+        <div className="sticky bottom-0 bg-white p-4 sm:p-5 md:p-6 border-t border-slate-100">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
             {/* Stats */}
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">Answered:</span>{" "}
-              {Object.values(answers).filter(answer => answer && answer.trim() !== '').length} of {PROFILE_QUESTIONS.length} questions
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Answered:{" "}
+              <span className="text-slate-800 font-black">
+                {Object.values(answers).filter(answer => answer && answer.trim() !== '').length}
+              </span> of {PROFILE_QUESTIONS.length} questions
             </div>
             
             {/* Action Buttons */}
@@ -243,21 +248,21 @@ const ProfileQuestions = ({
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm sm:text-base transition-colors"
+                className="flex-1 sm:flex-none h-10 px-4 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition text-xs sm:text-sm cursor-pointer"
               >
                 Clear All
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm sm:text-base transition-colors"
+                className="flex-1 sm:flex-none h-10 px-4 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition text-xs sm:text-sm cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 text-sm sm:text-base transition-colors"
+                className="flex-1 sm:flex-none h-10 px-6 bg-[#002060] text-white rounded-xl font-bold hover:bg-[#FF2A6D] transition flex items-center justify-center text-xs sm:text-sm cursor-pointer shadow-2xs"
               >
                 Save Answers
               </button>

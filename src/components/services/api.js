@@ -25,6 +25,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
     const originalRequest = error.config;
 
     // Agar 401 error hai aur pehle try nahi kiya

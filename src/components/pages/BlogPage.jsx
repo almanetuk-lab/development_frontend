@@ -1,265 +1,245 @@
+// src/components/pages/BlogPage.jsx (Refined, Premium UI Design with Search, Filters, & Pagination)
 import React, { useEffect, useState } from "react";
-import { getAll, getOne } from "../services/blogAPI";
+import { useNavigate } from "react-router-dom";
+import { getAll } from "../services/blogAPI";
 import { getPlainText } from "../blog/contentUtilis";
+import { FiCalendar, FiClock, FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
+
 const BlogPage = () => {
   const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Search & Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const blogsPerPage = 6;
 
   useEffect(() => {
     fetchBlogs();
   }, []);
 
   const fetchBlogs = async () => {
-    // Fetch blogs from API (placeholder logic)
-    const blogsData = await getAll();
-    console.log("Full API response:", blogsData);
-    console.log("blogsData.data:", blogsData?.data);
-    console.log("blogsData.data.articles:", blogsData?.data?.articles);
-    setBlogs(blogsData.data.articles);
+    try {
+      setLoading(true);
+      const blogsData = await getAll();
+      setBlogs(blogsData.data?.articles || []);
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getBlogById = async (id) => {
-    const blog = await getOne(id);
-    console.log("blog is = ", blog);
+  // Get unique categories dynamically from database articles
+  const categories = ["All", ...new Set(blogs.map(post => post.subtitle).filter(Boolean))];
+
+  // Filter blogs based on Search Query & Selected Category
+  const filteredBlogs = blogs.filter(post => {
+    const plainText = getPlainText(post.content || "").toLowerCase();
+    const matchesSearch = 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      plainText.includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = selectedCategory === "All" || post.subtitle === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Pagination Calculations for filtered list
+  const indexOfLastBlog = currentPage * blogsPerPage;
+  const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;
+  const currentBlogs = filteredBlogs.slice(indexOfFirstBlog, indexOfLastBlog);
+  const totalPages = Math.ceil(filteredBlogs.length / blogsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 350, behavior: 'smooth' });
   };
 
-  // Blog posts data
-  const blogPosts = [
-    {
-      id: 1,
-      title: "Intentional Connect - Finding Your Perfect Match",
-      excerpt:
-        "Discover how Intentional Connect uses advanced algorithms to connect like-minded individuals and create meaningful relationships.",
-      image:
-        "https://images.unsplash.com/photo-1519143226970-1d2d783d1e5c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGRhdGluZ3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      date: "Dec 15, 2024",
-      readTime: "5 min read",
-      category: "Platform Features",
-    },
-    {
-      id: 2,
-      title: "The Science Behind Our Matching Algorithm",
-      excerpt:
-        "Learn about the sophisticated technology that powers Mingle Hub's compatibility matching system.",
-      image:
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGFsZ29yaXRobXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      date: "Dec 10, 2024",
-      readTime: "7 min read",
-      category: "Technology",
-    },
-    {
-      id: 3,
-      title: "Success Stories: Real Connections Made",
-      excerpt:
-        "Heartwarming stories from couples who found their perfect match through Mingle Hub.",
-      image:
-        "https://images.unsplash.com/photo-1511632765486-a01980e01a18?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGNvdXBsZXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      date: "Dec 5, 2024",
-      readTime: "4 min read",
-      category: "Success Stories",
-    },
-    {
-      id: 4,
-      title: "Safety First: Our Commitment to User Security",
-      excerpt:
-        "How Intentional Connect ensures a safe and secure environment for all our users to connect and interact.",
-      image:
-        "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2VjdXJpdHl8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60",
-      date: "Nov 28, 2024",
-      readTime: "6 min read",
-      category: "Safety",
-    },
-    {
-      id: 5,
-      title: "Building Meaningful Connections in Digital Age",
-      excerpt:
-        "Tips and strategies to create authentic connections in today's digital dating landscape.",
-      image:
-        "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y29ubmVjdGlvbnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      date: "Nov 20, 2024",
-      readTime: "8 min read",
-      category: "Relationship Tips",
-    },
-    {
-      id: 6,
-      title: "New Features: Enhanced Chat Experience",
-      excerpt:
-        "Explore the latest updates to our chat system including video calls and advanced messaging.",
-      image:
-        "https://images.unsplash.com/photo-1587560699334-cc4ff634909a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2hhdHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-      date: "Nov 15, 2024",
-      readTime: "5 min read",
-      category: "Updates",
-    },
-  ];
-
-  // About Mingle Hub section
-  const aboutIntentionalConnect = {
-    title: "About Intentional Connect",
-    description:
-      "Intentional Connect is a revolutionary dating and social connection platform designed to help people find meaningful relationships through advanced matching algorithms, secure communication channels, and a user-friendly interface.",
-    features: [
-      "Advanced AI-Powered Matching",
-      "Secure Video & Audio Calls",
-      "Real-time Chat System",
-      "Comprehensive Profile Management",
-      "Advanced Search Filters",
-      "Safety & Privacy First Approach",
-    ],
-    stats: [
-      { number: "50K+", label: "Active Users" },
-      { number: "1K+", label: "Success Stories" },
-      { number: "95%", label: "User Satisfaction" },
-      { number: "24/7", label: "Support" },
-    ],
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    setCurrentPage(1); // Reset page on category change
   };
 
-  console.log("Blogs data:", blogs);
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset page on search change
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Hero Section - Clean Design */}
-      {/* <section className="bg-white text-gray-800 py-16 border-b">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Mingle Hub Blog
+    <div className="min-h-screen bg-slate-50/50">
+      
+      {/* Blog Hero Banner */}
+      <section className="py-12 md:py-16 bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[#FF2A6D] bg-pink-50 px-3.5 py-1.5 rounded-full mb-4 inline-block">
+            Intentional Insights
+          </span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#002060] mb-4 tracking-tight">
+            The Connection Blog
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-gray-600">
-            Insights, Stories & Updates from Your Favorite Dating Platform
+          <p className="text-sm sm:text-base text-slate-500 max-w-2xl mx-auto leading-relaxed mb-8">
+            Guides, stories, and research-backed perspectives on building healthy, mindful, and compatible relationships.
           </p>
-          <div className="max-w-2xl mx-auto">
+
+          {/* Search bar inside Hero */}
+          <div className="max-w-md mx-auto relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+              <FiSearch size={18} />
+            </div>
             <input
               type="text"
-              placeholder="Search blog posts..."
-              className="w-full px-6 py-3 rounded-full text-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              placeholder="Search articles..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm shadow-sm placeholder:text-slate-400"
             />
-          </div>
-        </div>
-      </section> */}
-      {/* About Mingle Hub Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-                {aboutIntentionalConnect.title}
-              </h2>
-              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                {aboutIntentionalConnect.description}
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-              {aboutIntentionalConnect.stats.map((stat, index) => (
-                <div
-                  key={index}
-                  className="text-center p-6 bg-amber-50 rounded-lg border border-amber-100"
-                >
-                  <div className="text-2xl md:text-3xl font-bold text-amber-600 mb-2">
-                    {stat.number}
-                  </div>
-                  <div className="text-gray-600 font-medium">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Features */}
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {aboutMingleHub.features.map((feature, index) => (
-                <div
-                  key={index}
-                  className="flex items-center p-4 bg-white border border-amber-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="w-3 h-3 bg-amber-500 rounded-full mr-4"></div>
-                  <span className="text-gray-700 font-medium">{feature}</span>
-                </div>
-              ))}
-            </div> */}
           </div>
         </div>
       </section>
 
-      {/* Blog Posts Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Latest Blog Posts
-            </h2>
-            <p className="text-lg text-gray-600">
-              Discover insights, updates, and success stories from the Mingle
-              Hub community
-            </p>
-          </div>
+      {/* Category Navigation Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <div className="flex flex-wrap justify-center gap-2 pb-2 border-b border-slate-100">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => handleCategoryChange(category)}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all duration-200 border ${
+                selectedCategory === category
+                  ? "bg-[#FF2A6D] text-white border-transparent shadow-sm"
+                  : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {blogs.length > 0
-              ? blogs.map((post) => (
+      {/* Blog Grid Section */}
+      <section className="py-10 md:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-10 h-10 border-4 border-[#FF2A6D] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm font-semibold text-slate-500">Loading articles...</p>
+            </div>
+          ) : currentBlogs.length > 0 ? (
+            <>
+              {/* Grid Layout */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {currentBlogs.map((post) => (
                   <article
                     key={post.id}
-                    className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border border-gray-200"
+                    className="bg-white rounded-3xl overflow-hidden border border-slate-100 hover:border-pink-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
                   >
-                    {/* Image */}
-                    <div className="h-48 overflow-hidden">
-                      <img
-                        src={post.cover_image}
-                        alt={post.title}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                      />
-                    </div>
+                    {/* Cover Image */}
+                    {post.cover_image && (
+                      <div className="h-48 overflow-hidden relative">
+                        <img
+                          src={post.cover_image}
+                          alt={post.title}
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                        />
+                      </div>
+                    )}
 
-                    {/* Content */}
-                    <div className="p-6">
-                      {/* Category & Meta */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
-                          {post.subtitle}
-                        </span>
-                        <div className="flex items-center text-gray-500 text-sm">
-                          <span>
-                            {new Date(post.created_at).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )}
+                    {/* Card Content */}
+                    <div className="p-6 flex flex-col flex-grow">
+                      {/* Meta Information */}
+                      <div className="flex items-center justify-between mb-3.5">
+                        {post.subtitle && (
+                          <span className="px-3 py-1 bg-pink-50 text-[#FF2A6D] border border-pink-100 rounded-full text-xs font-bold uppercase tracking-wide">
+                            {post.subtitle}
                           </span>
-                          {/* <span className="mx-2">•</span> */}
-                          {/* <span>{post.readTime}</span> */}
+                        )}
+                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                          <FiCalendar />
+                          <span>
+                            {new Date(post.created_at || post.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
                         </div>
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2">
+                      <h3 
+                        className="text-lg font-bold text-slate-800 mb-3 line-clamp-2 hover:text-[#FF2A6D] transition-colors duration-200 cursor-pointer" 
+                        onClick={() => navigate(`/blogs/${post.id}`)}
+                      >
                         {post.title}
                       </h3>
 
-                      {/* Excerpt */}
-                      {/* <p className="text-gray-600 mb-4 line-clamp-3">
-                        {post.content}
-                      </p> */}
-
-                       {/* kashish new code  */}
-                      <div className="text-gray-600 mb-4 line-clamp-3">
+                      {/* Excerpt Description */}
+                      <div className="text-slate-500 text-xs sm:text-sm leading-relaxed mb-6 line-clamp-3 font-normal">
                         {getPlainText(post.content)}
                       </div>
-                           {/* code end */}
 
-                      {/* Read More Button - AMBER COLOR */}
-                      <button
-                        className="w-full py-3 bg-amber-500 text-white rounded-lg font-semibold
-                       hover:bg-amber-600 transition-all duration-300 transform hover:scale-105"
-                        onClick={() => getBlogById(post.id)}
-                      >
-                        Read More
-                      </button>
+                      {/* Action Button - aligned to bottom */}
+                      <div className="mt-auto pt-2">
+                        <button
+                          className="w-full py-3 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 text-sm"
+                          onClick={() => navigate(`/blogs/${post.id}`)}
+                        >
+                          Read Article
+                        </button>
+                      </div>
                     </div>
                   </article>
-                ))
-              : null}
-          </div>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-12">
+                  <button
+                    onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2.5 border border-slate-200 text-slate-600 bg-white rounded-xl hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                    aria-label="Previous Page"
+                  >
+                    <FiChevronLeft size={18} />
+                  </button>
+
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handlePageChange(i + 1)}
+                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all duration-200 ${
+                        currentPage === i + 1
+                          ? "bg-[#FF2A6D] text-white shadow-md shadow-pink-100"
+                          : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-2.5 border border-slate-200 text-slate-600 bg-white rounded-xl hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                    aria-label="Next Page"
+                  >
+                    <FiChevronRight size={18} />
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-20 bg-white border border-slate-100 rounded-3xl shadow-sm max-w-md mx-auto">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">No Articles Found</h3>
+              <p className="text-sm text-slate-500">Try modifying your search query or selecting a different category.</p>
+            </div>
+          )}
         </div>
       </section>
     </div>
