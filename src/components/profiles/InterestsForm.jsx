@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { theme } from "../comman/theme";
+
+const inputClass = `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 shadow-2xs outline-none transition duration-200 hover:border-slate-300 ${theme.tailwind.focusPink}`;
 
 const INTERESTS_CONFIG = {
   creative_cultural: {
@@ -237,22 +240,22 @@ export default function InterestsForm({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-3 md:p-4">
-      <div className="bg-white rounded-lg sm:rounded-xl shadow-2xl w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl lg:max-w-5xl h-[95vh] sm:h-[90vh] flex flex-col mx-auto">
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl lg:max-w-5xl h-[95vh] sm:h-[90vh] flex flex-col mx-auto modal-form-custom">
         
         {/* Header */}
-        <div className="sticky top-0 bg-white p-4 sm:p-5 md:p-6 border-b">
+        <div className="sticky top-0 bg-white p-4 sm:p-5 md:p-6 border-b border-slate-100">
           <div className="flex justify-between items-start gap-3">
             <div className="flex-1">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
                 Interests & Passions
               </h2>
-              <p className="text-gray-600 text-sm sm:text-base mt-1">
+              <p className="text-slate-500 text-xs font-semibold mt-1">
                 Select multiple interests from each category
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-2xl text-gray-500 hover:text-gray-700 -mt-1"
+              className="text-2xl text-slate-400 hover:text-slate-600 -mt-1 cursor-pointer"
             >
               ×
             </button>
@@ -260,22 +263,22 @@ export default function InterestsForm({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-6">
           {Object.keys(INTERESTS_CONFIG).map(category => (
             <div 
               key={category} 
-              className="mb-4 sm:mb-6 p-3 sm:p-4 border border-gray-200 rounded-lg bg-white"
+              className="p-5 border border-slate-100 rounded-3xl bg-slate-50/45 shadow-2xs"
             >
               
               {/* Category Header */}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 sm:mb-4">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+                <h3 className="text-base sm:text-lg font-black text-slate-800 tracking-tight">
                   {INTERESTS_CONFIG[category].label}
                 </h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm text-gray-600">
+                  <span className="text-xs font-bold text-slate-500">
                     Selected:{" "}
-                    <span className="font-bold text-blue-600">
+                    <span className="font-extrabold text-[#002060]">
                       {formData[category].length}
                     </span>
                   </span>
@@ -283,25 +286,25 @@ export default function InterestsForm({
               </div>
 
               {/* Search Bar */}
-              <div className="mb-3">
+              <div className="mb-4">
                 <input
                   type="text"
                   placeholder={`Search ${INTERESTS_CONFIG[category].label.toLowerCase()}...`}
                   value={searchTerms[category]}
                   onChange={(e) => handleSearchChange(category, e.target.value)}
-                  className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={inputClass}
                 />
               </div>
 
               {/* Options Grid */}
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 mb-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {getFilteredOptions(category).map(([key, description]) => (
                   <div
                     key={key}
-                    className={`p-2 sm:p-3 border rounded-lg cursor-pointer transition-all text-sm sm:text-base ${
+                    className={`p-3 border rounded-2xl cursor-pointer transition-all text-sm ${
                       formData[category].includes(key)
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:bg-gray-50"
+                        ? "border-[#002060] bg-[#002060]/5 text-[#002060]"
+                        : "border-slate-150 bg-white hover:bg-slate-50 text-slate-700"
                     }`}
                     onClick={() => handleCheckboxChange(category, key)}
                   >
@@ -310,13 +313,13 @@ export default function InterestsForm({
                         type="checkbox"
                         checked={formData[category].includes(key)}
                         onChange={() => handleCheckboxChange(category, key)}
-                        className="mt-0.5 mr-2 sm:mr-3 h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                        className="mt-1 mr-3 h-4 w-4 rounded text-[#002060] focus:ring-[#002060] border-slate-300"
                       />
                       <div>
-                        <div className="font-medium text-gray-800">
+                        <div className="font-bold text-slate-800 text-sm">
                           {key}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                        <div className="text-[11px] text-slate-400 font-medium mt-0.5 leading-relaxed line-clamp-2">
                           {description}
                         </div>
                       </div>
@@ -330,14 +333,14 @@ export default function InterestsForm({
                 <button
                   type="button"
                   onClick={() => handleSelectAll(category)}
-                  className="px-3 py-1.5 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                  className="h-8 px-3.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition text-xs cursor-pointer"
                 >
                   Select All
                 </button>
                 <button
                   type="button"
                   onClick={() => handleClearAll(category)}
-                  className="px-3 py-1.5 text-xs sm:text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                  className="h-8 px-3.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 transition text-xs cursor-pointer"
                 >
                   Clear All
                 </button>
@@ -345,12 +348,12 @@ export default function InterestsForm({
 
               {/* Selected Preview */}
               {formData[category].length > 0 && (
-                <div className="mt-3 p-2 sm:p-3 bg-green-50 border border-green-100 rounded-md">
-                  <div className="flex items-center mb-2">
-                    <span className="text-green-600 mr-2 text-sm">
+                <div className="mt-4 p-4 bg-emerald-50/40 border border-emerald-100/50 rounded-2xl">
+                  <div className="flex items-center mb-3">
+                    <span className="text-emerald-600 mr-2 text-sm font-bold">
                       ✓
                     </span>
-                    <span className="font-medium text-green-800 text-sm">
+                    <span className="font-extrabold text-emerald-800 text-xs uppercase tracking-wider">
                       Selected ({formData[category].length})
                     </span>
                   </div>
@@ -358,7 +361,7 @@ export default function InterestsForm({
                     {formData[category].map(item => (
                       <span
                         key={item}
-                        className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                        className="px-2.5 py-1 bg-white border border-emerald-100 text-emerald-800 text-xs font-bold rounded-full shadow-2xs"
                       >
                         {item}
                       </span>
@@ -371,25 +374,25 @@ export default function InterestsForm({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white p-3 sm:p-4 md:p-6 border-t">
+        <div className="sticky bottom-0 bg-white p-4 sm:p-5 md:p-6 border-t border-slate-100">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">Total Selected:</span>{" "}
-              {Object.values(formData).flat().length} interests
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Total Selected:{" "}
+              <span className="text-slate-800 font-black">{Object.values(formData).flat().length}</span> interests
             </div>
             
             <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm sm:text-base transition-colors"
+                className="flex-1 sm:flex-none h-10 px-5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition text-xs sm:text-sm cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 text-sm sm:text-base transition-colors"
+                className="flex-1 sm:flex-none h-10 px-6 bg-[#002060] text-white rounded-xl font-bold hover:bg-[#FF2A6D] transition flex items-center justify-center text-xs sm:text-sm cursor-pointer shadow-2xs"
               >
                 Save & Close
               </button>

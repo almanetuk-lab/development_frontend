@@ -20,7 +20,7 @@ const SidebarItem = ({
           onClick={onToggle}
           className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl transition-all duration-200 ${
             active
-              ? "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border-r-2 border-indigo-600 shadow-sm"
+              ? "bg-[#002060]/5 text-[#002060] border-r-2 border-[#002060] shadow-sm"
               : "text-gray-700 hover:bg-gray-50 hover:translate-x-1"
           }`}
         >
@@ -52,7 +52,7 @@ const SidebarItem = ({
       onClick={onClick}
       className={`flex items-center w-full px-4 py-3 text-left rounded-xl transition-all duration-200 ${
         active
-          ? "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 border-r-2 border-indigo-600 shadow-sm"
+          ? "bg-[#002060]/5 text-[#002060] border-r-2 border-[#002060] shadow-sm"
           : "text-gray-700 hover:bg-gray-50 hover:translate-x-1"
       }`}
     >
@@ -91,7 +91,7 @@ export default function Sidebar({
 
       {/* Sidebar Header - Fixed Height */}
       <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <h2 className="text-xl sm:text-2xl font-black text-[#002060]">
           MingleHub
         </h2>
         <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -202,17 +202,17 @@ export default function Sidebar({
       {/* User Profile Section - Fixed Height */}
       <div className="flex-shrink-0 p-3 sm:p-4 border-t border-gray-200 bg-white">
         <div className="flex items-center gap-3 mb-3 p-2 sm:p-3 bg-gray-50 rounded-xl">
-          {profile?.profile_picture_url || profile?.profilePhoto ? (
-            <img
-              src={profile.profile_picture_url || profile.profilePhoto}
-              alt="Profile"
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-indigo-500"
-            />
-          ) : (
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm sm:text-base">
-              {profile?.full_name?.charAt(0) || "U"}
-            </div>
-          )}
+            {profile?.image_url || profile?.profile_picture_url || profile?.profilePhoto || profile?.profile_image ? (
+              <img
+                src={profile.image_url || profile.profile_picture_url || profile.profilePhoto || profile.profile_image}
+                alt="Profile"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-[#FF2A6D]"
+              />
+            ) : (
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#002060] flex items-center justify-center text-white font-bold text-sm sm:text-base">
+                {profile?.first_name?.charAt(0) || profile?.name?.charAt(0) || profile?.full_name?.charAt(0) || "U"}
+              </div>
+            )}
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-medium text-gray-800 truncate">
               {profile?.full_name?.split(" ")[0] || "User"}

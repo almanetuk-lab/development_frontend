@@ -6,6 +6,11 @@ import LifeRhythmsForm from "./LifeRhythmsForm";
 import axios from "axios";
 import InterestsForm from "./InterestsForm";
 import ProfileQuestions from "./ProfileQuestions";
+import { theme } from "../comman/theme";
+
+const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2";
+const inputClass = `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 shadow-2xs outline-none transition duration-200 hover:border-slate-300 ${theme.tailwind.focusPink}`;
+const sectionHeadingClass = `text-lg font-black text-[#002060] mb-4`;
 
 // ================== ENUM HELPERS ==================
 
@@ -534,47 +539,47 @@ export default function EditProfilePage() {
   const handleQuestionsSave = (questionsData) => {
     console.log("💾 Updating local formData with questions:", questionsData);
 
-    setFormData((prev) => ({
-      ...prev,
-      prompts: questionsData,
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        prompts: questionsData,
+      };
+      // Trigger background auto-save immediately with updated prompts
+      setTimeout(() => {
+        saveProfileData(true);
+      }, 50);
+      return updated;
+    });
 
     setIsQuestionsModalOpen(false);
-    // updateProfile wala part yahan se hata diya hai taaki useEffect trigger na ho
   };
 
-  // const handleQuestionsSave = (questionsData) => {
-  //   console.log("💾 Questions saved in EditProfile:", questionsData);
-
-  //   //  SIMPLE FIX: Direct set karo
-  //   setFormData(prev => ({
-  //     ...prev,
-  //     prompts: questionsData  // Direct assignment
-  //   }));
-
-  //   //  Context ko bhi update karo immediately
-  //   updateProfile({
-  //     ...profile,
-  //     prompts: questionsData
-  //   });
-
-  //   setIsQuestionsModalOpen(false);
-
-  //   console.log(" Prompts updated in form and context");
-  // };
-
   const handleLifeRhythmsSave = (data) => {
-    setFormData((prev) => ({
-      ...prev,
-      life_rhythms: data,
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        life_rhythms: data,
+      };
+      // Trigger background auto-save immediately
+      setTimeout(() => {
+        saveProfileData(true);
+      }, 50);
+      return updated;
+    });
   };
 
   const handleInterestsSave = (data) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests_categories: data, // UI ke liye same
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        interests_categories: data,
+      };
+      // Trigger background auto-save immediately
+      setTimeout(() => {
+        saveProfileData(true);
+      }, 50);
+      return updated;
+    });
   };
 
   // ================== LOAD PROFILE DATA ==================
@@ -874,56 +879,13 @@ export default function EditProfilePage() {
     }
   }, [profile?.user_id, profile?.latitude, profile?.longitude]);
 
-  // ================== PROGRESS & STEP HANDLING ==================
-  const progressPercentage = (currentStep / totalSteps) * 100;
-
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const goToStep = (step) => {
-    if (step >= 1 && step <= totalSteps) {
-      setCurrentStep(step);
-    }
-  };
-
-  const skipStep = () => {
-    nextStep();
-  };
-
-  // ================== CHANGE HANDLER ==================
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // ================== SUBMIT HANDLER ==================
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // ================== Reusable Save Logic ==================
+  const saveProfileData = async (silently = true) => {
     if (!formData.email || !formData.first_name || !formData.last_name) {
-      alert("Email, First name and Last name are required");
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.dob) {
-      alert("Please select Date of Birth");
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.age) {
-      alert("Please enter your age");
-      setLoading(false);
-      return;
+      if (!silently) {
+        alert("Email, First name and Last name are required");
+      }
+      return false;
     }
 
     try {
@@ -951,11 +913,8 @@ export default function EditProfilePage() {
       }
 
       const simpleInterests = handleArrayField(formData.interests);
-      //  CORRECT: Prompts format backend ke hisaab se
 
       const payload = {
-        // profile_image: finalProfileImage || profile.profile_image,
-        //  profile_image: finalProfileImage || profile?.image_url,
         profile_image:
           finalProfileImage === null
             ? ""
@@ -1008,9 +967,7 @@ export default function EditProfilePage() {
           "health_activity_level",
           formData.health_activity_level,
         ),
-
-        prompts: formData.prompts, // final q
-
+        prompts: formData.prompts,
         smoking: mapToDBEnum("smoking", formData.smoking),
         drinking: mapToDBEnum("drinking", formData.drinking),
         pets_preference: mapToDBEnum(
@@ -1068,21 +1025,10 @@ export default function EditProfilePage() {
           "preference_of_closeness",
           formData.preference_of_closeness,
         ),
-
-        // love_language_affection: mapToDBEnum(
-        //   "love_language_affection",
-        //   handleArrayField(formData.love_language_affection)
-        // ),
-
-        // love_language_affection:(
-        //   "love_language_affection",
-        //   formData.love_language_affection
-        // ),
         love_language_affection: formData.love_language_affection,
       };
 
-      console.log(" FINAL PAYLOAD:", payload);
-
+      console.log("💾 Auto-saving profile payload:", payload);
       await updateUserProfile(payload);
 
       updateProfile({
@@ -1091,13 +1037,80 @@ export default function EditProfilePage() {
         prompts: formData.prompts,
         profile_image: payload.profile_image,
       });
-      alert("Profile updated successfully ✅");
-      navigate("/dashboard");
+
+      if (!silently) {
+        alert("Profile updated successfully ✅");
+      }
+      return true;
     } catch (err) {
-      console.error("Update Profile Error:", err);
-      alert(err?.response?.data?.error || "Update failed");
-    } finally {
+      console.error("❌ Auto-save profile error:", err);
+      if (!silently) {
+        alert(err?.response?.data?.error || "Save failed");
+      }
+      return false;
+    }
+  };
+
+  // ================== PROGRESS & STEP HANDLING ==================
+  const progressPercentage = (currentStep / totalSteps) * 100;
+
+  const nextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+      saveProfileData(true);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      saveProfileData(true);
+    }
+  };
+
+  const goToStep = (step) => {
+    if (step >= 1 && step <= totalSteps) {
+      setCurrentStep(step);
+      saveProfileData(true);
+    }
+  };
+
+  const skipStep = () => {
+    nextStep();
+  };
+
+  // ================== CHANGE HANDLER ==================
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // ================== SUBMIT HANDLER ==================
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (!formData.email || !formData.first_name || !formData.last_name) {
+      alert("Email, First name and Last name are required");
       setLoading(false);
+      return;
+    }
+
+    if (!formData.dob) {
+      alert("Please select Date of Birth");
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.age) {
+      alert("Please enter your age");
+      setLoading(false);
+      return;
+    }
+
+    const success = await saveProfileData(false);
+    setLoading(false);
+    if (success) {
+      navigate("/dashboard");
     }
   };
 
@@ -1356,116 +1369,109 @@ export default function EditProfilePage() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-4 md:p-6">
-        {/* HEADER WITH PROGRESS BAR */}
+    <div className="min-h-screen bg-slate-50/60 py-6 px-3 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-100 shadow-xs p-6 sm:p-8 relative overflow-hidden">
+        {/* HEADER WITH MODERN SEGMENTED PROGRESS SLIDER */}
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Edit Profile</h1>
-              <p className="text-gray-600 text-sm mt-1">
-                Step {currentStep} of {totalSteps}
+              <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Edit Profile</h1>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mt-1.5">
+                Step {currentStep} of {totalSteps} — {
+                  currentStep === 1 ? "Profile Picture" :
+                  currentStep === 2 ? "Personal Info" :
+                  currentStep === 3 ? "Professional Details" :
+                  currentStep === 4 ? "About & Lifestyle" :
+                  "Relationship Preferences"
+                }
               </p>
             </div>
             <button
+              type="button"
               onClick={() => navigate("/dashboard/profile")}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm"
+              className="h-9 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition flex items-center justify-center gap-1.5 text-xs cursor-pointer"
             >
               Cancel
             </button>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-            <div
-              className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300"
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-
-          <div className="flex justify-between mt-4">
-            {[1, 2, 3, 4, 5].map((step) => (
-              <button
-                key={step}
-                onClick={() => goToStep(step)}
-                className={`flex flex-col items-center ${step <= currentStep ? "text-indigo-600" : "text-gray-400"
-                  }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === currentStep
-                    ? "bg-indigo-600 text-white"
-                    : step < currentStep
-                      ? "bg-indigo-100 text-indigo-600"
-                      : "bg-gray-200 text-gray-400"
-                    }`}
+          {/* Premium segmented progress slider */}
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-3 mb-6">
+            {[1, 2, 3, 4, 5].map((step) => {
+              const isActive = step === currentStep;
+              const isCompleted = step < currentStep;
+              return (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={() => goToStep(step)}
+                  className="group flex flex-col items-stretch text-left cursor-pointer focus:outline-hidden p-1.5 rounded-xl hover:bg-slate-50 transition-all duration-300 hover:-translate-y-0.5 active:scale-95 transform"
                 >
-                  {step}
-                </div>
-                <span className="text-xs font-medium">
-                  {step === 1
-                    ? "Photo"
-                    : step === 2
-                      ? "Personal"
-                      : step === 3
-                        ? "Professional"
-                        : step === 4
-                          ? "About"
-                          : "Relationships"}
-                </span>
-              </button>
-            ))}
+                  {/* Segment bar */}
+                  <div className="relative h-2 rounded-full overflow-hidden bg-slate-100 mb-2 shadow-inner transition-all duration-300 group-hover:scale-y-110">
+                    <div
+                      className={`absolute inset-0 transition-all duration-500 ease-out rounded-full ${
+                        isActive
+                          ? "bg-[#FF2A6D] w-full"
+                          : isCompleted
+                            ? "bg-[#002060] w-full"
+                            : "w-0"
+                      }`}
+                    />
+                  </div>
+                  {/* Label */}
+                  <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider transition-colors duration-200 ${
+                    isActive ? "text-[#002060]" : isCompleted ? "text-[#002060]/75" : "text-slate-400"
+                  }`}>
+                    0{step}
+                  </span>
+                  <span className={`text-xs font-bold hidden sm:inline transition-colors duration-200 ${
+                    isActive ? "text-slate-800 font-extrabold" : isCompleted ? "text-slate-500" : "text-slate-400"
+                  }`}>
+                    {step === 1
+                      ? "Photo"
+                      : step === 2
+                        ? "Personal"
+                        : step === 3
+                          ? "Professional"
+                          : step === 4
+                            ? "About"
+                            : "Preferences"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* STEP 1: PROFILE PICTURE */}
+        <form onSubmit={handleSubmit} className="space-y-8 edit-profile-form">
+          {/* STEP 1: PROFILE PICTURE - REFINED */}
 
           {currentStep === 1 && (
             <div className="animate-fadeIn">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-6 shadow-2xs">
+                <h3 className={sectionHeadingClass}>
                   Profile Picture
                 </h3>
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="relative">
-                    {/* <div className="w-32 h-32 rounded-full border-4 border-gray-300 overflow-hidden bg-gray-200 flex items-center justify-center">
-            {imagePreview || profile?.image_url ? (
-              <img
-                src={imagePreview || profile?.image_url}
-                alt="Profile preview"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-gray-500 text-sm text-center">
-                No Image
-              </span>
-            )}
-          </div>
-          
-          {/*  REMOVE BUTTON - Sirf jab image ho /}
-          {(imagePreview || profile?.image_url) && (
-            <button
-              type="button"
-              onClick={handleRemoveProfilePic}
-              className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
-              title="Remove photo"
-            >
-              ✕
-            </button> */}
-
-                    <div className="w-32 h-32 rounded-full border-4 border-gray-300 overflow-hidden bg-gray-200 flex items-center justify-center">
-                      {/*  Bas yeh condition: */}
-                      {imagePreview ||
-                        (profile?.image_url && finalProfileImage !== null) ? (
-                        <img
-                          src={imagePreview || profile?.image_url}
-                          alt="Profile preview"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-gray-500 text-sm text-center">
-                          No Image
-                        </span>
-                      )}
+                
+                <div className="flex flex-col items-center text-center space-y-5 py-4">
+                  {/* Premium Frame for Profile Pic */}
+                  <div className="relative group">
+                    <div className="w-36 h-36 rounded-full p-1 bg-white border-2 border-slate-200/80 shadow-md flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:border-[#002060]/30">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
+                        {imagePreview ||
+                          (profile?.image_url && finalProfileImage !== null) ? (
+                          <img
+                            src={imagePreview || profile?.image_url}
+                            alt="Profile preview"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        )}
+                      </div>
                     </div>
 
                     {/* Remove button */}
@@ -1474,17 +1480,29 @@ export default function EditProfilePage() {
                         <button
                           type="button"
                           onClick={handleRemoveProfilePic}
-                          className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg"
+                          className="absolute -top-1 -right-1 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition shadow-md hover:shadow-lg cursor-pointer"
                           title="Remove photo"
                         >
-                          ✕
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
                         </button>
                       )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <label className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition cursor-pointer text-center relative">
-                      Upload Photo
+                  <div className="max-w-xs">
+                    <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+                      We recommend a clear, front-facing portrait photo. Maximum file size is 5MB.
+                    </p>
+                  </div>
+
+                  {/* Refined Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm justify-center">
+                    <label className="flex-1 h-10 px-5 bg-[#002060] hover:bg-[#FF2A6D] text-white rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer text-sm shadow-2xs relative overflow-hidden">
+                      <svg className="w-4 h-4 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span>Upload Photo</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -1493,7 +1511,7 @@ export default function EditProfilePage() {
                         disabled={imageLoading}
                       />
                       {imageLoading && (
-                        <div className="absolute inset-0 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <div className="absolute inset-0 bg-[#002060] rounded-xl flex items-center justify-center">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         </div>
                       )}
@@ -1502,17 +1520,22 @@ export default function EditProfilePage() {
                     <button
                       type="button"
                       onClick={() => setShowCamera(true)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
+                      className="flex-1 h-10 px-5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer text-sm shadow-3xs"
                     >
-                      📸 Take Photo
+                      <svg className="w-4 h-4 mr-1 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>Take Photo</span>
                     </button>
                   </div>
 
                   {/* Status message */}
                   {imagePreview && (
-                    <p className="text-sm text-green-600 text-center">
-                      ✓ New photo selected
-                    </p>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-100/50">
+                      <span>✓</span>
+                      <span>New photo selected</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1522,13 +1545,13 @@ export default function EditProfilePage() {
           {/* STEP 2: PERSONAL INFORMATION */}
           {currentStep === 2 && (
             <div className="animate-fadeIn">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-6 shadow-2xs">
+                <h3 className={sectionHeadingClass}>
                   Personal Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       First Name <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
@@ -1536,13 +1559,13 @@ export default function EditProfilePage() {
                       name="first_name"
                       value={formData.first_name}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Last Name <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
@@ -1550,13 +1573,13 @@ export default function EditProfilePage() {
                       name="last_name"
                       value={formData.last_name}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       User Name <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
@@ -1564,13 +1587,13 @@ export default function EditProfilePage() {
                       name="username"
                       value={formData.username}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Email <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
@@ -1578,13 +1601,13 @@ export default function EditProfilePage() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Phone
                     </label>
                     <input
@@ -1593,12 +1616,12 @@ export default function EditProfilePage() {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="+91 1234567890"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Date of Birth
                     </label>
                     <input
@@ -1606,30 +1629,12 @@ export default function EditProfilePage() {
                       name="dob"
                       value={formData.dob}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
-                  {/* 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Age
-                    </label>
-                    <input
-                      type="number"
-                      name="age"
-                      value={formData.age}
-                      onChange={handleChange}
-                      placeholder="25"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Age & gender are AI-estimated (±10% tolerance). You can
-                      edit them.
-                    </p>
-                  </div> */}
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Age
                     </label>
                     <input
@@ -1638,7 +1643,7 @@ export default function EditProfilePage() {
                       value={formData.age}
                       onChange={handleChange}
                       placeholder="25"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Age & gender are AI-estimated (±10% tolerance). You can
@@ -1653,7 +1658,7 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Height (feet.inches)
                     </label>
                     <input
@@ -1665,7 +1670,7 @@ export default function EditProfilePage() {
                         setFormData({ ...formData, height: value });
                       }}
                       placeholder="5.6"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Example: 5.6 means 5 feet 6 inches
@@ -1673,14 +1678,14 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Gender
                     </label>
                     <select
                       name="gender"
                       value={formData.gender}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     >
                       <option value="">Select Gender</option>
                       <option value="Male">Male</option>
@@ -1691,14 +1696,14 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Marital Status
                     </label>
                     <select
                       name="marital_status"
                       value={formData.marital_status}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     >
                       <option value="">Select Marital Status</option>
                       <option value="Single">Single</option>
@@ -1709,7 +1714,7 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       City
                     </label>
                     <input
@@ -1718,12 +1723,12 @@ export default function EditProfilePage() {
                       value={formData.city}
                       onChange={handleChange}
                       placeholder="New Delhi"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Country
                     </label>
                     <input
@@ -1732,12 +1737,12 @@ export default function EditProfilePage() {
                       value={formData.country}
                       onChange={handleChange}
                       placeholder="Enter your country"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       State
                     </label>
                     <input
@@ -1746,12 +1751,12 @@ export default function EditProfilePage() {
                       value={formData.state}
                       onChange={handleChange}
                       placeholder="Enter your state"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Pincode
                     </label>
                     <input
@@ -1760,13 +1765,13 @@ export default function EditProfilePage() {
                       value={formData.pincode}
                       onChange={handleChange}
                       placeholder="Enter pincode"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
                 </div>
 
                 <div className="mt-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className={labelClass}>
                     Address
                   </label>
                   <textarea
@@ -1775,11 +1780,9 @@ export default function EditProfilePage() {
                     onChange={handleChange}
                     rows={3}
                     placeholder="Enter your complete address"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className={inputClass}
                   />
                 </div>
-
-
               </div>
             </div>
           )}
@@ -1787,7 +1790,7 @@ export default function EditProfilePage() {
           {/* STEP 3: PROFESSIONAL INFORMATION */}
           {currentStep === 3 && (
             <div className="animate-fadeIn">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+              <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-6 shadow-2xs">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Professional Information
                 </h3>
@@ -1807,7 +1810,7 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Profession
                     </label>
                     <input
@@ -1816,19 +1819,19 @@ export default function EditProfilePage() {
                       value={formData.profession}
                       onChange={handleChange}
                       placeholder="Software Engineer"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Professional Identity
                     </label>
                     <select
                       name="professional_identity"
                       value={formData.professional_identity}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     >
                       <option value="">Select Professional Identity</option>
                       <option value="STUDENT">Student</option>
@@ -1840,7 +1843,7 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Company
                     </label>
                     <input
@@ -1849,12 +1852,12 @@ export default function EditProfilePage() {
                       value={formData.company}
                       onChange={handleChange}
                       placeholder="Google Inc."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Position
                     </label>
                     <input
@@ -1863,19 +1866,19 @@ export default function EditProfilePage() {
                       value={formData.position}
                       onChange={handleChange}
                       placeholder="Software Engineer"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Company Type
                     </label>
                     <select
                       name="company_type"
                       value={formData.company_type}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className={inputClass}
                     >
                       <option value="">Select Type</option>
                       <option value="MNC">MNC</option>
@@ -1888,7 +1891,7 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Experience (years)
                     </label>
                     <input
@@ -1897,19 +1900,19 @@ export default function EditProfilePage() {
                       value={formData.experience}
                       onChange={handleChange}
                       placeholder="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Education
                     </label>
                     <select
                       name="education"
                       value={formData.education}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     >
                       <option value="">Select Education</option>
                       <option value="No Formal Education">
@@ -1935,7 +1938,7 @@ export default function EditProfilePage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Education Institution
                     </label>
                     <input
@@ -1944,12 +1947,12 @@ export default function EditProfilePage() {
                       value={formData.education_institution_name}
                       onChange={handleChange}
                       placeholder="University of Delhi"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className={labelClass}>
                       Languages Spoken
                     </label>
                     <input
@@ -1957,8 +1960,7 @@ export default function EditProfilePage() {
                       name="languages_spoken"
                       value={formData.languages_spoken}
                       onChange={handleChange}
-                      placeholder="Hindi, English, Spanish"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className={inputClass}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       Separate languages with commas
@@ -1972,14 +1974,14 @@ export default function EditProfilePage() {
           {/* STEP 4: ABOUT & LIFESTYLE */}
           {currentStep === 4 && (
             <div className="animate-fadeIn">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-6 shadow-2xs">
+                <h3 className={sectionHeadingClass}>
                   About & Lifestyle
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         About Me
                       </label>
                       <textarea
@@ -1988,30 +1990,30 @@ export default function EditProfilePage() {
                         onChange={handleChange}
                         rows={4}
                         placeholder="Tell us about yourself..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       />
 
                       {profile?.intent_tags && (
-                        <div className="mt-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl shadow-sm animate-fadeIn">
+                        <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-xl shadow-2xs animate-fadeIn">
                           <div className="flex items-center gap-2 mb-3">
                             <span className="text-lg">🤖</span>
-                            <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider">AI Intent Interpretation</h4>
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">AI Intent Interpretation</h4>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             {Object.entries(typeof profile.intent_tags === 'string' ? JSON.parse(profile.intent_tags) : profile.intent_tags).map(([key, value]) => (
-                              <div key={key} className="bg-white/80 p-2 rounded-lg border border-white shadow-sm">
-                                <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-tight">{key.replace(/_/g, ' ')}</p>
-                                <p className="text-sm text-indigo-900 font-semibold">{value}</p>
+                              <div key={key} className="bg-white p-2 rounded-lg border border-slate-100 shadow-2xs">
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">{key.replace(/_/g, ' ')}</p>
+                                <p className="text-sm text-slate-800 font-semibold">{value}</p>
                               </div>
                             ))}
                           </div>
-                          <p className="text-[10px] text-indigo-400 mt-3 italic text-center">Metadata generated by Gemini AI 2.0</p>
+                          <p className="text-[10px] text-slate-400 mt-3 italic text-center">Metadata generated by Gemini AI 2.0</p>
                         </div>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Hobbies (comma separated)
                       </label>
                       <input
@@ -2020,7 +2022,7 @@ export default function EditProfilePage() {
                         value={formData.hobbies}
                         onChange={handleChange}
                         placeholder="Reading, Traveling, Sports"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         Separate with commas
@@ -2028,7 +2030,7 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Skills
                       </label>
                       <textarea
@@ -2037,12 +2039,12 @@ export default function EditProfilePage() {
                         onChange={handleChange}
                         rows={3}
                         placeholder="JavaScript, React, Node.js, Python"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Interests
                       </label>
                       <textarea
@@ -2051,21 +2053,21 @@ export default function EditProfilePage() {
                         onChange={handleChange}
                         rows={3}
                         placeholder="Coding, Reading, Travel, Photography"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Free Time Style
                       </label>
                       <select
                         name="freetime_style"
                         value={formData.freetime_style}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Free Time Style</option>
                         <option value="Mostly social">Mostly social</option>
@@ -2078,14 +2080,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Health Activity Level
                       </label>
                       <select
                         name="health_activity_level"
                         value={formData.health_activity_level}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Activity Level</option>
                         <option value="Active">Active</option>
@@ -2096,14 +2098,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Smoking
                       </label>
                       <select
                         name="smoking"
                         value={formData.smoking}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Smoking Preference</option>
                         <option value="NO">No</option>
@@ -2113,14 +2115,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Drinking
                       </label>
                       <select
                         name="drinking"
                         value={formData.drinking}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Drinking Preference</option>
                         <option value="NO">No</option>
@@ -2130,14 +2132,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Pets Preference
                       </label>
                       <select
                         name="pets_preference"
                         value={formData.pets_preference}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Pets Preference</option>
                         <option value="Want">Want</option>
@@ -2151,23 +2153,18 @@ export default function EditProfilePage() {
                         <option value="OPEN_OR_NOT_SURE_YET">
                           Open / Not sure yet
                         </option>
-                        {/* <option value="Open or not sure yet">
-                          Open / Not Sure yet
-                        </option> */}
-                        {/* <option value="Open">Open</option>OPEN_OR_NOT_SURE_YET */}
-                        {/* <option value="Not Sure yet">Not Sure yet</option> */}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Religious Belief
                       </label>
                       <select
                         name="religious_belief"
                         value={formData.religious_belief}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Religious Belief</option>
                         <option value="Hindu">Hindu</option>
@@ -2188,7 +2185,7 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Zodiac Sign
                       </label>
                       <input
@@ -2197,7 +2194,7 @@ export default function EditProfilePage() {
                         value={formData.zodiac_sign}
                         onChange={handleChange}
                         placeholder="Aries, Taurus, Gemini..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       />
                     </div>
                   </div>
@@ -2209,17 +2206,17 @@ export default function EditProfilePage() {
           {/* STEP 5: RELATIONSHIP PREFERENCES */}
           {currentStep === 5 && (
             <div className="animate-fadeIn">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-slate-50/50 border border-slate-100/80 rounded-3xl p-6 shadow-2xs">
+                <h3 className={sectionHeadingClass}>
                   Relationship Preferences
                 </h3>
 
                 {/* Life Rhythms Section */}
-                <div className="mb-6 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                <div className="mb-6 p-5 border border-slate-100 rounded-3xl bg-slate-50/50 shadow-2xs">
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-1">
                     Life Rhythms
                   </h4>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-4">
                     Describe your work rhythm, social energy, life pace, and
                     emotional style
                   </p>
@@ -2227,15 +2224,15 @@ export default function EditProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowLifeRhythms(true)}
-                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                    className="inline-flex items-center h-10 px-5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition cursor-pointer text-xs sm:text-sm shadow-3xs"
                   >
                     🎵 Edit Life Rhythms
                   </button>
 
                   {formData.life_rhythms &&
                     Object.keys(formData.life_rhythms).length > 0 && (
-                      <div className="mt-4 p-3 bg-white border rounded-md">
-                        <p className="font-medium text-gray-700 mb-2">
+                      <div className="mt-4 p-4 bg-white border border-slate-100 rounded-2xl shadow-3xs">
+                        <p className="text-xs font-bold text-[#002060] uppercase tracking-wider mb-3">
                           Current Selections:
                         </p>
                         <div className="text-sm space-y-2">
@@ -2246,12 +2243,12 @@ export default function EditProfilePage() {
                                   key={category}
                                   className="flex items-start"
                                 >
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-2"></div>
+                                  <div className="w-1.5 h-1.5 bg-[#002060] rounded-full mt-2 mr-2"></div>
                                   <div>
-                                    <span className="font-medium capitalize">
+                                    <span className="font-bold text-slate-700 capitalize text-xs">
                                       {category.replace("_", " ")}:
                                     </span>
-                                    <span className="ml-2 text-gray-600">
+                                    <span className="ml-2 text-slate-500 font-semibold text-xs leading-relaxed">
                                       {data.statement}
                                     </span>
                                   </div>
@@ -2264,18 +2261,18 @@ export default function EditProfilePage() {
                 </div>
 
                 {/*  FIXED: Interests Categories Section */}
-                <div className="mb-6 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                <div className="mb-6 p-5 border border-slate-100 rounded-3xl bg-slate-50/50 shadow-2xs">
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-1">
                     Interests & Passions (Categories)
                   </h4>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-[11px] font-semibold text-slate-400 mb-4">
                     Select interests from different categories
                   </p>
 
                   <button
                     type="button"
                     onClick={() => setIsInterestsModalOpen(true)}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    className="inline-flex items-center h-10 px-5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition cursor-pointer text-xs sm:text-sm shadow-3xs"
                   >
                     🎯 Edit Interests Categories
                   </button>
@@ -2284,12 +2281,12 @@ export default function EditProfilePage() {
                   {formData.interests_categories &&
                     typeof formData.interests_categories === "object" &&
                     Object.keys(formData.interests_categories).length > 0 ? (
-                    <div className="mt-4 p-3 bg-white border rounded-md">
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="font-medium text-gray-700">
+                    <div className="mt-4 p-4 bg-white border border-slate-100 rounded-2xl shadow-3xs">
+                      <div className="flex justify-between items-center mb-3">
+                        <p className="text-xs font-bold text-[#002060] uppercase tracking-wider">
                           Selected Interests:
                         </p>
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        <span className="text-[10px] font-bold bg-[#002060]/5 text-[#002060] px-2.5 py-0.5 rounded-full">
                           {totalCheckboxInterests} selected
                         </span>
                       </div>
@@ -2300,43 +2297,42 @@ export default function EditProfilePage() {
                           .map((interest, index) => (
                             <span
                               key={index}
-                              className="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full"
+                              className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-slate-700 font-bold text-xs rounded-full shadow-3xs"
                             >
                               {interest}
                             </span>
                           ))}
                         {totalCheckboxInterests > 8 && (
-                          <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                          <span className="px-2.5 py-1 bg-[#002060]/5 text-[#002060] text-xs font-bold rounded-full">
                             +{totalCheckboxInterests - 8} more
                           </span>
                         )}
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-4 p-4 bg-white border border-dashed border-gray-300 rounded-md text-center">
-                      <p className="text-gray-500 text-sm italic">
+                    <div className="mt-4 p-4 bg-white border border-dashed border-slate-200 rounded-2xl text-center">
+                      <p className="text-slate-400 text-xs italic">
                         No interests categories added yet
                       </p>
-                      <p className="text-gray-400 text-xs mt-1">
-                        Click above button to add interests from different
-                        categories
+                      <p className="text-slate-400 text-[10px] mt-1 font-semibold">
+                        Click above button to add interests from different categories
                       </p>
                     </div>
                   )}
 
                   {/*  FIXED: Profile Questions Section */}
-                  <div className="mb-6 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                  <div className="mt-6 mb-2 p-5 border border-slate-100 rounded-3xl bg-slate-50/50 shadow-2xs">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-1">
                       Tell Us More About Yourself
                     </h4>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-[11px] font-semibold text-slate-400 mb-4">
                       Answer these prompts to help others know you better
                     </p>
 
                     <button
                       type="button"
                       onClick={() => setIsQuestionsModalOpen(true)}
-                      className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                      className="inline-flex items-center h-10 px-5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition cursor-pointer text-xs sm:text-sm shadow-3xs"
                     >
                       ✍️ Edit Profile Questions
                     </button>
@@ -2345,12 +2341,12 @@ export default function EditProfilePage() {
                     {formData.prompts &&
                       typeof formData.prompts === "object" &&
                       Object.keys(formData.prompts).length > 0 ? (
-                      <div className="mt-4 p-3 bg-white border rounded-md">
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="font-medium text-gray-700">
+                      <div className="mt-4 p-4 bg-white border border-slate-100 rounded-2xl shadow-3xs">
+                        <div className="flex justify-between items-center mb-3">
+                          <p className="text-xs font-bold text-[#002060] uppercase tracking-wider">
                             Answered Questions:
                           </p>
-                          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                          <span className="text-[10px] font-bold bg-[#002060]/5 text-[#002060] px-2.5 py-0.5 rounded-full">
                             {Object.keys(formData.prompts).length} answered
                           </span>
                         </div>
@@ -2368,12 +2364,12 @@ export default function EditProfilePage() {
                               return (
                                 <div
                                   key={question_key}
-                                  className="border-l-4 border-purple-300 pl-3 py-2"
+                                  className="border-l-4 border-slate-200 pl-3 py-1"
                                 >
-                                  <p className="font-medium text-sm text-gray-800 mb-1">
+                                  <p className="font-bold text-xs text-slate-700 mb-1 leading-snug">
                                     {label}
                                   </p>
-                                  <p className="text-sm text-gray-600 line-clamp-2">
+                                  <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed">
                                     {answer}
                                   </p>
                                 </div>
@@ -2381,21 +2377,20 @@ export default function EditProfilePage() {
                             })}
 
                           {Object.keys(formData.prompts).length > 3 && (
-                            <div className="text-center pt-2 border-t">
-                              <p className="text-xs text-purple-600">
-                                +{Object.keys(formData.prompts).length - 3} more
-                                questions answered
+                            <div className="text-center pt-2 border-t border-slate-100">
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                +{Object.keys(formData.prompts).length - 3} more questions answered
                               </p>
                             </div>
                           )}
                         </div>
                       </div>
                     ) : (
-                      <div className="mt-4 p-4 bg-white border border-dashed border-gray-300 rounded-md text-center">
-                        <p className="text-gray-500 text-sm italic">
+                      <div className="mt-4 p-4 bg-white border border-dashed border-slate-200 rounded-2xl text-center">
+                        <p className="text-slate-400 text-xs italic">
                           No questions answered yet
                         </p>
-                        <p className="text-gray-400 text-xs mt-1">
+                        <p className="text-slate-400 text-[10px] mt-1 font-semibold">
                           Click above button to answer prompts about yourself
                         </p>
                       </div>
@@ -2407,14 +2402,14 @@ export default function EditProfilePage() {
                   {/* Left Column */}
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Interested In
                       </label>
                       <select
                         name="interested_in"
                         value={formData.interested_in}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Interested In</option>
                         <option value="Man">Man</option>
@@ -2425,7 +2420,7 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Relationship Goal
                       </label>
 
@@ -2433,7 +2428,7 @@ export default function EditProfilePage() {
                         name="relationship_goal"
                         value={formData.relationship_goal}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Relationship Goal</option>
                         <option value="Long-term">Long-term</option>
@@ -2447,7 +2442,7 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Children Preference
                       </label>
 
@@ -2455,7 +2450,7 @@ export default function EditProfilePage() {
                         name="children_preference"
                         value={formData.children_preference}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className={inputClass}
                       >
                         <option value="">Select Children Preference</option>
 
@@ -2474,14 +2469,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Relationship Values
                       </label>
                       <select
                         name="relationship_values"
                         value={formData.relationship_values}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Relationship Values</option>
                         <option value="Growth">Growth</option>
@@ -2497,14 +2492,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Values in Others
                       </label>
                       <select
                         name="values_in_others"
                         value={formData.values_in_others}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Values in Others</option>
                         <option value="Self-awareness">Self-awareness</option>
@@ -2518,14 +2513,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Relationship Pace
                       </label>
                       <select
                         name="relationship_pace"
                         value={formData.relationship_pace}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Relationship Pace</option>
                         <option value="Naturally">Naturally</option>
@@ -2538,14 +2533,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Approach to Physical Closeness
                       </label>
                       <select
                         name="approach_to_physical_closeness"
                         value={formData.approach_to_physical_closeness}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">
                           Select Approach to Physical Closeness
@@ -2567,14 +2562,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Love Languages
                       </label>
                       <select
                         name="love_language_affection"
                         value={formData.love_language_affection || ""}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Love Language</option>
                         <option value="Physical Touch">Physical Touch</option>
@@ -2593,14 +2588,14 @@ export default function EditProfilePage() {
                   {/* Right Column */}
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Self Expression
                       </label>
                       <select
                         name="self_expression"
                         value={formData.self_expression}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Self Expression</option>
                         <option value="Clear and direct">
@@ -2619,14 +2614,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Interaction Style
                       </label>
                       <select
                         name="interaction_style"
                         value={formData.interaction_style}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Interaction Style</option>
                         <option value="Light and engaging">
@@ -2643,14 +2638,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Work Environment
                       </label>
                       <select
                         name="work_environment"
                         value={formData.work_environment}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Work Environment</option>
                         <option value="Remote">Remote</option>
@@ -2664,14 +2659,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Work Rhythm
                       </label>
                       <select
                         name="work_rhythm"
                         value={formData.work_rhythm}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Work Rhythm</option>
                         <option value="Regular">Structured routine</option>
@@ -2684,14 +2679,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Career Decision Style
                       </label>
                       <select
                         name="career_decision_style"
                         value={formData.career_decision_style}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Career Decision Style</option>
                         <option value="Analytical">Security-focused</option>
@@ -2702,14 +2697,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Work Demand Response
                       </label>
                       <select
                         name="work_demand_response"
                         value={formData.work_demand_response}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Work Demand Response</option>
                         <option value="Proactive">
@@ -2726,14 +2721,14 @@ export default function EditProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className={labelClass}>
                         Preference of Closeness
                       </label>
                       <select
                         name="preference_of_closeness"
                         value={formData.preference_of_closeness}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={inputClass}
                       >
                         <option value="">Select Preference of Closeness</option>
                         <option value="High">More time together</option>
@@ -2751,26 +2746,26 @@ export default function EditProfilePage() {
           )}
 
           {/* NAVIGATION BUTTONS */}
-          <div className="flex justify-between items-center pt-8 border-t mt-8">
+          <div className="flex justify-between items-center pt-8 border-t border-slate-100 mt-8">
             <div>
               {currentStep > 1 && (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center gap-2"
+                  className="h-10 px-5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
                 >
                   ← Back
                 </button>
               )}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               {currentStep < totalSteps && (
                 <>
                   <button
                     type="button"
                     onClick={skipStep}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                    className="h-10 px-5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
                   >
                     Skip for now
                   </button>
@@ -2778,7 +2773,7 @@ export default function EditProfilePage() {
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
+                    className="h-10 px-6 bg-[#002060] text-white rounded-xl font-bold hover:bg-[#FF2A6D] transition-all shadow-2xs hover:shadow-xs flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
                   >
                     Next Step →
                   </button>
@@ -2789,7 +2784,7 @@ export default function EditProfilePage() {
                 <button
                   type="submit"
                   disabled={loading || imageLoading}
-                  className="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 flex items-center gap-2"
+                  className="h-10 px-8 bg-[#002060] text-white rounded-xl font-bold hover:bg-[#FF2A6D] transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-xs sm:text-sm shadow-2xs hover:shadow-xs cursor-pointer"
                 >
                   {loading ? (
                     <>

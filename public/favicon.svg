@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .letter-i {
+      fill: #1a2a3a;
+      font-family: 'Outfit', 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: 24px;
+    }
+    .letter-c {
+      fill: #FF1493;
+      font-family: 'Outfit', 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: 24px;
+    }
+    @media (prefers-color-scheme: dark) {
+      .letter-i {
+        fill: #ffffff;
+      }
+    }
+  </style>
+  <text x="3" y="24" class="letter-i">I</text>
+  <text x="13" y="24" class="letter-c">C</text>
+</svg>

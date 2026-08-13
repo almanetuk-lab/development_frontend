@@ -2,7 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-primary: 'Outfit', 'Inter', sans-serif;
 
+  /* Brand tokens — must match theme.js */
+  --color-primary: #002060;        /* Brand Navy */
+  --color-primary-hover: #001740;
+
+  --color-secondary: #FF2A6D;      /* Brand Pink */
+  --color-secondary-hover: #e0105a;
+
+  --color-dark: #1E293B;           /* slate-800 */
+  --color-light: #FAFBFD;          /* Off-white base */
+  --color-border: #E2E8F0;         /* slate-200 */
+  --color-text-muted: #64748B;     /* slate-500 */
+}
+
+body {
+  font-family: var(--font-primary);
+  color: #333333;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Brand Logo - guaranteed colors, cannot be overridden by Tailwind resets or inheritance */
+.brand-logo-blue {
+  color: #002060 !important;
+}
+.brand-logo-pink {
+  color: #FF2A6D !important;
+}
 @keyframes fade-in {
   from {
     opacity: 0;

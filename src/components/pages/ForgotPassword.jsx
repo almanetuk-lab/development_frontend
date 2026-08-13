@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
+import Logo from "../comman/Logo";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -32,27 +33,28 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white/90 backdrop-blur-md shadow-xl rounded-2xl p-8 border border-blue-100 animate-fade-in">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8 sm:py-12 md:py-16 relative overflow-hidden">
+      {/* Flat solid geometric stripes (pink and blue) running in the background */}
+      <div className="absolute top-0 left-[-15%] sm:left-[-10%] w-[55%] sm:w-[30%] h-full bg-[#E3F2FD] transform -skew-x-12 z-0 pointer-events-none opacity-60 sm:opacity-100"></div>
+      <div className="absolute top-0 right-[-15%] sm:right-[-10%] w-[55%] sm:w-[30%] h-full bg-pink-100/50 transform -skew-x-12 z-0 pointer-events-none opacity-60 sm:opacity-100"></div>
+
+      <div className="w-full max-w-md bg-white border border-slate-100/80 shadow-xl rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 relative z-10 animate-fade-in">
         {/* Header with Intentional Connections - HOME PAGE STYLE */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold">
-            <span className="text-blue-700">Intentional</span>
-            <span className="text-pink-500"> Connections</span>
-          </h1>
-          <p className="text-gray-600 mt-2">Reset your password</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <Logo size="text-2xl sm:text-3xl" className="justify-center" />
+          <p className="text-xs sm:text-sm text-slate-500 mt-2">Reset your password</p>
         </div>
 
         {message && (
-          <div className="bg-blue-100 text-blue-700 px-3 py-2 rounded-md mb-4 text-sm text-center">
+          <div className="bg-[#E3F2FD] border border-blue-100 text-slate-700 px-4 py-2.5 sm:py-3 rounded-xl mb-5 sm:mb-6 text-xs sm:text-sm text-center font-medium animate-pulse">
             {message}
           </div>
         )}
 
-        {/* Form with BLUE theme */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Form with pink theme */}
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5 sm:mb-2">
               Email Address
             </label>
             <input
@@ -61,31 +63,26 @@ export default function ForgotPassword() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="Enter your registered email"
-              className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
+              className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] outline-none transition bg-white text-slate-800 placeholder-slate-400 text-sm shadow-inner"
             />
           </div>
 
-          {/* BLUE BUTTON like home page */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 mt-4 font-bold text-white rounded-lg shadow-md transition duration-200 ${
-              loading 
-                ? "bg-blue-600 cursor-not-allowed opacity-90" 
-                : "bg-blue-600 hover:bg-blue-700 hover:shadow-lg"
-            }`}
+            className="w-full py-2.5 sm:py-3 mt-2 font-bold text-white bg-[#FF2A6D] hover:bg-[#e0105a] rounded-xl hover:shadow-lg transition-all duration-200 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {loading ? "Sending Email..." : "Send Reset Link"}
           </button>
         </form>
 
-        {/* Back to login section with blue text */}
-        <div className="mt-8 text-center">
-          <p className="text-gray-600">
+        {/* Back to login section with pink text */}
+        <div className="mt-6 sm:mt-8 text-center pt-3 sm:pt-4 border-t border-slate-100">
+          <p className="text-slate-500 text-xs sm:text-sm">
             Remembered your password?{" "}
             <Link
               to="/login"
-              className="font-bold text-blue-600 hover:text-blue-800 hover:underline"
+              className="font-bold text-[#FF2A6D] hover:text-[#e0105a] transition"
             >
               Back to Login
             </Link>
