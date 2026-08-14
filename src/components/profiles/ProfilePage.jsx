@@ -1,9 +1,42 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, Component } from "react";
 import { useUserProfile } from "../context/UseProfileContext";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { adminAPI } from "../services/adminApi";
+import api from "../services/api";
 import profileViewApi from "../services/profileViewApi";
 import ImageModal from "../comman/ImageModal";
+
+// Error boundary to prevent full white page on render crash
+class ProfileErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error("ProfilePage render error:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-50/60 flex items-center justify-center px-4">
+          <div className="text-center space-y-4 max-w-sm bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <p className="text-slate-700 text-base font-semibold">Something went wrong loading this profile.</p>
+            <p className="text-slate-400 text-xs">{this.state.error?.message}</p>
+            <button
+              onClick={() => window.history.back()}
+              className="w-full h-10 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import {
   FiArrowLeft,
   FiEdit3,
@@ -103,7 +136,15 @@ function LifeRhythmsDisplay({ data }) {
   );
 }
 
-export default function ProfilePage() {
+export default function WrappedProfilePage() {
+  return (
+    <ProfileErrorBoundary>
+      <ProfilePage />
+    </ProfileErrorBoundary>
+  );
+}
+
+function ProfilePage() {
   const { profile: currentUserProfile } = useUserProfile();
   const [displayProfile, setDisplayProfile] = useState(null);
   const { userId } = useParams();
@@ -116,15 +157,14 @@ export default function ProfilePage() {
   const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
   useEffect(() => {
-    if (!currentUserProfile) return;
-
     const myId = currentUserProfile?.id || currentUserProfile?.user_id;
     const viewedId = userId;
 
     const isOwnProfile = !viewedId || myId == viewedId;
     setIsCurrentUser(isOwnProfile);
 
-    if (!isOwnProfile && viewedId && !hasTrackedRef.current) {
+    // Profile view tracking (only for other users, only once)
+    if (!isOwnProfile && viewedId && myId && !hasTrackedRef.current) {
       hasTrackedRef.current = true;
       (async () => {
         try {
@@ -135,24 +175,25 @@ export default function ProfilePage() {
       })();
     }
 
-    // Data loading logic
+    // If location.state already has the profile, use it directly
     if (location.state?.userProfile) {
       setDisplayProfile(location.state.userProfile);
       setLoading(false);
       return;
     }
 
-    if (!viewedId) {
-      if (currentUserProfile) {
-        setDisplayProfile(currentUserProfile);
-        setLoading(false);
-      } else {
-        fetchCurrentUserData();
-      }
+    // Viewing someone else's profile — fetch by ID (doesn't need currentUserProfile)
+    if (viewedId) {
+      fetchUserData(viewedId);
       return;
     }
 
-    fetchUserData(viewedId);
+    // Viewing own profile — wait until context is ready
+    if (currentUserProfile) {
+      setDisplayProfile(currentUserProfile);
+      setLoading(false);
+    }
+    // If currentUserProfile not loaded yet, stay in loading state
   }, [userId, location.state, currentUserProfile]);
 
   const fetchCurrentUserData = async () => {
@@ -161,8 +202,8 @@ export default function ProfilePage() {
       const currentUserId =
         currentUserProfile?.id || currentUserProfile?.user_id;
       if (currentUserId) {
-        const response = await adminAPI.getUserDetails(currentUserId);
-        if (response.data) {
+        const response = await api.get(`/api/users/${currentUserId}`);
+        if (response.data && !response.data.message) {
           setDisplayProfile(response.data);
         } else {
           setDisplayProfile(currentUserProfile);
@@ -181,8 +222,9 @@ export default function ProfilePage() {
   const fetchUserData = async (id) => {
     try {
       setLoading(true);
-      const response = await adminAPI.getUserDetails(id);
-      if (response.data) {
+      const response = await api.get(`/api/users/${id}`);
+      // /api/users/:id returns the joined user+profile row directly
+      if (response.data && !response.data.message) {
         setDisplayProfile(response.data);
       } else {
         setDisplayProfile({
@@ -191,7 +233,7 @@ export default function ProfilePage() {
         });
       }
     } catch (error) {
-      console.error("API Error:", error);
+      console.error("API Error loading profile:", error);
       setDisplayProfile({
         user_id: id,
         name: `User ${id}`,

@@ -134,7 +134,7 @@ const MemberPage = () => {
       if (response.data) {
         const membersData = Array.isArray(response.data)
           ? response.data
-          : response.data.data || response.data.users || [];
+          : response.data.results || response.data.data || response.data.users || [];
 
         setMembers(membersData);
         setFilteredMembers(membersData);
@@ -280,7 +280,7 @@ const MemberPage = () => {
       if (response.data) {
         const searchResults = Array.isArray(response.data)
           ? response.data
-          : response.data.data || response.data.users || [];
+          : response.data.results || response.data.data || response.data.users || [];
 
         setMembers(searchResults);
 
