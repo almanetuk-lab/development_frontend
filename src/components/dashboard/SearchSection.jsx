@@ -1,14 +1,20 @@
 // src/components/chatsystem/AdvancedSearch.jsx
 import React, { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { adminAPI } from "../services/adminApi";
 import api from "../services/api";
+import { FiEye, FiMessageSquare } from "react-icons/fi";
+
 export default function AdvancedSearch() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || "basic");
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searchLimitReached, setSearchLimitReached] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
 
   // radius and distance are kept in sync — both always hold the same numeric value.
   // Default is 10 km. distance is used by the range slider; radius by the number input.
@@ -137,6 +143,10 @@ export default function AdvancedSearch() {
       return;
     }
     setActiveTab(tabId);
+    setSearchResults([]);
+    setCurrentPage(1);
+    setTotalPages(1);
+    setTotalResults(0);
 
     if (tabId !== "advanced") {
       setFilters((prev) => ({
@@ -269,20 +279,26 @@ export default function AdvancedSearch() {
   //   }
   // };
 
-  const performSearch = async () => {
+  const performSearch = async (pageNumber = 1) => {
     if (searchLimitReached) {
       alert("Your people search limit is over. Please upgrade your plan.");
       return;
     }
 
     setLoading(true);
-    setSearchResults([]);
+    if (pageNumber === 1) {
+      setSearchResults([]);
+    }
 
     try {
-      let searchParams = {};
+      let searchParams = {
+        page: pageNumber,
+        limit: 6, // 6 results per page
+      };
 
       if (activeTab === "basic") {
         searchParams = {
+          ...searchParams,
           search_mode: "basic",
           first_name: filters.basicSearch,
           profession: filters.profession,
@@ -292,6 +308,7 @@ export default function AdvancedSearch() {
 
       if (activeTab === "advanced") {
         searchParams = {
+          ...searchParams,
           search_mode: "advanced",
           first_name: filters.first_name,
           last_name: filters.last_name,
@@ -321,6 +338,7 @@ export default function AdvancedSearch() {
           ? currentFilters.radius
           : DEFAULT_RADIUS;
         searchParams = {
+          ...searchParams,
           search_mode: "nearme",
           radius: radVal,
           lat: currentFilters.lat,
@@ -333,7 +351,16 @@ export default function AdvancedSearch() {
       }
 
       const response = await api.get("/search", { params: searchParams });
-      setSearchResults(response.data || []);
+      const data = response.data || {};
+      const results = data.results || [];
+      const total = data.total || 0;
+      const totalP = data.totalPages || 1;
+      const currentP = data.page || 1;
+
+      setSearchResults(results);
+      setTotalResults(total);
+      setTotalPages(totalP);
+      setCurrentPage(currentP);
     } catch (error) {
       console.error("Search error:", error);
 
@@ -346,7 +373,15 @@ export default function AdvancedSearch() {
         return;
       }
 
-      alert("Search failed");
+      if (
+        error.response?.status === 403 &&
+        error.response?.data?.code === "NO_ACTIVE_PLAN"
+      ) {
+        alert("No active subscription found. Please subscribe to search.");
+        return;
+      }
+
+      alert("Search failed: " + (error.response?.data?.message || "Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -903,58 +938,113 @@ export default function AdvancedSearch() {
                 {searchResults.map((profile) => (
                   <div
                     key={profile.user_id || profile.id}
-                    className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+                    className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
                   >
-                    <div className="flex items-start gap-5">
-                      {/* Profile Image */}
-                      <div className="flex-shrink-0">
-                        <img
-                          src={
-                            profile.image_url && profile.image_url !== ""
-                              ? profile.image_url.startsWith("http")
-                                ? profile.image_url
-                                : `${import.meta.env.VITE_API_BASE_URL}${profile.image_url}`
-                              : `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}`
-                          }
-                          onError={(e) => {
-                            e.target.src = `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}`;
-                          }}
-                          alt="profile"
-                          className="w-24 h-24 rounded-full object-cover border"
-                        />
-                      </div>
-
-                      {/* Profile Info */}
-                      <div className="flex-1">
-                        <h4 className="text-lg font-semibold text-gray-800">
-                          {profile.first_name} {profile.last_name}
-                        </h4>
-
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-gray-600 text-sm">
-                            {profile.profession} • {profile.city}
-                          </span>
-                          {activeTab === "nearme" && profile.distance_meters !== undefined && profile.distance_meters !== null && (
-                            <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-100 flex items-center gap-0.5 shadow-sm">
-                              📍 {(profile.distance_meters / 1000).toFixed(1)} km away
-                            </span>
-                          )}
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
+                      <div className="flex items-start gap-5 flex-1 min-w-0">
+                        {/* Profile Image */}
+                        <div className="flex-shrink-0">
+                          <img
+                            src={
+                              profile.image_url && profile.image_url !== ""
+                                ? profile.image_url.startsWith("http")
+                                  ? profile.image_url
+                                  : `${import.meta.env.VITE_API_BASE_URL}${profile.image_url}`
+                                : `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}`
+                            }
+                            onError={(e) => {
+                              e.target.src = `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}`;
+                            }}
+                            alt="profile"
+                            className="w-24 h-24 rounded-full object-cover border"
+                          />
                         </div>
 
-                        <p className="text-gray-500 text-sm mt-2 line-clamp-2">
-                          {profile.about}
-                        </p>
+                        {/* Profile Info */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-lg font-semibold text-gray-800">
+                            {profile.first_name} {profile.last_name}
+                          </h4>
+
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-gray-600 text-sm">
+                              {profile.profession} • {profile.city}
+                            </span>
+                            {activeTab === "nearme" && profile.distance_meters !== undefined && profile.distance_meters !== null && (
+                              <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-100 flex items-center gap-0.5 shadow-sm">
+                                📍 {(profile.distance_meters / 1000).toFixed(1)} km away
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="text-gray-500 text-sm mt-2 line-clamp-2">
+                            {profile.about}
+                          </p>
+                        </div>
                       </div>
 
                       {/* Right Side Stats */}
-                      <div className="text-right text-sm text-gray-500">
+                      <div className="text-left sm:text-right text-sm text-gray-500 shrink-0">
                         <p>{profile.age} years</p>
                         <p>{profile.experience} yrs exp</p>
                       </div>
                     </div>
+
+                    {/* Action Buttons Row */}
+                    <div className="border-t border-gray-100 pt-4 mt-4 flex justify-end gap-3">
+                      <button
+                        onClick={() => navigate(`/dashboard/profile/${profile.user_id || profile.id}`, {
+                          state: { userProfile: profile }
+                        })}
+                        className="px-4 py-2 bg-[#002060] hover:bg-[#001848] text-white rounded-xl text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <FiEye className="w-3.5 h-3.5" />
+                        <span>View Profile</span>
+                      </button>
+                      <button
+                        onClick={() => navigate("/dashboard/messages", {
+                          state: {
+                            selectedUser: {
+                              id: profile.user_id || profile.id,
+                              name: `${profile.first_name || ""} ${profile.last_name || ""}`.trim(),
+                              email: profile.email,
+                              city: profile.city,
+                              profession: profile.profession,
+                            },
+                          },
+                        })}
+                        className="px-4 py-2 bg-pink-50 hover:bg-pink-100 text-[#FF2A6D] border border-pink-200 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <FiMessageSquare className="w-3.5 h-3.5" />
+                        <span>Message</span>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => performSearch(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-600 font-medium">
+                    Page {currentPage} of {totalPages} ({totalResults} results)
+                  </span>
+                  <button
+                    onClick={() => performSearch(currentPage + 1)}
+                    disabled={currentPage === totalPages || loading}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
