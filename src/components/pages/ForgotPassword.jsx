@@ -12,11 +12,24 @@ export default function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setMessage("Email address is required.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       // backend call (future-ready)
-      const response = await api.post("/api/forgotpassword", { email });
+      const response = await api.post("/api/forgotpassword", { email: trimmedEmail });
       setMessage(response.data.message);
       
       // temporary simulation

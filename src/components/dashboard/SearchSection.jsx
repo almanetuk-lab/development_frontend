@@ -16,8 +16,6 @@ export default function AdvancedSearch() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
 
-  // radius and distance are kept in sync — both always hold the same numeric value.
-  // Default is 10 km. distance is used by the range slider; radius by the number input.
   const DEFAULT_RADIUS = 10;
   const [filters, setFilters] = useState({
     basicSearch: "",
@@ -37,7 +35,7 @@ export default function AdvancedSearch() {
     lat: "",
     lon: "",
   });
-  //new code added now ik
+
   const [plan, setPlan] = useState({
     loading: true,
     active: false,
@@ -46,9 +44,9 @@ export default function AdvancedSearch() {
 
   const [locationDenied, setLocationDenied] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
-  // Ref so the debounced performSearch always reads the live value (avoids stale closure)
   const locationDeniedRef = useRef(false);
   const filtersRef = useRef(filters);
+  
   useEffect(() => { filtersRef.current = filters; }, [filters]);
   useEffect(() => { locationDeniedRef.current = locationDenied; }, [locationDenied]);
 
@@ -58,7 +56,6 @@ export default function AdvancedSearch() {
     }
   }, [location.state]);
 
-  /* Request geolocation permission, fetch fresh lat/lon, and update profile DB */
   const getLiveLocation = async () => {
     setLocationLoading(true);
     setLocationDenied(false);
@@ -68,15 +65,12 @@ export default function AdvancedSearch() {
       handleInputChange("lat", coords.latitude);
       handleInputChange("lon", coords.longitude);
       setLocationDenied(false);
-      console.log("GPS location fetched:", coords.latitude, coords.longitude);
-
-      // Update location in database profile
+      
       try {
         await api.put("/api/profiles/location", {
           latitude: coords.latitude,
           longitude: coords.longitude,
         });
-        console.log("Updated user profile location in backend DB.");
       } catch (dbErr) {
         console.warn("Failed to update user location in profile DB:", dbErr);
       }
@@ -117,7 +111,6 @@ export default function AdvancedSearch() {
     }
   }, [activeTab]);
 
-  // Auto-search trigger when parameters update, with a light 300ms debounce
   useEffect(() => {
     if (!plan.loading && plan.active) {
       const delayDebounceFn = setTimeout(() => {
@@ -137,9 +130,7 @@ export default function AdvancedSearch() {
 
   const handleTabChange = (tabId) => {
     if (!plan.loading && !plan.active) {
-      alert(
-        "Your subscription has expired. Please upgrade to use search features.",
-      );
+      alert("Your subscription has expired. Please upgrade to use search features.");
       return;
     }
     setActiveTab(tabId);
@@ -164,14 +155,12 @@ export default function AdvancedSearch() {
     }
 
     if (tabId !== "nearme") {
-      // Reset both distance and radius when leaving Near Me tab
       setFilters((prev) => ({
         ...prev,
         radius: DEFAULT_RADIUS,
         distance: DEFAULT_RADIUS,
       }));
     } else {
-      // Re-entering Near Me — restore radius/distance to default if somehow cleared
       setFilters((prev) => ({
         ...prev,
         radius: prev.radius || DEFAULT_RADIUS,
@@ -181,7 +170,6 @@ export default function AdvancedSearch() {
   };
 
   const handleInputChange = (field, value) => {
-    // distance and radius are always kept in sync
     if (field === "distance" || field === "radius") {
       const normalized = value === "" || value === null ? DEFAULT_RADIUS : Math.max(1, Number(value));
       setFilters((prev) => ({ ...prev, distance: normalized, radius: normalized }));
@@ -195,89 +183,6 @@ export default function AdvancedSearch() {
     }
     setFilters((prev) => ({ ...prev, [field]: value }));
   };
-
-  // const performSearch = async () => {
-  //   if (!plan.loading && !plan.active) {
-  //     alert(
-  //       "Your subscription has expired. Please upgrade to use search features.",
-  //     );
-  //     return;
-  //   }
-  //   // yeh add kiya h
-  //   setLoading(true);
-  //   setSearchResults([]);
-
-  //   try {
-  //     let searchParams = {};
-
-  //     const cleanValue = (val) => {
-  //       if (val === undefined || val === null) return "";
-  //       if (typeof val === "string") return val.trim();
-  //       return val;
-  //     };
-
-  //     if (activeTab === "basic") {
-  //       searchParams = { search_mode: "basic" };
-  //       if (filters.basicSearch)
-  //         searchParams.first_name = cleanValue(filters.basicSearch);
-  //       if (filters.profession)
-  //         searchParams.profession = cleanValue(filters.profession);
-  //       if (filters.city) searchParams.city = cleanValue(filters.city);
-  //     }
-
-  //     if (activeTab === "advanced") {
-  //       searchParams = {
-  //         search_mode: "advanced",
-  //         first_name: cleanValue(filters.first_name),
-  //         last_name: cleanValue(filters.last_name),
-  //         gender: cleanValue(filters.gender),
-  //         marital_status: cleanValue(filters.marital_status),
-  //         profession: cleanValue(filters.profession),
-  //         skills: cleanValue(filters.skills),
-  //         interests: cleanValue(filters.interests),
-  //         city: cleanValue(filters.city),
-  //         state: cleanValue(filters.state),
-  //         min_age: filters.min_age,
-  //         max_age: filters.max_age,
-  //       };
-  //     }
-
-  //     if (activeTab === "nearme") {
-  //       searchParams = {
-  //         search_mode: "nearme",
-  //         radius: Number(filters.radius || filters.distance),
-  //         lat: filters.lat,
-  //         lon: filters.lon,
-  //         city: cleanValue(filters.city),
-  //       };
-  //     }
-
-  //     const cleanParams = Object.fromEntries(
-  //       Object.entries(searchParams).filter(([key, value]) => {
-  //         if (key === "lat" || key === "lon") return true;
-  //         if (["min_age", "max_age", "radius"].includes(key)) {
-  //           return value !== "" && value !== null && !isNaN(value);
-  //         }
-  //         return (
-  //           value !== "" &&
-  //           value !== null &&
-  //           value !== undefined &&
-  //           !(typeof value === "string" && value.trim() === "")
-  //         );
-  //       }),
-  //     );
-
-  //     console.log("Shraddha Final Params:", cleanParams);
-
-  //     const response = await adminAPI.searchProfiles(cleanParams);
-  //     setSearchResults(response.data || []);
-  //   } catch (error) {
-  //     console.error("Search API error:", error);
-  //     alert("Search failed: " + (error.response?.data?.error || error.message));
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const performSearch = async (pageNumber = 1) => {
     if (searchLimitReached) {
@@ -293,7 +198,7 @@ export default function AdvancedSearch() {
     try {
       let searchParams = {
         page: pageNumber,
-        limit: 6, // 6 results per page
+        limit: 6,
       };
 
       if (activeTab === "basic") {
@@ -328,12 +233,10 @@ export default function AdvancedSearch() {
         const denied = locationDeniedRef.current;
         const currentFilters = filtersRef.current;
         if (denied || !currentFilters.lat || !currentFilters.lon) {
-          console.warn("[NearMe] Search blocked: Location permission is required.");
           setSearchResults([]);
           setLoading(false);
           return;
         }
-        // radius and distance are always in sync; use radius as authoritative source
         const radVal = typeof currentFilters.radius === "number" && !isNaN(currentFilters.radius) && currentFilters.radius >= 1
           ? currentFilters.radius
           : DEFAULT_RADIUS;
@@ -347,7 +250,6 @@ export default function AdvancedSearch() {
         if (currentFilters.city && typeof currentFilters.city === "string" && currentFilters.city.trim() !== "") {
           searchParams.city = currentFilters.city.trim();
         }
-        console.log("[NearMe] Search params:", searchParams);
       }
 
       const response = await api.get("/search", { params: searchParams });
@@ -364,19 +266,13 @@ export default function AdvancedSearch() {
     } catch (error) {
       console.error("Search error:", error);
 
-      if (
-        error.response?.status === 403 &&
-        error.response?.data?.code === "SEARCH_LIMIT_EXCEEDED"
-      ) {
+      if (error.response?.status === 403 && error.response?.data?.code === "SEARCH_LIMIT_EXCEEDED") {
         setSearchLimitReached(true);
         alert("Your people search limit is over. Please upgrade.");
         return;
       }
 
-      if (
-        error.response?.status === 403 &&
-        error.response?.data?.code === "NO_ACTIVE_PLAN"
-      ) {
+      if (error.response?.status === 403 && error.response?.data?.code === "NO_ACTIVE_PLAN") {
         alert("No active subscription found. Please subscribe to search.");
         return;
       }
@@ -393,108 +289,87 @@ export default function AdvancedSearch() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-            Find Your Match
-          </h2>
-          {!plan.loading && (
-            <div
-              className={`mb-4 p-3 rounded text-center text-sm ${
-                plan.active
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-red-50 text-red-700 border border-red-200"
-              }`}
-            >
-              {plan.active ? (
-                <> Plan active — {plan.daysLeft} days left</>
-              ) : (
-                <>❌ No active subscription</>
-              )}
-            </div>
-          )}
-
-          {/* Tabs Navigation */}
-          <div className="flex border-b border-gray-200 mb-6">
+    <div className="w-full">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
+        {/* Main Panel */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+          
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              Find Your Match
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Search by keywords, detailed filter parameters, or find matches physically near your location.
+            </p>
+          </div>
+          {/* Segmented Tab Navigation */}
+          <div className="bg-slate-100 p-1.5 rounded-xl flex gap-1 mb-8">
             {[
-              { id: "basic", label: "🔍 Basic Search" },
-              { id: "advanced", label: "⚡ Advanced Search" },
-              { id: "nearme", label: "📍 Near Me" },
+              { id: "basic", label: "Basic Search", icon: <i className="fa-solid fa-magnifying-glass mr-2"></i> },
+              { id: "advanced", label: "Advanced Search", icon: <i className="fa-solid fa-sliders mr-2"></i> },
+              { id: "nearme", label: "Near Me", icon: <i className="fa-solid fa-location-dot mr-2"></i> },
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex-1 py-3 px-4 text-center font-medium border-b-2 transition-colors ${
+                className="flex-1 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-bold text-center transition-all duration-200 flex items-center justify-center"
+                style={
                   activeTab === tab.id
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+                    ? { backgroundColor: "#002060", color: "#ffffff" }
+                    : { color: "#64748b" }
+                }
               >
-                {tab.label}
+                {tab.icon}
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
 
-          {/* Tab Content */}
-          <div className="min-h-[400px]">
+          {/* Forms Section */}
+          <div className="space-y-6">
             {/* Basic Search Tab */}
             {activeTab === "basic" && (
               <form onSubmit={handleSearch} className="space-y-6">
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                    Quick Search
-                  </h3>
-                  <p className="text-gray-600">
-                    Find matches with simple keywords
-                  </p>
-                </div>
-
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Search by name, profession, skills, or interests
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                      Keyword Search
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Doctor, JavaScript, Traveling, Mumbai..."
+                      placeholder="Search by name, skills, interests (e.g. Doctor, React, Traveling...)"
                       value={filters.basicSearch}
-                      onChange={(e) =>
-                        handleInputChange("basicSearch", e.target.value)
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onChange={(e) => handleInputChange("basicSearch", e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Profession
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. Developer, Doctor"
+                        placeholder="e.g. Software Developer"
                         value={filters.profession}
-                        onChange={(e) =>
-                          handleInputChange("profession", e.target.value)
-                        }
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("profession", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         City
                       </label>
                       <input
                         type="text"
-                        placeholder="Enter city"
+                        placeholder="e.g. London"
                         value={filters.city}
-                        onChange={(e) =>
-                          handleInputChange("city", e.target.value)
-                        }
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("city", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
                   </div>
@@ -505,230 +380,195 @@ export default function AdvancedSearch() {
             {/* Advanced Search Tab */}
             {activeTab === "advanced" && (
               <form onSubmit={handleSearch} className="space-y-6">
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                    Advanced Search
-                  </h3>
-                  <p className="text-gray-600">
-                    Filter matches with detailed criteria
-                  </p>
-                </div>
-
-                {/* Personal Information Section */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                {/* Personal Section */}
+                <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100 space-y-4">
+                  <h4 className="text-xs font-bold tracking-widest text-slate-400 uppercase">
                     Personal Information
                   </h4>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         First Name
                       </label>
                       <input
                         type="text"
                         placeholder="First name"
                         value={filters.first_name}
-                        onChange={(e) =>
-                          handleInputChange("first_name", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("first_name", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Last Name
                       </label>
                       <input
                         type="text"
                         placeholder="Last name"
                         value={filters.last_name}
-                        onChange={(e) =>
-                          handleInputChange("last_name", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("last_name", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Gender
-                    </label>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleInputChange(
-                            "gender",
-                            filters.gender === "Male" ? "" : "Male",
-                          )
-                        }
-                        className={`px-6 py-2 border rounded-md transition-colors ${
-                          filters.gender === "Male"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        Male
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleInputChange(
-                            "gender",
-                            filters.gender === "Female" ? "" : "Female",
-                          )
-                        }
-                        className={`px-6 py-2 border rounded-md transition-colors ${
-                          filters.gender === "Female"
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        Female
-                      </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                        Gender
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleInputChange("gender", filters.gender === "Male" ? "" : "Male")}
+                          className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200"
+                          style={
+                            filters.gender === "Male"
+                              ? { backgroundColor: "#002060", color: "#ffffff", borderColor: "#002060" }
+                              : { backgroundColor: "#ffffff", color: "#475569", borderColor: "#e2e8f0" }
+                          }
+                        >
+                          Male
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleInputChange("gender", filters.gender === "Female" ? "" : "Female")}
+                          className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all duration-200"
+                          style={
+                            filters.gender === "Female"
+                              ? { backgroundColor: "#002060", color: "#ffffff", borderColor: "#002060" }
+                              : { backgroundColor: "#ffffff", color: "#475569", borderColor: "#e2e8f0" }
+                          }
+                        >
+                          Female
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Marital Status
-                    </label>
-                    <select
-                      value={filters.marital_status}
-                      onChange={(e) =>
-                        handleInputChange("marital_status", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Any Status</option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married</option>
-                      <option value="Divorced">Divorced</option>
-                    </select>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                        Marital Status
+                      </label>
+                      <select
+                        value={filters.marital_status}
+                        onChange={(e) => handleInputChange("marital_status", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm"
+                      >
+                        <option value="">Any Status</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Divorced">Divorced</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Min Age
                       </label>
                       <input
                         type="number"
                         placeholder="18"
                         value={filters.min_age}
-                        onChange={(e) =>
-                          handleInputChange("min_age", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("min_age", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Max Age
                       </label>
                       <input
                         type="number"
                         placeholder="60"
                         value={filters.max_age}
-                        onChange={(e) =>
-                          handleInputChange("max_age", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("max_age", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Professional Information */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                    Professional Information
+                {/* Professional Section */}
+                <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100 space-y-4">
+                  <h4 className="text-xs font-bold tracking-widest text-slate-400 uppercase">
+                    Professional & Skills
                   </h4>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Profession
                       </label>
                       <input
                         type="text"
                         placeholder="e.g. Software Developer"
                         value={filters.profession}
-                        onChange={(e) =>
-                          handleInputChange("profession", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("profession", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Skills
                       </label>
                       <input
                         type="text"
                         placeholder="e.g. JavaScript, React, Node.js"
                         value={filters.skills}
-                        onChange={(e) =>
-                          handleInputChange("skills", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("skills", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         Interests
                       </label>
                       <input
                         type="text"
                         placeholder="e.g. Traveling, Music, Sports"
                         value={filters.interests}
-                        onChange={(e) =>
-                          handleInputChange("interests", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("interests", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Location Information */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                    Location
+                {/* Location Section */}
+                <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100 space-y-4">
+                  <h4 className="text-xs font-bold tracking-widest text-slate-400 uppercase">
+                    Location Filters
                   </h4>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         City
                       </label>
                       <input
                         type="text"
                         placeholder="City"
                         value={filters.city}
-                        onChange={(e) =>
-                          handleInputChange("city", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("city", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                         State
                       </label>
                       <input
                         type="text"
                         placeholder="State"
                         value={filters.state}
-                        onChange={(e) =>
-                          handleInputChange("state", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onChange={(e) => handleInputChange("state", e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 transition"
                       />
                     </div>
                   </div>
@@ -739,74 +579,68 @@ export default function AdvancedSearch() {
             {/* Near Me Tab */}
             {activeTab === "nearme" && (
               <form onSubmit={handleSearch} className="space-y-6">
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                    Find Nearby Matches
-                  </h3>
-                  <p className="text-gray-600">
-                    Connect with people in your area using real-time GPS proximity
-                  </p>
-                </div>
-
                 {locationLoading ? (
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center space-y-3">
-                    <div className="animate-spin text-3xl mx-auto text-blue-600">🎯</div>
-                    <h4 className="text-base font-semibold text-blue-900">
-                      Requesting location permission from browser...
+                  <div className="bg-blue-50/50 border border-blue-150 rounded-2xl p-8 text-center space-y-3">
+                    <div className="text-3xl mx-auto text-blue-600">
+                      <i className="fa-solid fa-arrows-spin animate-spin"></i>
+                    </div>
+                    <h4 className="text-base font-bold text-slate-900">
+                      Detecting location...
                     </h4>
-                    <p className="text-xs text-blue-700">
-                      Please allow location access when prompted by your browser.
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Please allow location permissions when prompted by your browser to sync nearby profiles.
                     </p>
                   </div>
                 ) : locationDenied || !filters.lat || !filters.lon ? (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center space-y-4">
-                    <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-sm">
-                      📍
+                  <div className="bg-rose-50/50 border border-rose-150 rounded-2xl p-8 text-center space-y-4">
+                    <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-sm">
+                      <i className="fa-solid fa-location-dot animate-bounce"></i>
                     </div>
-                    <h3 className="text-xl font-bold text-red-900">
+                    <h3 className="text-lg font-black text-slate-900">
                       Location Access Required
                     </h3>
-                    <p className="text-sm text-red-700 max-w-md mx-auto leading-relaxed">
-                      To access <strong>Near Me</strong> search, you must enable location permissions in your browser. This is required to detect your coordinates and update your profile location.
+                    <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+                      To detect other profiles nearby, we need your active coordinates. Please enable your location services and refresh.
                     </p>
                     <button
                       type="button"
                       onClick={getLiveLocation}
                       disabled={locationLoading}
-                      className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md inline-flex items-center gap-2"
+                      className="px-6 py-2.5 text-white rounded-xl text-xs uppercase tracking-wider font-bold transition-all shadow-md inline-flex items-center gap-2"
+                      style={{ backgroundColor: "#002060" }}
                     >
-                      <span>🎯</span>
-                      {locationLoading ? "Requesting..." : "Allow & Update Location"}
+                      <i className="fa-solid fa-location-crosshairs"></i>
+                      <span>{locationLoading ? "Requesting..." : "Enable Location Access"}</span>
                     </button>
                   </div>
                 ) : (
-                  <>
+                  <div className="space-y-6">
                     {/* Location Detection Banner */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
-                      <div className="text-xs text-green-800 flex items-center gap-2">
-                        <span className="text-base">📍</span>
-                        <span className="font-medium">
-                          Location acquired & saved: {Number(filters.lat).toFixed(4)}, {Number(filters.lon).toFixed(4)}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4">
+                      <div className="text-xs text-emerald-800 flex items-center gap-2">
+                        <i className="fa-solid fa-location-crosshairs text-emerald-600 text-sm"></i>
+                        <span className="font-semibold">
+                          Location acquired: {Number(filters.lat).toFixed(4)}, {Number(filters.lon).toFixed(4)}
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={getLiveLocation}
-                        className="px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 flex-shrink-0"
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition duration-200 shadow-sm flex items-center gap-1.5 flex-shrink-0"
                       >
-                        <span>🔄</span> Refresh Location
+                        <i className="fa-solid fa-arrows-rotate"></i>
+                        <span>Update Location</span>
                       </button>
                     </div>
 
-                    <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-6">
-
-                      {/* Radius slider — single source: filters.radius */}
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-6 space-y-6">
+                      {/* Radius slider */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-semibold text-gray-700">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                             Search Radius
                           </label>
-                          <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">
+                          <span className="text-xs font-bold text-white px-2.5 py-1 rounded-full" style={{ backgroundColor: "#002060" }}>
                             {filters.radius} km
                           </span>
                         </div>
@@ -817,9 +651,9 @@ export default function AdvancedSearch() {
                           step="1"
                           value={filters.radius}
                           onChange={(e) => handleInputChange("radius", e.target.value)}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-900 focus:outline-none focus:ring-2 focus:ring-slate-350"
                         />
-                        <div className="flex justify-between text-xs text-gray-400 mt-1.5 font-medium">
+                        <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-wider">
                           <span>1 km</span>
                           <span>25 km</span>
                           <span>50 km</span>
@@ -831,9 +665,8 @@ export default function AdvancedSearch() {
                       {/* Precise radius input + City */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                             Radius (km)
-                            <span className="ml-1.5 text-xs font-normal text-gray-400">— or type exact value</span>
                           </label>
                           <div className="relative">
                             <input
@@ -843,160 +676,157 @@ export default function AdvancedSearch() {
                               placeholder="e.g. 25"
                               value={filters.radius}
                               onChange={(e) => handleInputChange("radius", e.target.value)}
-                              className="w-full pl-3 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+                              className="w-full pl-3 pr-10 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm font-medium"
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">km</span>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none font-bold">km</span>
                           </div>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            City
-                            <span className="ml-1.5 text-xs font-normal text-gray-400">— optional filter</span>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                            City Filter
                           </label>
                           <input
                             type="text"
-                            placeholder="e.g. Mumbai"
+                            placeholder="e.g. London"
                             value={filters.city}
                             onChange={(e) => handleInputChange("city", e.target.value)}
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            className="w-full px-3 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm"
                           />
                         </div>
                       </div>
-
-                      {/* Info hint */}
-                      <p className="text-xs text-gray-400 leading-relaxed">
-                        💡 Real-time GPS location calculates exact physical distances to other profiles.
-                      </p>
                     </div>
-                  </>
+                  </div>
                 )}
               </form>
             )}
           </div>
 
-          {/* Search Button */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            {/* 
-            <button
-              type="button"
-              onClick={handleSearch}
-              disabled={loading || searchLimitReached}
-              className={`w-full py-3 bg-blue-600 text-white rounded-lg font-medium text-lg transition-colors ${
-                loading || searchLimitReached
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-blue-700"
-              }`}
-            >
-              {searchLimitReached
-                ? "🔒 Search limit over"
-                : loading
-                  ? "🔍 Searching..."
-                  : `🔍 Search ${
-                      activeTab === "basic"
-                        ? "Matches"
-                        : activeTab === "advanced"
-                          ? "Advanced"
-                          : "Nearby"
-                    }`}
-            </button> */}
-
+          {/* Search Trigger Button */}
+          <div className="mt-8 pt-6 border-t border-slate-200">
             <button
               type="button"
               onClick={handleSearch}
               disabled={loading || searchLimitReached || (activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon))}
-              className={`w-full py-3 bg-blue-600 text-white rounded-lg font-medium text-lg transition-colors ${
-                loading || searchLimitReached || (activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon))
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-blue-700"
-              }`}
+              className="w-full py-3.5 text-white rounded-xl font-bold text-sm uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:opacity-95"
+              style={{ backgroundColor: "#002060" }}
             >
-              {searchLimitReached
-                ? "🔒 Search limit over"
-                : activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon)
-                  ? "📍 Location Permission Required"
-                  : loading
-                    ? "🔍 Searching..."
-                    : `🔍 Search ${
-                        activeTab === "basic"
-                          ? "Matches"
-                          : activeTab === "advanced"
-                            ? "Advanced"
-                            : "Nearby"
-                      }`}
+              {searchLimitReached ? (
+                <>
+                  <i className="fa-solid fa-triangle-exclamation mr-1.5"></i>
+                  <span>Search Limit Reached</span>
+                </>
+              ) : activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon) ? (
+                <>
+                  <i className="fa-solid fa-location-crosshairs mr-1.5"></i>
+                  <span>Location Required</span>
+                </>
+              ) : loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5"></div>
+                  <span>Searching Profiles...</span>
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-magnifying-glass mr-1.5"></i>
+                  <span>
+                    Search {activeTab === "basic" ? "Matches" : activeTab === "advanced" ? "Advanced Parameters" : "Nearby"}
+                  </span>
+                </>
+              )}
             </button>
           </div>
 
-          {/* Search Results */}
-          {/* Search Results */}
+          {/* Search Results Block */}
           {searchResults.length > 0 && (
-            <div className="mt-6 border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Search Results ({searchResults.length})
-              </h3>
+            <div className="mt-8 border-t border-slate-200 pt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-slate-800 tracking-tight text-lg">
+                  Search Results ({totalResults})
+                </h3>
+              </div>
 
-              <div className="grid gap-4">
+              {/* 2-Column Responsive Card Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {searchResults.map((profile) => (
                   <div
                     key={profile.user_id || profile.id}
-                    className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+                    className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
                   >
-                    <div className="flex flex-col sm:flex-row items-start justify-between gap-5">
-                      <div className="flex items-start gap-5 flex-1 min-w-0">
-                        {/* Profile Image */}
-                        <div className="flex-shrink-0">
-                          <img
-                            src={
-                              profile.image_url && profile.image_url !== ""
-                                ? profile.image_url.startsWith("http")
-                                  ? profile.image_url
-                                  : `${import.meta.env.VITE_API_BASE_URL}${profile.image_url}`
-                                : `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}`
-                            }
-                            onError={(e) => {
-                              e.target.src = `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}`;
-                            }}
-                            alt="profile"
-                            className="w-24 h-24 rounded-full object-cover border"
-                          />
-                        </div>
-
-                        {/* Profile Info */}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-lg font-semibold text-gray-800">
-                            {profile.first_name} {profile.last_name}
-                          </h4>
-
-                          <div className="flex flex-wrap items-center gap-2 mt-1">
-                            <span className="text-gray-600 text-sm">
-                              {profile.profession} • {profile.city}
-                            </span>
-                            {activeTab === "nearme" && profile.distance_meters !== undefined && profile.distance_meters !== null && (
-                              <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-100 flex items-center gap-0.5 shadow-sm">
-                                📍 {(profile.distance_meters / 1000).toFixed(1)} km away
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-gray-500 text-sm mt-2 line-clamp-2">
-                            {profile.about}
-                          </p>
-                        </div>
+                    <div className="flex items-start gap-4">
+                      {/* Avatar container */}
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={
+                            profile.image_url && profile.image_url !== ""
+                              ? profile.image_url.startsWith("http")
+                                ? profile.image_url
+                                : `${import.meta.env.VITE_API_BASE_URL}${profile.image_url}`
+                              : `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}&background=E0F2FE&color=0369A1`
+                          }
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${profile.first_name}+${profile.last_name}&background=E0F2FE&color=0369A1`;
+                          }}
+                          alt="profile"
+                          className="w-16 h-16 rounded-full object-cover border border-slate-100 shadow-sm"
+                        />
+                        {activeTab === "nearme" && profile.distance_meters !== undefined && profile.distance_meters !== null && (
+                          <span className="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center border border-white text-[9px] shadow-sm animate-pulse" title="Nearby">
+                            <i className="fa-solid fa-location-dot"></i>
+                          </span>
+                        )}
                       </div>
 
-                      {/* Right Side Stats */}
-                      <div className="text-left sm:text-right text-sm text-gray-500 shrink-0">
-                        <p>{profile.age} years</p>
-                        <p>{profile.experience} yrs exp</p>
+                      {/* Header details */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-base font-bold text-slate-900 truncate">
+                          {profile.first_name} {profile.last_name}
+                        </h4>
+                        <p className="text-xs font-semibold text-slate-500 truncate mt-0.5">
+                          {profile.profession || "No Profession Listed"}
+                        </p>
+                        
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                            {profile.city || "N/A"}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                            {profile.age} yrs
+                          </span>
+                          {profile.experience && (
+                            <span className="text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                              {profile.experience} yrs exp
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Action Buttons Row */}
-                    <div className="border-t border-gray-100 pt-4 mt-4 flex justify-end gap-3">
+                    {/* About Snippet */}
+                    <div className="mt-4">
+                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                        {profile.about || "No profile description provided."}
+                      </p>
+                    </div>
+
+                    {/* Proximity tag */}
+                    {activeTab === "nearme" && profile.distance_meters !== undefined && profile.distance_meters !== null && (
+                      <div className="mt-3 text-[11px] font-bold text-indigo-700 bg-indigo-50/50 border border-indigo-100 rounded-lg py-1.5 px-3 flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <i className="fa-solid fa-road text-indigo-400"></i>
+                          Distance
+                        </span>
+                        <span>{(profile.distance_meters / 1000).toFixed(1)} km away</span>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="border-t border-slate-150 pt-4 mt-4 flex gap-2">
                       <button
                         onClick={() => navigate(`/dashboard/profile/${profile.user_id || profile.id}`, {
                           state: { userProfile: profile }
                         })}
-                        className="px-4 py-2 bg-[#002060] hover:bg-[#001848] text-white rounded-xl text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow flex items-center gap-1.5 cursor-pointer"
+                        className="flex-1 py-2 text-white rounded-xl text-xs font-bold transition duration-200 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-95"
+                        style={{ backgroundColor: "#002060" }}
                       >
                         <FiEye className="w-3.5 h-3.5" />
                         <span>View Profile</span>
@@ -1013,7 +843,7 @@ export default function AdvancedSearch() {
                             },
                           },
                         })}
-                        className="px-4 py-2 bg-pink-50 hover:bg-pink-100 text-[#FF2A6D] border border-pink-200 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                        className="flex-1 py-2 bg-pink-50 hover:bg-pink-100 text-[#FF2A6D] border border-pink-200 rounded-xl text-xs font-bold transition duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <FiMessageSquare className="w-3.5 h-3.5" />
                         <span>Message</span>
@@ -1023,23 +853,23 @@ export default function AdvancedSearch() {
                 ))}
               </div>
 
-              {/* Pagination Controls */}
+              {/* Pagination block */}
               {totalPages > 1 && (
-                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-200">
                   <button
                     onClick={() => performSearch(currentPage - 1)}
                     disabled={currentPage === 1 || loading}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200"
+                    className="px-4 py-2 border border-slate-250 rounded-xl text-xs uppercase tracking-wider font-bold text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
                   >
                     Previous
                   </button>
-                  <span className="text-sm text-gray-600 font-medium">
+                  <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
                     Page {currentPage} of {totalPages} ({totalResults} results)
                   </span>
                   <button
                     onClick={() => performSearch(currentPage + 1)}
                     disabled={currentPage === totalPages || loading}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all duration-200"
+                    className="px-4 py-2 border border-slate-250 rounded-xl text-xs uppercase tracking-wider font-bold text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
                   >
                     Next
                   </button>
@@ -1048,16 +878,11 @@ export default function AdvancedSearch() {
             </div>
           )}
 
-          {/* No Results Message */}
+          {/* No results block */}
           {!loading && searchResults.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No results found. Try adjusting your search criteria.
-            </div>
-          )}
-
-          {!loading && searchResults.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              {/* No results found. Try adjusting your search criteria. */}
+            <div className="text-center py-12 text-slate-400 font-semibold text-sm">
+              <i className="fa-solid fa-circle-info text-slate-350 text-2xl block mb-2"></i>
+              No profiles found matching your filters.
             </div>
           )}
         </div>

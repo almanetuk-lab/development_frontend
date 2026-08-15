@@ -165,24 +165,13 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           : "text-slate-600 hover:text-[#002060] hover:bg-white/60"
                       }`}
                     >
-                      <svg
-                        className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${
+                      <i
+                        className={`fa-solid fa-chart-pie text-sm transition-transform duration-200 group-hover:scale-110 ${
                           location.pathname === "/dashboard" || location.pathname === "/dashboard/"
                             ? "text-[#6366F1]"
                             : "text-slate-400 group-hover:text-[#002060]"
                         }`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="3" y="3" width="7" height="9" rx="1" />
-                        <rect x="14" y="3" width="7" height="5" rx="1" />
-                        <rect x="14" y="12" width="7" height="9" rx="1" />
-                        <rect x="3" y="16" width="7" height="5" rx="1" />
-                      </svg>
+                      ></i>
                       <span>Dashboard</span>
                     </Link>
                   </li>
@@ -197,20 +186,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           : "text-slate-600 hover:text-[#002060] hover:bg-white/60"
                       }`}
                     >
-                      <svg
-                        className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${
+                      <i
+                        className={`fa-solid fa-location-dot text-sm transition-transform duration-200 group-hover:scale-110 ${
                           isActive("/dashboard/search") ? "text-[#FF2A6D]" : "text-slate-400 group-hover:text-[#002060]"
                         }`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
+                      ></i>
                       <span>Near Me</span>
                     </Link>
                   </li>
@@ -225,22 +205,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           : "text-slate-600 hover:text-[#002060] hover:bg-white/60"
                       }`}
                     >
-                      <svg
-                        className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${
+                      <i
+                        className={`fa-solid fa-users text-sm transition-transform duration-200 group-hover:scale-110 ${
                           isActive("/dashboard/members") ? "text-[#2563EB]" : "text-slate-400 group-hover:text-[#002060]"
                         }`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
+                      ></i>
                       <span>Browse Members</span>
                     </Link>
                   </li>
@@ -255,19 +224,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           : "text-slate-600 hover:text-[#002060] hover:bg-white/60"
                       }`}
                     >
-                      <svg
-                        className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${
+                      <i
+                        className={`fa-solid fa-heart text-sm transition-transform duration-200 group-hover:scale-110 ${
                           isActive("/dashboard/matches") ? "text-[#FF2A6D]" : "text-slate-400 group-hover:text-[#002060]"
                         }`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                      </svg>
+                      ></i>
                       <span>My Matches</span>
                     </Link>
                   </li>
@@ -282,20 +243,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           : "text-slate-600 hover:text-[#002060] hover:bg-white/60"
                       }`}
                     >
-                      <svg
-                        className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${
+                      <i
+                        className={`fa-solid fa-user-pen text-sm transition-transform duration-200 group-hover:scale-110 ${
                           isActive("/dashboard/edit-profile") ? "text-[#F59E0B]" : "text-slate-400 group-hover:text-[#002060]"
                         }`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                      </svg>
+                      ></i>
                       <span>Edit Profile</span>
                     </Link>
                   </li>
@@ -384,9 +336,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                         >
                           <span className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
-                            </svg>
+                            <i className="fa-solid fa-chart-pie text-sm"></i>
                           </span>
                           <div className="flex-1">
                             <p className="leading-tight">Dashboard</p>
@@ -400,9 +350,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                         >
                           <span className="p-1.5 rounded-lg bg-purple-50 text-purple-600 group-hover:bg-purple-100 transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                            <i className="fa-solid fa-user-pen text-sm"></i>
                           </span>
                           <div className="flex-1">
                             <p className="leading-tight">Edit Profile</p>
@@ -416,9 +364,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                         >
                           <span className="p-1.5 rounded-lg bg-pink-50 text-pink-600 group-hover:bg-pink-100 transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
+                            <i className="fa-solid fa-cart-shopping text-sm"></i>
                           </span>
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
@@ -445,9 +391,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 font-bold transition-all duration-200 group"
                         >
                           <span className="p-1.5 rounded-lg bg-red-50 text-red-600 group-hover:bg-red-100 transition-colors">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
+                            <i className="fa-solid fa-right-from-bracket text-sm"></i>
                           </span>
                           <div className="text-left">
                             <p className="leading-tight">Logout</p>
@@ -562,12 +506,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="3" width="7" height="9" rx="1" />
-                            <rect x="14" y="3" width="7" height="5" rx="1" />
-                            <rect x="14" y="12" width="7" height="9" rx="1" />
-                            <rect x="3" y="16" width="7" height="5" rx="1" />
-                          </svg>
+                          <i className="fa-solid fa-chart-pie text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Dashboard</span>
                       </Link>
@@ -579,10 +518,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-sky-50 text-sky-600 group-hover:bg-sky-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="8" r="4" />
-                            <path d="M20 21a8 8 0 0 0-16 0" />
-                          </svg>
+                          <i className="fa-solid fa-id-card text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">View Profile</span>
                       </Link>
@@ -594,10 +530,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                          </svg>
+                          <i className="fa-solid fa-user-pen text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Edit Profile</span>
                       </Link>
@@ -609,9 +542,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-teal-50 text-teal-600 group-hover:bg-teal-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                          </svg>
+                          <i className="fa-solid fa-comment-dots text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Messages</span>
                       </Link>
@@ -623,10 +554,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-purple-50 text-purple-600 group-hover:bg-purple-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                          </svg>
+                          <i className="fa-solid fa-magnifying-glass-plus text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Advanced Search</span>
                       </Link>
@@ -638,9 +566,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-rose-50 text-[#FF2A6D] group-hover:bg-rose-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                          </svg>
+                          <i className="fa-solid fa-heart text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">My Matches</span>
                       </Link>
@@ -652,9 +578,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z" />
-                          </svg>
+                          <i className="fa-solid fa-wand-magic-sparkles text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">AI Suggestions</span>
                       </Link>
@@ -666,12 +590,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                          </svg>
+                          <i className="fa-solid fa-users text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Browse Members</span>
                       </Link>
@@ -683,10 +602,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="2" y="5" width="20" height="14" rx="2" />
-                            <line x1="2" y1="10" x2="22" y2="10" />
-                          </svg>
+                          <i className="fa-solid fa-credit-card text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Plan</span>
                       </Link>
@@ -698,10 +614,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600 group-hover:bg-slate-200 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                          </svg>
+                          <i className="fa-solid fa-gears text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Settings</span>
                       </Link>
@@ -713,9 +626,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-pink-50 text-pink-600 group-hover:bg-pink-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
+                          <i className="fa-solid fa-cart-shopping text-sm w-4 text-center"></i>
                         </span>
                         <div className="flex-1 flex items-center justify-between">
                           <span className="leading-tight">My Cart</span>
@@ -734,10 +645,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50 hover:text-[#002060] font-semibold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-pink-50 text-pink-600 group-hover:bg-pink-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                          </svg>
+                          <i className="fa-solid fa-book-open text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight flex-1">Blogs</span>
                       </Link>
@@ -755,9 +663,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 font-bold transition-all duration-200 group"
                       >
                         <span className="p-1.5 rounded-lg bg-red-50 text-red-600 group-hover:bg-red-100 transition-colors shrink-0">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                          </svg>
+                          <i className="fa-solid fa-right-from-bracket text-sm w-4 text-center"></i>
                         </span>
                         <span className="leading-tight">Logout</span>
                       </button>
@@ -840,35 +746,35 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
 
                 <Link
                   to="/dashboard"
-                  className="flex items-center gap-3 py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+                  className="flex items-center gap-3 py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm group"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <span className="text-lg">📊</span>
+                  <i className="fa-solid fa-chart-pie text-slate-400 group-hover:text-[#002060] text-base w-5 text-center transition-colors shrink-0"></i>
                   <span>Dashboard</span>
                 </Link>
                 <Link
                   to="/members"
-                  className="flex items-center gap-3 py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+                  className="flex items-center gap-3 py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm group"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <span className="text-lg">👥</span>
+                  <i className="fa-solid fa-users text-slate-400 group-hover:text-[#002060] text-base w-5 text-center transition-colors shrink-0"></i>
                   <span>Members</span>
                 </Link>
                 <Link
                   to="/edit-profile"
-                  className="flex items-center gap-3 py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+                  className="flex items-center gap-3 py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm group"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <span className="text-lg">✏️</span>
+                  <i className="fa-solid fa-user-pen text-slate-400 group-hover:text-[#002060] text-base w-5 text-center transition-colors shrink-0"></i>
                   <span>Edit Profile</span>
                 </Link>
                 <Link
                   to="/cart"
-                  className="flex items-center justify-between py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm"
+                  className="flex items-center justify-between py-2.5 px-4 text-slate-600 hover:text-[#002060] hover:bg-slate-50 rounded-xl transition font-semibold text-sm group"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <span className="flex items-center gap-3">
-                    <span className="text-lg">🛒</span>
+                    <i className="fa-solid fa-cart-shopping text-slate-400 group-hover:text-[#002060] text-base w-5 text-center transition-colors shrink-0"></i>
                     <span>My Cart</span>
                   </span>
                   {cartCount > 0 && (
@@ -920,9 +826,9 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                     setIsMobileMenuOpen(false);
                     handleLogout();
                   }}
-                  className="w-full flex items-center gap-3 py-2.5 px-4 text-red-600 hover:bg-red-50 rounded-xl transition font-bold text-sm"
+                  className="w-full flex items-center gap-3 py-2.5 px-4 text-red-600 hover:bg-red-50 rounded-xl transition font-bold text-sm group"
                 >
-                  <span className="text-lg">🚪</span>
+                  <i className="fa-solid fa-right-from-bracket text-red-400 group-hover:text-red-600 text-base w-5 text-center transition-colors shrink-0"></i>
                   <span>Logout</span>
                 </button>
               )}

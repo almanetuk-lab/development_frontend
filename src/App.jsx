@@ -57,6 +57,7 @@ import LinkedInCallback from "./components/social/LinkedInCallback";
 import AdminModelDetails from "./components/admin/AdminModelDetails";
 import ResetPassword from "./components/pages/ResetPassword";
 import Settings from "./components/pages/Settings";
+import CookieConsentBanner from "./components/comman/CookieConsentBanner";
 
 // Protected Route Component (For regular users)
 const UserProtectedRoute = ({ children }) => {
@@ -347,8 +348,14 @@ export default function App() {
         {/*user settings routes */}
 
         <Route
-       path="/dashboard/settings"
-        element={<Settings/>} 
+          path="/dashboard/settings"
+          element={
+            <MainLayout>
+              <UserProtectedRoute>
+                <Settings />
+              </UserProtectedRoute>
+            </MainLayout>
+          }
         />
 
 
@@ -551,6 +558,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <ToastContainer />
+      <CookieConsentBanner />
     </UserProfileProvider>
   );
 }

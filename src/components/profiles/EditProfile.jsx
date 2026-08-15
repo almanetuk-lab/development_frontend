@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useUserProfile } from "../context/UseProfileContext";
 import { updateUserProfile, uploadImage, saveProfileImage, removeProfileImage, updateUserLocation } from "../services/api";
 import LifeRhythmsForm from "./LifeRhythmsForm";
@@ -592,7 +593,7 @@ export default function EditProfilePage() {
   // ✨ FACE DETECTION FUNCTION - Yeh aapka **API Integration** hai
   const handleFaceDetection = async (imageFile) => {
     if (!imageFile) {
-      alert("Please select an image first");
+      toast.error("Please select an image first");
       return;
     }
 
@@ -616,11 +617,11 @@ export default function EditProfilePage() {
         }));
       }
 
-      alert("Face detected successfully! ✅");
+      toast.success("Face detected successfully! ✅");
       return faceData;
     } catch (error) {
       console.error("❌ Face detection failed:", error);
-      alert("Face detection failed. Please try again.");
+      toast.error("Face detection failed. Please try again.");
     } finally {
       setImageLoading(false);
     }
@@ -879,12 +880,106 @@ export default function EditProfilePage() {
     }
   }, [profile?.user_id, profile?.latitude, profile?.longitude]);
 
+  // ================== FIELD VALIDATION LOGIC ==================
+  const validateProfileFields = (silently = false) => {
+    const firstName = (formData.first_name || "").trim();
+    if (!firstName) {
+      if (!silently) toast.error("First name is required.");
+      return false;
+    }
+    if (firstName.length < 2) {
+      if (!silently) toast.error("First name must be at least 2 characters long.");
+      return false;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(firstName)) {
+      if (!silently) toast.error("First name can only contain letters and spaces.");
+      return false;
+    }
+
+    const lastName = (formData.last_name || "").trim();
+    if (!lastName) {
+      if (!silently) toast.error("Last name is required.");
+      return false;
+    }
+    if (lastName.length < 2) {
+      if (!silently) toast.error("Last name must be at least 2 characters long.");
+      return false;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(lastName)) {
+      if (!silently) toast.error("Last name can only contain letters and spaces.");
+      return false;
+    }
+
+    const username = (formData.username || "").trim();
+    if (!username) {
+      if (!silently) toast.error("Username is required.");
+      return false;
+    }
+    if (username.length < 3) {
+      if (!silently) toast.error("Username must be at least 3 characters long.");
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      if (!silently) toast.error("Username can only contain letters, numbers, and underscores.");
+      return false;
+    }
+
+    const email = (formData.email || "").trim();
+    if (!email) {
+      if (!silently) toast.error("Email address is required.");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      if (!silently) toast.error("Please enter a valid email address.");
+      return false;
+    }
+
+    const phone = (formData.phone || "").trim();
+    if (phone) {
+      if (!/^[+0-9\s\-()]+$/.test(phone)) {
+        if (!silently) toast.error("Phone number can only contain digits, spaces, hyphens, parentheses, and +.");
+        return false;
+      }
+      const digitsCount = phone.replace(/[^0-9]/g, "").length;
+      if (digitsCount < 7 || digitsCount > 15) {
+        if (!silently) toast.error("Phone number should be between 7 and 15 digits long.");
+        return false;
+      }
+    }
+
+    if (formData.dob) {
+      const dobDate = new Date(formData.dob);
+      const today = new Date();
+      if (dobDate >= today) {
+        if (!silently) toast.error("Date of Birth must be in the past.");
+        return false;
+      }
+      let calculatedAge = today.getFullYear() - dobDate.getFullYear();
+      const monthDiff = today.getMonth() - dobDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+        calculatedAge--;
+      }
+      if (calculatedAge < 18) {
+        if (!silently) toast.error("You must be at least 18 years old.");
+        return false;
+      }
+    }
+
+    if (formData.age) {
+      const ageNum = Number(formData.age);
+      if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
+        if (!silently) toast.error("Age must be a valid number between 18 and 120.");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   // ================== Reusable Save Logic ==================
   const saveProfileData = async (silently = true) => {
-    if (!formData.email || !formData.first_name || !formData.last_name) {
-      if (!silently) {
-        alert("Email, First name and Last name are required");
-      }
+    if (!validateProfileFields(silently)) {
       return false;
     }
 
@@ -1039,13 +1134,13 @@ export default function EditProfilePage() {
       });
 
       if (!silently) {
-        alert("Profile updated successfully ✅");
+        toast.success("Profile updated successfully ✅");
       }
       return true;
     } catch (err) {
       console.error("❌ Auto-save profile error:", err);
       if (!silently) {
-        alert(err?.response?.data?.error || "Save failed");
+        toast.error(err?.response?.data?.error || "Save failed");
       }
       return false;
     }
@@ -1089,20 +1184,19 @@ export default function EditProfilePage() {
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.email || !formData.first_name || !formData.last_name) {
-      alert("Email, First name and Last name are required");
+    if (!validateProfileFields(false)) {
       setLoading(false);
       return;
     }
 
     if (!formData.dob) {
-      alert("Please select Date of Birth");
+      toast.error("Please select Date of Birth");
       setLoading(false);
       return;
     }
 
     if (!formData.age) {
-      alert("Please enter your age");
+      toast.error("Please enter your age");
       setLoading(false);
       return;
     }
@@ -1301,7 +1395,7 @@ export default function EditProfilePage() {
       return imageUrl;
     } catch (error) {
       console.error("❌ Image upload error:", error);
-      alert("Image upload failed.");
+      toast.error("Image upload failed.");
       return null;
     } finally {
       setImageLoading(false);
@@ -1348,10 +1442,10 @@ export default function EditProfilePage() {
           profile_image: null,
         });
 
-        alert("Profile picture removed!");
+        toast.success("Profile picture removed!");
       } catch (error) {
         console.error("Error removing profile picture:", error);
-        alert("Failed to remove profile picture.");
+        toast.error("Failed to remove profile picture.");
       }
     }
   };

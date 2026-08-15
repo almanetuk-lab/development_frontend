@@ -26,7 +26,12 @@ export default function PaymentHistory({ onClose }) {
         }
 
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
-        const res = await fetch(`${API_BASE_URL}/payments/${user_id}`);
+        const token = localStorage.getItem("accessToken");
+        const res = await fetch(`${API_BASE_URL}/payments/${user_id}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
         const data = await res.json();
 
         setHistory(Array.isArray(data) ? data : []);

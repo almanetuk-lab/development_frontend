@@ -1,6 +1,8 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import AddNewPlan from "../admin/AddPlanForm";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 const BASE_URL = `${API_BASE_URL}/api/admin/plans`;
 const CONFIG_URL = `${API_BASE_URL}/api/admin/configurations`;
@@ -88,6 +90,7 @@ export default function AdminAddNewPlan() {
                 setEditingId={setEditingId}
                 formData={formData}
                 config={config} //  pass config to form
+                onCancel={() => navigate("/admin/plans")}
             />
         </>
     )

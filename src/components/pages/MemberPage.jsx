@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { userAPI } from "../services/userApi";
-import api from "../services/api"; // Your axios instance
+import api from "../services/api"; 
 import ImageModal from "../comman/ImageModal";
 
 const MemberPage = () => {
@@ -18,17 +18,20 @@ const MemberPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [debounceTimer, setDebounceTimer] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(12);
-  const [loadingProfileId, setLoadingProfileId] = useState(null); // Track which profile is loading
+  const [loadingProfileId, setLoadingProfileId] = useState(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   // State for Image Modal
   const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
-  // ADDED: PLAN STATUS STATE
+  // Plan Status State
   const [planActive, setPlanActive] = useState(false);
   const [planLoading, setPlanLoading] = useState(true);
 
-  //  ADDED: CHECK PLAN STATUS
+  // Check Plan Status
   useEffect(() => {
     const checkPlanStatus = async () => {
       try {
@@ -44,13 +47,12 @@ const MemberPage = () => {
     checkPlanStatus();
   }, []);
 
-  //  MODIFIED: Initial load of members with plan check
+  // Initial load of members with plan check
   useEffect(() => {
     if (!planLoading && planActive) {
       fetchMembers();
     }
   }, [planLoading, planActive]);
-
 
   // Search with debounce
   useEffect(() => {
@@ -59,7 +61,7 @@ const MemberPage = () => {
     }
 
     if (searchTerm.trim() === "") {
-      setFilteredMembers(members.slice(0, visibleCount));
+      setFilteredMembers(members);
       return;
     }
 
@@ -80,6 +82,11 @@ const MemberPage = () => {
   useEffect(() => {
     applyAllFilters();
   }, [selectedGender, selectedCity, minAge, maxAge, members]);
+
+  // Reset pagination to page 1 on search or filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedGender, selectedCity, minAge, maxAge]);
 
   const applyAllFilters = () => {
     let result = members.filter((member) => {
@@ -119,17 +126,22 @@ const MemberPage = () => {
     setFilteredMembers(result);
   };
 
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setSelectedGender("All");
+    setSelectedCity("");
+    setMinAge("");
+    setMaxAge("");
+  };
+
   // Fetch initial members
   const fetchMembers = async () => {
     try {
       setLoading(true);
-
       const response = await userAPI.searchProfiles({
         search_mode: "basic",
         first_name: "",
       });
-
-      console.log("Initial members response:", response.data);
 
       if (response.data) {
         const membersData = Array.isArray(response.data)
@@ -141,7 +153,6 @@ const MemberPage = () => {
       }
     } catch (error) {
       console.error("Error fetching members:", error);
-      // Fallback dummy data
       setMembers(getDummyMembers());
       setFilteredMembers(getDummyMembers());
     } finally {
@@ -149,99 +160,64 @@ const MemberPage = () => {
     }
   };
 
-  //  CORRECT: Fetch COMPLETE user profile
+  // Fetch COMPLETE user profile
   const fetchCompleteProfile = async (userId) => {
     try {
-      console.log(`🔍 Fetching COMPLETE profile for user ${userId} via /api/users/${userId}...`);
-
+      console.log(`🔍 Fetching complete profile for user ${userId}...`);
       const response = await api.get(`/api/users/${userId}`);
 
-      console.log(`/api/users/${userId} response:`, response.data);
-
       if (response.data) {
-        // Check response format
         let completeProfile = {};
-
-        // Format 1: Data in response.data.data
         if (response.data.data) {
           completeProfile = {
             ...response.data.data,
             prompts: response.data.prompts || {}
           };
-        }
-        // Format 2: Direct data in response.data
-        else {
+        } else {
           completeProfile = response.data;
-
-          // If prompts are separate, combine them
           if (response.data.prompts && !completeProfile.prompts) {
             completeProfile.prompts = response.data.prompts;
           }
         }
 
-        console.log(" Complete profile fetched:", completeProfile);
-        console.log("Has prompts?", completeProfile.prompts);
-        console.log("User ID in profile:", completeProfile.user_id || completeProfile.id);
-
-        // Verify this is the correct user
         const profileUserId = completeProfile.user_id || completeProfile.id;
         if (profileUserId == userId) {
-          console.log("CORRECT user profile verified");
           return completeProfile;
-        } else {
-          console.log(` WRONG user: Expected ${userId}, got ${profileUserId}`);
-          return null;
         }
       }
-
       return null;
-
     } catch (error) {
       console.error("❌ Error fetching complete profile:", error);
       return null;
     }
   };
 
-  //  UPDATED: View Profile Function with COMPLETE data fetch
   const handleViewProfile = async (member) => {
     const memberId = member.user_id || member.id;
     const memberName = formatName(member);
 
-    console.log("🎯 VIEW PROFILE CLICKED for user:", memberName, "ID:", memberId);
-    console.log("Current member data (partial):", member);
-
-    //  ADDED: PLAN CHECK
     if (!planActive) {
       navigate("/dashboard/upgrade");
       return;
     }
 
     try {
-      // Show loading for this specific profile
       setLoadingProfileId(memberId);
-
-      // 1. Fetch COMPLETE profile data using /api/users/{userId}
       const completeProfile = await fetchCompleteProfile(memberId);
 
       if (completeProfile) {
-        console.log(" SUCCESS: Complete profile data fetched");
-
-        // 2. Navigate with COMPLETE data
         navigate(`/dashboard/profile/${memberId}`, {
           state: {
-            userProfile: completeProfile, // COMPLETE data with prompts, questions, etc.
+            userProfile: completeProfile,
             memberId: memberId,
             name: memberName,
             from: "member_page_complete"
           }
         });
       } else {
-        console.log("⚠️ Complete profile not found, using partial data");
-
-        // Fallback: Use partial member data
         navigate(`/dashboard/profile/${memberId}`, {
           state: {
-            userProfile: member, // Only basic data
+            userProfile: member,
             memberId: memberId,
             name: memberName,
             from: "member_page_partial"
@@ -250,11 +226,8 @@ const MemberPage = () => {
       }
     } catch (error) {
       console.error("❌ Navigation error:", error);
-
-      // Final fallback: Navigate without state
       navigate(`/dashboard/profile/${memberId}`);
     } finally {
-      // Hide loading
       setLoadingProfileId(null);
     }
   };
@@ -262,20 +235,16 @@ const MemberPage = () => {
   // Perform search using API
   const performSearch = async () => {
     if (!searchTerm.trim()) {
-      setFilteredMembers(members.slice(0, 12));
-      setVisibleCount(12);
+      applyAllFilters();
       return;
     }
 
     try {
       setSearchLoading(true);
-
       const response = await userAPI.searchProfiles({
         search_mode: "basic",
         first_name: searchTerm,
       });
-
-      console.log("Search response:", response.data);
 
       if (response.data) {
         const searchResults = Array.isArray(response.data)
@@ -294,57 +263,16 @@ const MemberPage = () => {
               (selected === "woman" && memberGender === "female")
             );
           });
-          setFilteredMembers(genderFiltered.slice(0, 12));
+          setFilteredMembers(genderFiltered);
         } else {
-          setFilteredMembers(searchResults.slice(0, 12));
+          setFilteredMembers(searchResults);
         }
-        setVisibleCount(12);
       }
     } catch (error) {
       console.error("Search error:", error);
     } finally {
       setSearchLoading(false);
     }
-  };
-
-  // Filter members by gender
-  const filterMembersByGender = () => {
-    if (selectedGender === "All") {
-      setFilteredMembers(members.slice(0, 12));
-    } else {
-      const filtered = members.filter((member) => {
-        const memberGender = member.gender?.toLowerCase();
-        const selected = selectedGender.toLowerCase();
-        return (
-          memberGender === selected ||
-          (selected === "man" && memberGender === "male") ||
-          (selected === "woman" && memberGender === "female")
-        );
-      });
-      setFilteredMembers(filtered.slice(0, 12));
-    }
-    setVisibleCount(12);
-  };
-
-  // Load More function
-  const loadMoreMembers = () => {
-    setVisibleCount((prev) => prev + 12);
-  };
-
-  // Reset all filters
-  const handleResetFilters = () => {
-    setSearchTerm("");
-    setSelectedGender("All");
-    setSelectedCity("");
-    setMinAge("");
-    setMaxAge("");
-    setVisibleCount(12);
-    fetchMembers();
-  };
-
-  // Calculate if there are more members to load
-  const hasMoreMembers = () => {
-    return filteredMembers.length > visibleCount;
   };
 
   // Handle search form submit
@@ -356,12 +284,9 @@ const MemberPage = () => {
     performSearch();
   };
 
-  //  FIXED: Chat Function
+  // Chat Function
   const handleSendMessage = async (memberId, memberName = "") => {
     try {
-      console.log("💬 CHAT CLICKED for:", memberName, "ID:", memberId);
-
-      // Navigate to messages page with user info
       navigate(`/dashboard/messages`, {
         state: {
           selectedUser: {
@@ -371,10 +296,8 @@ const MemberPage = () => {
           }
         }
       });
-
     } catch (error) {
       console.error("Error starting chat:", error);
-      // Fallback navigation
       navigate(`/dashboard/messages`, {
         state: {
           selectedUser: {
@@ -402,7 +325,6 @@ const MemberPage = () => {
     return member.address || "Location not specified";
   };
 
-  // Dummy data fallback
   const getDummyMembers = () => [
     {
       id: 1,
@@ -413,8 +335,7 @@ const MemberPage = () => {
       gender: "Woman",
       city: "Delhi",
       profession: "Fashion Designer",
-      image_url:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face",
+      image_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face",
     },
     {
       id: 2,
@@ -425,8 +346,7 @@ const MemberPage = () => {
       gender: "Man",
       city: "Panaji",
       profession: "Software Engineer",
-      image_url:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
+      image_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
     },
     {
       id: 3,
@@ -437,8 +357,7 @@ const MemberPage = () => {
       gender: "Woman",
       city: "Mumbai",
       profession: "Doctor",
-      image_url:
-        "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=300&h-300&fit=crop&crop=face",
+      image_url: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=300&h-300&fit=crop&crop=face",
     },
     {
       id: 4,
@@ -449,398 +368,383 @@ const MemberPage = () => {
       gender: "Man",
       city: "Kolkata",
       profession: "Business Owner",
-      image_url:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h-300&fit=crop&crop=face",
+      image_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h-300&fit=crop&crop=face",
     },
   ];
 
+  const totalMembers = members.length;
+  const filteredTotal = filteredMembers.length;
+  const totalPages = Math.ceil(filteredTotal / ITEMS_PER_PAGE);
+
+  const indexOfLastMember = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstMember = indexOfLastMember - ITEMS_PER_PAGE;
+  const visibleMembers = filteredMembers.slice(indexOfFirstMember, indexOfLastMember);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/*  ADDED: PLAN CHECK MODAL */}
+    <div className="w-full bg-slate-50/30 min-h-screen">
+      
+      {/* Plan Restricted Modal Backdrop */}
       {!planLoading && !planActive && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-xl">
-            <h2 className="text-xl font-bold mb-3">
-              Membership Required 🔒
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Please upgrade your plan to access member profiles and chat features.
-            </p>
+        <div className="fixed inset-0 bg-slate-950/60 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-xl border border-slate-200 mx-4 space-y-5">
+            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+              <i className="fa-solid fa-lock"></i>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-black text-slate-900">Membership Required</h2>
+              <p className="text-sm text-slate-500">
+                Please upgrade your plan to unlock full search capabilities, detailed profiles, and member chat features.
+              </p>
+            </div>
             <button
               onClick={() => navigate("/dashboard/upgrade")}
-              className="px-6 py-2 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
+              className="w-full py-3 text-white rounded-xl text-xs uppercase tracking-wider font-bold transition shadow-sm hover:opacity-95"
+              style={{ backgroundColor: "#002060" }}
             >
-              Upgrade Plan
+              Upgrade Subscription
             </button>
           </div>
         </div>
       )}
 
-      {/* Search & Filter Section */}
-      <div className="bg-gray-100 py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <form onSubmit={handleSearchSubmit}>
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                {/* Search Bar */}
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      placeholder="Search Members by name, profession or city..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                      disabled={!planActive || searchLoading}
-                    />
-                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      {searchLoading ? (
-                        <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+        
+        {/* Header Panel */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <i className="fa-solid fa-users text-indigo-600"></i>
+              Browse Members
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Explore the entire community, find matching professions, or connect with members nearby.
+            </p>
+          </div>
 
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-amber-500 text-white font-medium rounded-xl hover:bg-amber-600 transition-all shadow-sm"
-                  >
-                    Search
-                  </button>
-                </div>
+          <div className="text-xs bg-slate-100 text-slate-600 font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl border border-slate-155 flex items-center gap-2 self-stretch md:self-auto justify-center">
+            <i className="fa-solid fa-layer-group text-slate-400"></i>
+            <span>Total: {filteredTotal} Members</span>
+          </div>
+        </div>
 
-                {/* Filters Grid: Gender, City, Min Age, Max Age */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 pt-2 border-t border-gray-100">
-                  {/* Gender Filter */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      Gender
-                    </label>
-                    <select
-                      value={selectedGender}
-                      onChange={(e) => setSelectedGender(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
-                    >
-                      <option value="All">All Genders</option>
-                      <option value="Man">Men</option>
-                      <option value="Woman">Women</option>
-                    </select>
-                  </div>
-
-                  {/* City Filter */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Filter by City..."
-                      value={selectedCity}
-                      onChange={(e) => setSelectedCity(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
-                    />
-                  </div>
-
-                  {/* Min Age Filter */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      Min Age
-                    </label>
-                    <input
-                      type="number"
-                      min="18"
-                      max="100"
-                      placeholder="e.g. 21"
-                      value={minAge}
-                      onChange={(e) => setMinAge(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
-                    />
-                  </div>
-
-                  {/* Max Age Filter */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      Max Age
-                    </label>
-                    <input
-                      type="number"
-                      min="18"
-                      max="100"
-                      placeholder="e.g. 40"
-                      value={maxAge}
-                      onChange={(e) => setMaxAge(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Results Count & Reset Button */}
-                <div className="flex flex-wrap items-center justify-between pt-3 border-t border-gray-100 text-sm text-gray-600 gap-2">
-                  <div>
-                    {searchLoading ? (
-                      <div className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Searching...
-                      </div>
-                    ) : (
-                      <div>
-                        Showing <span className="font-bold text-amber-600">{filteredMembers.length}</span> of <span className="font-bold">{members.length}</span> members
-                      </div>
-                    )}
-                  </div>
-
-                  {(selectedGender !== "All" || selectedCity || minAge || maxAge || searchTerm) && (
-                    <button
-                      type="button"
-                      onClick={handleResetFilters}
-                      className="text-xs text-amber-600 hover:text-amber-800 font-semibold underline transition-all"
-                    >
-                      Reset All Filters ✕
-                    </button>
+        {/* Search & Filters Panel */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+          <form onSubmit={handleSearchSubmit} className="space-y-6">
+            
+            {/* Search Input Bar */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Search members by name, job description or city..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm text-slate-950 placeholder-slate-400"
+                  disabled={!planActive || searchLoading}
+                />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center">
+                  {searchLoading ? (
+                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <i className="fa-solid fa-magnifying-glass text-slate-400"></i>
                   )}
                 </div>
               </div>
-            </form>
-          </div>
-        </div>
-      </div>
 
-      {/* Members Grid */}
-      <div className="container mx-auto px-4 py-12">
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-0 overflow-hidden animate-pulse"
+              <button
+                type="submit"
+                className="px-6 py-3 text-white rounded-xl text-xs uppercase tracking-wider font-bold transition shadow-sm hover:opacity-95 shrink-0"
+                style={{ backgroundColor: "#002060" }}
+                disabled={!planActive}
               >
-                <div className="h-48 bg-gray-300"></div>
-                <div className="p-6">
-                  <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/3 mb-3"></div>
-                  <div className="h-4 bg-gray-300 rounded w-full mb-1"></div>
-                  <div className="h-4 bg-gray-300 rounded w-2/3 mb-6"></div>
-                  <div className="flex gap-3">
-                    <div className="h-10 bg-gray-300 rounded-lg flex-1"></div>
-                    <div className="h-10 bg-gray-300 rounded-lg flex-1"></div>
+                Search
+              </button>
+            </div>
+
+            {/* Filters Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Gender Preference
+                </label>
+                <select
+                  value={selectedGender}
+                  onChange={(e) => setSelectedGender(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm text-slate-950"
+                  disabled={!planActive}
+                >
+                  <option value="All">All Genders</option>
+                  <option value="Man">Men</option>
+                  <option value="Woman">Women</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  City / Region
+                </label>
+                <input
+                  type="text"
+                  placeholder="Filter by city..."
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm text-slate-950 placeholder-slate-400"
+                  disabled={!planActive}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Min Age
+                </label>
+                <input
+                  type="number"
+                  min="18"
+                  max="100"
+                  placeholder="e.g. 21"
+                  value={minAge}
+                  onChange={(e) => setMinAge(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm text-slate-950"
+                  disabled={!planActive}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Max Age
+                </label>
+                <input
+                  type="number"
+                  min="18"
+                  max="100"
+                  placeholder="e.g. 40"
+                  value={maxAge}
+                  onChange={(e) => setMaxAge(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm text-slate-950"
+                  disabled={!planActive}
+                />
+              </div>
+            </div>
+
+            {/* Results metadata + reset controls */}
+            <div className="flex flex-wrap items-center justify-between pt-4 border-t border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500 gap-2">
+              <div>
+                {searchLoading ? (
+                  <span className="flex items-center gap-2 text-indigo-600">
+                    <i className="fa-solid fa-spinner animate-spin"></i> Searching Database...
+                  </span>
+                ) : (
+                  <span>
+                    Showing <span className="text-indigo-600 font-extrabold">{filteredTotal}</span> results
+                  </span>
+                )}
+              </div>
+
+              {(selectedGender !== "All" || selectedCity || minAge || maxAge || searchTerm) && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-rose-600 hover:text-rose-800 transition flex items-center gap-1 cursor-pointer"
+                >
+                  Reset All Filters <i className="fa-solid fa-xmark"></i>
+                </button>
+              )}
+            </div>
+
+          </form>
+        </div>
+
+        {/* Members Grid Deck */}
+        <div className="w-full">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
+                  <div className="h-48 bg-slate-200"></div>
+                  <div className="p-5 space-y-3">
+                    <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-10 bg-slate-200 rounded-xl flex-1"></div>
+                      <div className="w-10 h-10 bg-slate-200 rounded-xl"></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredMembers.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredMembers.slice(0, visibleCount).map((member) => {
-                const memberId = member.user_id || member.id;
-                const isLoading = loadingProfileId === memberId;
+              ))}
+            </div>
+          ) : visibleMembers.length > 0 ? (
+            <div className="space-y-8">
+              
+              {/* Grid cards listing */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {visibleMembers.map((member) => {
+                  const memberId = member.user_id || member.id;
+                  const isLoading = loadingProfileId === memberId;
+                  const displayName = formatName(member);
+                  const displayCity = getDisplayCity(member);
+                  
+                  const imgSrc = member.image_url && member.image_url !== "Not provided"
+                    ? member.image_url
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&size=400`;
 
-                return (
-                  <div
-                    key={member.id || member.user_id}
-                    className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100 hover:border-amber-100"
-                  >
+                  return (
                     <div
-                      className="h-48 overflow-hidden bg-gray-100 relative group cursor-pointer"
-                      onClick={() => {
-                        const imgSrc = member.image_url && member.image_url !== "Not provided"
-                          ? member.image_url
-                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(formatName(member))}&background=random&size=400`;
-                        setModalImage({ isOpen: true, url: imgSrc, title: formatName(member) });
-                      }}
-                      title="Click to view image in big mode"
+                      key={member.id || member.user_id}
+                      className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between"
                     >
-                      <img
-                        src={
-                          member.image_url && member.image_url !== "Not provided"
-                            ? member.image_url
-                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              formatName(member)
-                            )}&background=random&size=400`
-                        }
-                        alt={formatName(member)}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            formatName(member)
-                          )}&background=random&size=400`;
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm flex items-center gap-1 shadow-md">
-                          🔍 View Big Image
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-6">
-                      <h3 className="text-lg font-bold text-gray-800 mb-3 truncate">
-                        {formatName(member)}
-                      </h3>
-
-                      <div className="flex items-center gap-2 text-gray-600 mb-2">
-                        <svg
-                          className="w-4 h-4 text-gray-500 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <span className="text-sm truncate">
-                          {member.profession || "Profession not specified"}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-gray-500 text-sm mb-6">
-                        <svg
-                          className="w-4 h-4 text-gray-500 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        <span className="truncate">{getDisplayCity(member)}</span>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => {
-                            console.log("🟢 VIEW PROFILE BUTTON CLICKED");
-                            console.log("Member:", member);
-                            console.log("Using user_id:", member.user_id);
-                            console.log("Member Name:", formatName(member));
-
-                            // ✅ Use updated handleViewProfile with complete data fetch
-                            handleViewProfile(member);
+                      {/* Media Header block */}
+                      <div
+                        className="relative h-48 overflow-hidden bg-slate-100 cursor-pointer group"
+                        onClick={() => setModalImage({ isOpen: true, url: imgSrc, title: displayName })}
+                      >
+                        <img
+                          src={imgSrc}
+                          alt={displayName}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            const nameForAvatar = displayName.replace(/[^a-zA-Z0-9 ]/g, "");
+                            const encodedName = encodeURIComponent(nameForAvatar || "User");
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodedName}&background=E0F2FE&color=0369A1&bold=true&size=150`;
                           }}
-                          disabled={isLoading}
-                          className={`flex-1 bg-amber-500 text-white py-2.5 rounded-lg font-semibold hover:bg-amber-600 transition-all hover:-translate-y-0.5 active:translate-y-0 ${isLoading ? "opacity-70 cursor-wait" : ""
-                            }`}
-                        >
-                          {isLoading ? (
-                            <>
-                              <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Loading...
-                            </>
-                          ) : (
-                            "View Profile"
-                          )}
-                        </button>
+                        />
 
-                        <button
-                          onClick={() => {
-                            console.log("💬 CHAT BUTTON CLICKED");
-                            console.log("For user_id:", member.user_id);
-                            console.log("Name:", formatName(member));
+                        <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="bg-slate-900/80 text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl backdrop-blur-sm shadow flex items-center gap-1.5">
+                            <i className="fa-solid fa-expand"></i> View Image
+                          </span>
+                        </div>
+                      </div>
 
-                            // ✅ Use user_id for chat
-                            handleSendMessage(member.user_id, formatName(member));
-                          }}
-                          className="flex-1 border border-amber-500 text-amber-600 py-2.5 rounded-lg font-semibold hover:bg-amber-50 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                      {/* Card Content details */}
+                      <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                        
+                        <div className="space-y-1.5">
+                          <div className="cursor-pointer" onClick={() => handleViewProfile(member)}>
+                            <h3 className="font-bold text-slate-900 hover:text-indigo-600 transition-colors leading-tight truncate">
+                              {displayName}
+                            </h3>
+                            {member.profession ? (
+                              <p className="text-xs font-semibold text-slate-500 truncate mt-0.5">{member.profession}</p>
+                            ) : (
+                              <p className="text-xs font-semibold text-slate-400 italic truncate mt-0.5">Profession not specified</p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                            {member.age && member.age > 0 && <span>{member.age} yrs</span>}
+                            {member.gender && <span>• {member.gender}</span>}
+                          </div>
+                        </div>
+
+                        {/* Location Details Meta */}
+                        <div className="text-xs text-slate-500 border-t border-slate-100 pt-3 flex items-center gap-1.5 truncate">
+                          <i className="fa-solid fa-location-dot text-slate-400 w-4 text-center"></i>
+                          <span>{displayCity}</span>
+                        </div>
+
+                        {/* Buttons Block */}
+                        <div className="flex gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            onClick={() => handleViewProfile(member)}
+                            disabled={isLoading}
+                            className="flex-1 py-2 text-white rounded-xl text-xs font-bold transition shadow-sm hover:opacity-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            style={{ backgroundColor: "#002060" }}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                            />
-                          </svg>
-                          Chat
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                            {isLoading ? (
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <>
+                                <i className="fa-solid fa-eye text-xs"></i>
+                                <span>Profile</span>
+                              </>
+                            )}
+                          </button>
 
-            {hasMoreMembers() && (
-              <div className="text-center mt-12">
-                <button
-                  onClick={loadMoreMembers}
-                  className="px-8 py-3 bg-amber-500 text-white font-medium rounded-xl hover:bg-amber-600 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  Load More Members
-                </button>
+                          <button
+                            onClick={() => handleSendMessage(memberId, displayName)}
+                            className="flex-1 py-2 bg-pink-50 hover:bg-pink-100 text-[#FF2A6D] border border-pink-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <i className="fa-solid fa-comment-dots text-xs"></i>
+                            <span>Chat</span>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })}
               </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-16">
-            <div className="text-gray-400 mb-4">
-              <svg
-                className="w-24 h-24 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+
+              {/* Numbered Pagination bar */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-slate-200">
+                  <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                    Showing {indexOfFirstMember + 1} - {Math.min(indexOfLastMember, filteredTotal)} of {filteredTotal} members
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+                    >
+                      <i className="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => {
+                      const isSelected = page === currentPage;
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className="w-10 h-10 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center"
+                          style={
+                            isSelected
+                              ? { backgroundColor: "#002060", color: "#ffffff" }
+                              : { border: "1px solid #e2e8f0", backgroundColor: "#ffffff", color: "#475569" }
+                          }
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="w-10 h-10 border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+                    >
+                      <i className="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              No members found
-            </h3>
-            <p className="text-gray-500">
-              Try adjusting your search criteria or filters
-            </p>
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedGender("All");
-                setVisibleCount(12);
-                fetchMembers();
-              }}
-              className="mt-4 px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition hover:-translate-y-0.5"
-            >
-              Reset Filters
-            </button>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <i className="fa-solid fa-users-slash animate-bounce"></i>
+              </div>
+              <h3 className="text-lg font-black text-slate-900">No Members Found</h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                Try adjusting your search criteria, keywords, or filters to explore other profiles.
+              </p>
+              <button
+                onClick={handleResetFilters}
+                className="px-6 py-3 text-white rounded-xl text-xs uppercase tracking-wider font-bold transition shadow-sm hover:opacity-95"
+                style={{ backgroundColor: "#002060" }}
+              >
+                Reset Search Filters
+              </button>
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {/* Image Modal for Big Mode viewing */}
+      {/* Image Modal Lightbox */}
       <ImageModal
         isOpen={modalImage.isOpen}
         imageUrl={modalImage.url}
@@ -852,158 +756,3 @@ const MemberPage = () => {
 };
 
 export default MemberPage;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
