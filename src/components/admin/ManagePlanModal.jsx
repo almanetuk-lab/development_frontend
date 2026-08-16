@@ -9,12 +9,12 @@ export default function ManagePlanModal({ plan, onClose, onUpdated }) {
     try {
       let updatePlanStatusApiCall = async (planId) => {
         let res = await updatePlanStatus(planId);
-        const newStatus = res.data.newStatus;
+        const newStatus = res.data.is_active;
         setIsActive(newStatus === 1);
         onUpdated(); // refresh list
       };
 
-      updatePlanStatusApiCall(plan.id);
+      await updatePlanStatusApiCall(plan.id);
     } catch (err) {
       console.error("Error toggling plan:", err);
       alert("Failed to update plan status");

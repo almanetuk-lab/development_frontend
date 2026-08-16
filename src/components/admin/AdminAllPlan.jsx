@@ -30,7 +30,7 @@ export default function AdminPlans({
     people_search_limit: 0,
     people_message_limit: 0,
     audio_call_limit: 0,
-    billigng_info: "",
+    billing_info: "",
   });
 
   // Fetch plans from the API

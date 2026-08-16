@@ -7,6 +7,7 @@ export default function AddNewPlan({
   config = {},
   editingId,
   setEditingId,
+  onCancel,
 }) {
   // Always visible fields
   const alwaysShow = [
@@ -111,12 +112,23 @@ export default function AddNewPlan({
                 )}
               </div>
             ))}
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
-        >
-          Add Plan
-        </button>
+        <div className="flex gap-4 pt-4">
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition duration-200"
+          >
+            {editingId ? "Update Plan" : "Add Plan"}
+          </button>
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl transition duration-200"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

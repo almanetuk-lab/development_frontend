@@ -319,6 +319,17 @@ export const adminAPI = {
   login: (credentials) => api.post('/api/admin/login', credentials),
 };
 
+// AI Agent Config APIs
+export const getAiAgentConfig = async () => {
+  const res = await api.get("/api/ai-agent/config");
+  return res.data.data ?? res.data;
+};
+
+export const updateAiAgentConfig = async ({ enabled, instructions }) => {
+  const res = await api.put("/api/ai-agent/config", { enabled, instructions });
+  return res.data.data ?? res.data;
+};
+
 export default api;
 
 

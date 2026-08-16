@@ -83,11 +83,34 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError("Email address is required.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const { token, refresh, user } = await loginUser({ email, password });
+      const { token, refresh, user } = await loginUser({ email: trimmedEmail, password });
 
       if (!token) throw new Error("No token received from server");
 

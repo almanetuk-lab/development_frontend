@@ -11,6 +11,7 @@ const ContactPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState("");
   
   // State for active FAQ popup
   const [activeFaq, setActiveFaq] = useState(null);
@@ -20,23 +21,75 @@ const ContactPage = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    
+    const name = (formData.name || "").trim();
+    if (!name) {
+      setError("Name is required.");
+      return;
+    }
+    if (name.length < 2) {
+      setError("Name must be at least 2 characters long.");
+      return;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(name)) {
+      setError("Name can only contain letters and spaces.");
+      return;
+    }
+
+    const email = (formData.email || "").trim();
+    if (!email) {
+      setError("Email address is required.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const subject = (formData.subject || "").trim();
+    if (!subject) {
+      setError("Subject is required.");
+      return;
+    }
+    if (subject.length < 4) {
+      setError("Subject must be at least 4 characters long.");
+      return;
+    }
+
+    const message = (formData.message || "").trim();
+    if (!message) {
+      setError("Message is required.");
+      return;
+    }
+    if (message.length < 10) {
+      setError("Message must be at least 10 characters long.");
+      return;
+    }
+
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    }, 3000);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsSubmitted(true);
+      
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      }, 3000);
+    } catch (err) {
+      setError("Failed to send message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // FAQ Modal Data
@@ -110,86 +163,93 @@ const ContactPage = () => {
                   <p className="text-sm text-slate-500">We appreciate you reaching out. We will get back to you soon.</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                <>
+                  {error && (
+                    <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-2.5 rounded-xl mb-5 text-xs text-center font-medium animate-pulse">
+                      {error}
+                    </div>
+                  )}
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                          Your Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                      
+                      <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                          Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
+                          placeholder="your@email.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                        Your Name *
+                        Subject *
                       </label>
                       <input
                         type="text"
-                        name="name"
-                        value={formData.name}
+                        name="subject"
+                        value={formData.subject}
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
-                        placeholder="Enter your full name"
+                        placeholder="What's this about?"
                       />
                     </div>
-                    
-                    <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+
+                    <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                        Email Address *
+                        Message *
                       </label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
+                      <textarea
+                        name="message"
+                        value={formData.message}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
-                        placeholder="your@email.com"
+                        rows={5}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400 resize-none"
+                        placeholder="Tell us more about your inquiry..."
                       />
                     </div>
-                  </div>
 
-                  <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                      Subject *
-                    </label>
-                    <input
-                      type="text"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400"
-                      placeholder="What's this about?"
-                    />
-                  </div>
-
-                  <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                      Message *
-                    </label>
-                    <textarea
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      rows={5}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FF2A6D] focus:ring-4 focus:ring-pink-50/50 transition-all duration-200 text-sm placeholder:text-slate-400 resize-none"
-                      placeholder="Tell us more about your inquiry..."
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full py-3.5 px-6 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm flex items-center justify-center ${
-                      isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center justify-center">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Sending Message...
-                      </div>
-                    ) : (
-                      'Send Message'
-                    )}
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`w-full py-3.5 px-6 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm flex items-center justify-center ${
+                        isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center justify-center">
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Sending Message...
+                        </div>
+                      ) : (
+                        'Send Message'
+                      )}
+                    </button>
+                  </form>
+                </>
               )}
             </div>
           </div>
