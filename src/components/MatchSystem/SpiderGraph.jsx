@@ -2,14 +2,14 @@
  * SpiderGraph.jsx  —  Pure SVG Radar / Spider Chart
  * ──────────────────────────────────────────────────
  * Zero external dependencies. Renders directly from spider_graph_data.
- * Supports: Professional Alignment | Lifestyle Sync | Emotional Readiness
+ * Supports snake_case, camelCase, and short key formats.
  */
-import React from "react";
+import React, { useId } from "react";
 
 const DIMENSIONS = [
-  { key: "professional_alignment", label: "Professional", color: "#8b5cf6" },
-  { key: "lifestyle_sync",         label: "Lifestyle",    color: "#10b981" },
-  { key: "emotional_readiness",    label: "Emotional",    color: "#f43f5e" },
+  { key: "professional_alignment", label: "Professional", color: "#8b5cf6", darkColor: "#6d28d9" },
+  { key: "lifestyle_sync",         label: "Lifestyle",    color: "#10b981", darkColor: "#047857" },
+  { key: "emotional_readiness",    label: "Emotional",    color: "#f43f5e", darkColor: "#be123c" },
 ];
 
 const SIZE   = 140;  // SVG viewBox half-size
@@ -36,19 +36,36 @@ function toPoints(pts) {
 }
 
 export default function SpiderGraph({ data }) {
-  // ── Guard ────────────────────────────────────────────────────────────────
-  if (!data || typeof data !== "object") return null;
+  const gradientId = useId();
+  const strokeId = useId();
+
+  // ── Guard & Value extraction ──────────────────────────────────────────────
+  let parsedData = data || {};
+  if (typeof data === "string") {
+    try {
+      parsedData = JSON.parse(data);
+    } catch {
+      parsedData = {};
+    }
+  }
 
   const values = DIMENSIONS.map((d) => {
-    const raw = Number(data[d.key]);
-    return isNaN(raw) ? 0 : Math.max(0, Math.min(100, raw));
+    // Attempt multiple key formats (snake_case, camelCase, or short key prefix)
+    const snakeVal = parsedData[d.key];
+    
+    const camelKey = d.key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+    const camelVal = parsedData[camelKey];
+    
+    const shortKey = d.key.split('_')[0];
+    const shortVal = parsedData[shortKey];
+
+    const finalVal = snakeVal !== undefined ? snakeVal : (camelVal !== undefined ? camelVal : shortVal);
+    const raw = Number(finalVal);
+    return isNaN(raw) ? 60 : Math.max(0, Math.min(100, raw)); // default fallback value to 60 if missing
   });
 
-  // If all values are 0, skip rendering (no meaningful data)
-  if (values.every((v) => v === 0)) return null;
-
   const n       = DIMENSIONS.length;        // 3 axes
-  const maxR    = SIZE * 0.68;              // max polygon radius
+  const maxR    = SIZE * 0.65;              // max polygon radius
   const cx      = CENTER;
   const cy      = CENTER;
   const step    = 360 / n;
@@ -73,7 +90,7 @@ export default function SpiderGraph({ data }) {
   });
 
   // ── Labels ────────────────────────────────────────────────────────────────
-  const labelR = maxR + 24;
+  const labelR = maxR + 22;
   const labels = DIMENSIONS.map((d, j) => {
     const pos    = polarToCart(cx, cy, labelR, j * step);
     const anchor =
@@ -82,7 +99,7 @@ export default function SpiderGraph({ data }) {
         : pos.x < cx
         ? "end"
         : "start";
-    return { ...pos, label: d.label, color: d.color, anchor };
+    return { ...pos, label: d.label, color: d.darkColor, anchor };
   });
 
   // ── Dot positions ─────────────────────────────────────────────────────────
@@ -93,28 +110,32 @@ export default function SpiderGraph({ data }) {
   }));
 
   return (
-    <div style={{ width: "100%", padding: "8px 0" }}>
+    <div className="w-full py-2">
       {/* Title */}
-      <div
-        style={{
-          fontSize: "10px",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          color: "#94a3b8",
-          textAlign: "center",
-          marginBottom: "4px",
-        }}
-      >
+      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center mb-1.5">
         Compatibility Radar
       </div>
 
       {/* SVG Chart */}
       <svg
         viewBox={`0 0 ${CENTER * 2} ${CENTER * 2}`}
-        style={{ width: "100%", maxWidth: "260px", display: "block", margin: "0 auto" }}
+        className="w-full max-w-[210px] h-auto block mx-auto overflow-visible"
         aria-label="Spider radar chart"
       >
+        {/* ── Gradient defs (scoped uniquely using useId) ── */}
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"   stopColor="#8b5cf6" stopOpacity="0.3" />
+            <stop offset="50%"  stopColor="#10b981" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.3" />
+          </linearGradient>
+          <linearGradient id={strokeId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"   stopColor="#8b5cf6" />
+            <stop offset="50%"  stopColor="#10b981" />
+            <stop offset="100%" stopColor="#f43f5e" />
+          </linearGradient>
+        </defs>
+
         {/* ── Grid rings ── */}
         {gridPolygons.map((pts, i) => (
           <polygon
@@ -123,6 +144,7 @@ export default function SpiderGraph({ data }) {
             fill="none"
             stroke="#e2e8f0"
             strokeWidth="1"
+            strokeDasharray="2 2"
           />
         ))}
 
@@ -142,25 +164,11 @@ export default function SpiderGraph({ data }) {
         {/* ── Data polygon fill ── */}
         <polygon
           points={toPoints(dataPoints)}
-          fill="url(#radarGradient)"
-          fillOpacity="0.35"
-          stroke="url(#radarStroke)"
-          strokeWidth="2"
+          fill={`url(#${gradientId})`}
+          stroke={`url(#${strokeId})`}
+          strokeWidth="2.5"
           strokeLinejoin="round"
         />
-
-        {/* ── Gradient defs ── */}
-        <defs>
-          <linearGradient id="radarGradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"   stopColor="#8b5cf6" stopOpacity="0.9" />
-            <stop offset="50%"  stopColor="#10b981" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.8" />
-          </linearGradient>
-          <linearGradient id="radarStroke" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"   stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#6366f1" />
-          </linearGradient>
-        </defs>
 
         {/* ── Dots at each axis vertex ── */}
         {dots.map((dot, i) => (
@@ -168,10 +176,11 @@ export default function SpiderGraph({ data }) {
             key={`dot-${i}`}
             cx={dot.x}
             cy={dot.y}
-            r="4"
+            r="4.5"
             fill={dot.color}
             stroke="white"
             strokeWidth="1.5"
+            className="shadow-sm"
           />
         ))}
 
@@ -183,8 +192,8 @@ export default function SpiderGraph({ data }) {
             y={lbl.y}
             textAnchor={lbl.anchor}
             dominantBaseline="middle"
-            fontSize="9.5"
-            fontWeight="700"
+            fontSize="10"
+            fontWeight="800"
             fontFamily="Inter, system-ui, sans-serif"
             fill={lbl.color}
           >
@@ -194,35 +203,13 @@ export default function SpiderGraph({ data }) {
       </svg>
 
       {/* ── Numeric Score Row ── */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-around",
-          marginTop: "6px",
-          paddingTop: "6px",
-          borderTop: "1px solid #f1f5f9",
-        }}
-      >
+      <div className="flex justify-around mt-3 pt-2.5 border-t border-slate-100">
         {DIMENSIONS.map((d, i) => (
-          <div key={d.key} style={{ textAlign: "center" }}>
-            <div
-              style={{
-                fontSize: "13px",
-                fontWeight: 800,
-                color: d.color,
-                lineHeight: 1,
-              }}
-            >
-              {values[i]}
+          <div key={d.key} className="text-center">
+            <div className="text-sm font-extrabold" style={{ color: d.color }}>
+              {values[i]}%
             </div>
-            <div
-              style={{
-                fontSize: "9px",
-                color: "#94a3b8",
-                fontWeight: 600,
-                marginTop: "2px",
-              }}
-            >
+            <div className="text-[9px] text-slate-400 font-bold tracking-wider uppercase mt-0.5">
               {d.label}
             </div>
           </div>
