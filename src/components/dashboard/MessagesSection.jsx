@@ -41,6 +41,7 @@ export default function MessagesSection() {
   const [showDeleteOption, setShowDeleteOption] = useState(null);
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [messageLimitReached, setMessageLimitReached] = useState(false);
+  const [aiTyping, setAiTyping] = useState(false);  // AI typing indicator
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
@@ -226,11 +227,26 @@ export default function MessagesSection() {
     if (selectedUser) {
       setShouldAutoScroll(true);
       setUserScrolled(false);
+      setAiTyping(false); // clear typing indicator when switching conversations
       if (messagesContainerRef.current) {
         messagesContainerRef.current.scrollTop = 0;
       }
     }
   }, [selectedUser]);
+
+  // Auto-scroll to bottom when AI typing indicator appears
+  useEffect(() => {
+    if (aiTyping && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [aiTyping]);
+
+  // Auto-scroll to bottom whenever messages change (new send or incoming)
+  useEffect(() => {
+    if (shouldAutoScroll && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   // Fetch recent chats
   const fetchRecentChats = async () => {
@@ -409,6 +425,11 @@ export default function MessagesSection() {
       console.log("📩 Socket message received:", message);
       fetchRecentChats();
 
+      // If AI message arrived, clear the typing indicator immediately
+      if (message.is_ai_generated) {
+        setAiTyping(false);
+      }
+
       if (!selectedUser) return;
 
       const isRelevant =
@@ -442,12 +463,22 @@ export default function MessagesSection() {
       }
     };
 
+    // Handle AI typing indicator
+    const handleAiTyping = ({ aiUserId, isTyping }) => {
+      // Show indicator only if we're currently chatting with the AI owner
+      if (selectedUser && String(aiUserId) === String(selectedUser.id)) {
+        setAiTyping(isTyping);
+      }
+    };
+
     socket.on("new_reaction", handleNewReaction);
     socket.on("new_message", handleIncomingMessage);
+    socket.on("ai_typing", handleAiTyping);
 
     return () => {
       socket.off("new_message", handleIncomingMessage);
       socket.off("new_reaction", handleNewReaction);
+      socket.off("ai_typing", handleAiTyping);
     };
   }, [currentUserId, selectedUser, socket]);
 
@@ -709,6 +740,12 @@ export default function MessagesSection() {
 
     setMessages((prev) => [...prev, tempMsg]);
     setNewMessage("");
+
+    // Always scroll to bottom when user sends their own message
+    setShouldAutoScroll(true);
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
 
     try {
       const response = await chatApi.sendMessage({
@@ -1407,7 +1444,12 @@ export default function MessagesSection() {
                           {/* Message content */}
                           {message.content && (
                             <p className="break-words whitespace-pre-wrap text-sm leading-relaxed">
-                              {message.content}
+                              {message.is_ai_generated && (
+                              <span className="  brand-logo-pink font-bold ">
+                                 AI :
+                              </span>
+                            )}
+                              {" "}{message.content}
                             </p>
                           )}
 
@@ -1427,6 +1469,8 @@ export default function MessagesSection() {
                               {deletingMessageId === message.id &&
                                 " • Deleting..."}
                             </p>
+
+                            
 
                             {/* WhatsApp Style Reaction Button */}
                             <button
@@ -1488,6 +1532,30 @@ export default function MessagesSection() {
                         </div>
                       </div>
                     ))}
+
+                    {/* AI Typing Indicator — shown to User A while User B's AI generates */}
+                    {aiTyping && (
+                      <div className="flex justify-start">
+                        <div className="bg-white border border-slate-100 shadow-xs rounded-2xl px-4 py-3 flex items-center gap-2.5 max-w-[160px]">
+                          <span className="text-xs text-slate-500 font-semibold">🤖 AI is typing</span>
+                          <div className="flex items-center gap-1">
+                            <span
+                              className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "0ms", animationDuration: "0.8s" }}
+                            />
+                            <span
+                              className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "160ms", animationDuration: "0.8s" }}
+                            />
+                            <span
+                              className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                              style={{ animationDelay: "320ms", animationDuration: "0.8s" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div ref={messagesEndRef} />
                   </div>
                 )}

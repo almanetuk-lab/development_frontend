@@ -1,49 +1,65 @@
-
 // src/pages/Settings.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import ProfileSettings from "../components/settings/ProfileSettings";
-// import AccountSettings from "../components/settings/AccountSettings";
-// import NotificationSettings from "../components/settings/NotificationSettings";
-// import PrivacySettings from "../components/settings/PrivacySettings";
-// import SubscriptionSettings from "../components/settings/SubscriptionSettings";
-// import PreferencesSettings from "../components/settings/PreferencesSettings";
-// import api from "../services/api";
-// import SubscriptionSettings from "../setting/SubscriptionSettings";
+
 import SubscriptionSettings from "../settings/SubscriptionSettings";
+import AIAgentSettings from "../settings/AIAgentSettings";
 import PrivacySettings from "../settings/PrivacySettings";
 import ChangePasswordSettings from "../settings/ChangePasswordSettings";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("subscription"); // set default tab to subscription or privacy
+  const [activeTab, setActiveTab] = useState("subscription");
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState(null);
 
   // Fetch user data
-//   useEffect(() => {
-//     fetchUserData();
-//   }, []);
+  // useEffect(() => {
+  //   fetchUserData();
+  // }, []);
 
-//   const fetchUserData = async () => {
-//     setLoading(true);
-//     try {
-//       const response = await api.get("/api/user/profile");
-//       setUserData(response.data);
-//     } catch (error) {
-//       console.error("Error fetching user data:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
+  // const fetchUserData = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await api.get("/api/user/profile");
+  //     setUserData(response.data);
+  //   } catch (error) {
+  //     console.error("Error fetching user data:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const tabs = [
-    { id: "privacy", label: "Privacy & Data", icon: <i className="fa-solid fa-shield-halved"></i>, component: PrivacySettings },
-    { id: "subscription", label: "Subscription", icon: <i className="fa-solid fa-credit-card"></i>, component: SubscriptionSettings },
-    { id: "password", label: "Security & Password", icon: <i className="fa-solid fa-key"></i>, component: ChangePasswordSettings },
+    {
+      id: "privacy",
+      label: "Privacy & Data",
+      icon: <i className="fa-solid fa-shield-halved"></i>,
+      component: PrivacySettings,
+    },
+    {
+      id: "subscription",
+      label: "Subscription",
+      icon: <i className="fa-solid fa-credit-card"></i>,
+      component: SubscriptionSettings,
+    },
+    {
+      id: "password",
+      label: "Security & Password",
+      icon: <i className="fa-solid fa-key"></i>,
+      component: ChangePasswordSettings,
+    },
+    {
+      id: "ai-agent",
+      label: "AI Agent",
+      icon: "🤖",
+      component: AIAgentSettings,
+    },
   ];
 
-  const ActiveComponent = tabs.find(t => t.id === activeTab)?.component;
+  const ActiveComponent = tabs.find(
+    (tab) => tab.id === activeTab
+  )?.component;
 
   return (
     <div className="w-full">
@@ -56,7 +72,10 @@ export default function Settings() {
           >
             <i className="fa-solid fa-arrow-left"></i> Back
           </button>
-          <h1 className="text-2xl font-black text-slate-950 tracking-tight">Settings</h1>
+
+          <h1 className="text-2xl font-black text-slate-950 tracking-tight">
+            Settings
+          </h1>
         </div>
 
         {/* Settings Content */}
@@ -76,7 +95,10 @@ export default function Settings() {
                     }`}
                     style={
                       activeTab === tab.id
-                        ? { backgroundColor: "rgba(0, 32, 96, 0.06)", color: "#002060" }
+                        ? {
+                            backgroundColor: "rgba(0, 32, 96, 0.06)",
+                            color: "#002060",
+                          }
                         : {}
                     }
                   >
@@ -90,10 +112,10 @@ export default function Settings() {
             {/* Right Content */}
             <div className="flex-1 p-6">
               {ActiveComponent && (
-                <ActiveComponent 
-                  userData={userData} 
+                <ActiveComponent
+                  userData={userData}
                   loading={loading}
-                //   onUpdate={fetchUserData}
+                  // onUpdate={fetchUserData}
                 />
               )}
             </div>
