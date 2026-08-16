@@ -108,7 +108,7 @@ export default function EditPlanModal({
   handleUpdate,
   setIsOpen,
 }) {
-  const hiddenFields = ["id", "created_at", "updated_at","is_active","type"];
+  const hiddenFields = ["id", "created_at", "updated_at","is_active"];
 
   console.log(formData);
 

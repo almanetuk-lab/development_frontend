@@ -28,6 +28,7 @@ export default function Register() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [linkedinLoading, setLinkedinLoading] = useState(false);
@@ -133,8 +134,83 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (!agreeToTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy to register.");
+      return;
+    }
+
+    const firstName = (form.first_name || "").trim();
+    if (!firstName) {
+      setError("First name is required.");
+      return;
+    }
+    if (firstName.length < 2) {
+      setError("First name must be at least 2 characters long.");
+      return;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(firstName)) {
+      setError("First name can only contain letters and spaces.");
+      return;
+    }
+
+    const lastName = (form.last_name || "").trim();
+    if (!lastName) {
+      setError("Last name is required.");
+      return;
+    }
+    if (lastName.length < 2) {
+      setError("Last name must be at least 2 characters long.");
+      return;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(lastName)) {
+      setError("Last name can only contain letters and spaces.");
+      return;
+    }
+
+    const username = (form.username || "").trim();
+    if (!username) {
+      setError("Username is required.");
+      return;
+    }
+    if (username.length < 3) {
+      setError("Username must be at least 3 characters long.");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError("Username can only contain letters, numbers, and underscores.");
+      return;
+    }
+
+    const profession = (form.profession || "").trim();
+    if (!profession) {
+      setError("Profession is required.");
+      return;
+    }
+
+    const email = (form.email || "").trim();
+    if (!email) {
+      setError("Email address is required.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const password = form.password;
+    if (!password) {
+      setError("Password is required.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       localStorage.removeItem("user");
@@ -146,15 +222,16 @@ export default function Register() {
       }
 
       const payload = {
-        first_name: form.first_name,
-        last_name: form.last_name,
-        email: form.email,
-        password: form.password,
-        profession: form.profession,
-        username: form.username,
-        about_me: form.about_me || null,
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        password: password,
+        profession: profession,
+        username: username,
+        about_me: form.about_me ? form.about_me.trim() : null,
         interests: form.interests,
         marital_status: form.marital_status,
+        consent_given: true, // Send confirmation of consent to backend
       };
 
       await registerUser(payload);
@@ -377,10 +454,32 @@ export default function Register() {
             </div>
           </div>
 
+          {/* Privacy & ToS Agreement Checkbox */}
+          <div className="flex items-start gap-2.5 my-2">
+            <input
+              type="checkbox"
+              id="agreeToTerms"
+              checked={agreeToTerms}
+              onChange={(e) => setAgreeToTerms(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-slate-300 text-[#FF2A6D] focus:ring-[#FF2A6D] accent-[#FF2A6D] cursor-pointer"
+            />
+            <label htmlFor="agreeToTerms" className="text-xs text-slate-500 cursor-pointer select-none">
+              I agree to the{" "}
+              <Link to="/terms-and-conditions" className="font-semibold text-[#FF2A6D] hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link to="/privacy-policy" className="font-semibold text-[#FF2A6D] hover:underline">
+                Privacy Policy
+              </Link>{" "}
+              (compliant with UK GDPR standards).
+            </label>
+          </div>
+
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreeToTerms}
             className="w-full py-2.5 sm:py-3 mt-4 font-bold text-white bg-[#FF2A6D] hover:bg-[#e0105a] rounded-xl hover:shadow-lg transition-all duration-200 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {loading ? "Creating Account..." : "Create Account"}

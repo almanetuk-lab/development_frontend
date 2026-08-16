@@ -33,9 +33,13 @@ export default function CartItem({ item, handleRemove /* OLD: , handleBuy */ }) 
       console.log("Processing payment with user_id:", user_id, "plan:", item.plan);
 
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+      const token = localStorage.getItem("accessToken");
       const response = await fetch(`${API_BASE_URL}/payments/create-checkout-session`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ plan: item.plan, user_id }),
       });
 

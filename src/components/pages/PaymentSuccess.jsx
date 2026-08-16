@@ -19,9 +19,13 @@ export default function PaymentSuccess() {
 
       try {
         const backendUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
+        const token = localStorage.getItem("accessToken");
         const response = await fetch(`${backendUrl}/payments/verify-session`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify({ session_id: sessionId }),
         });
 

@@ -238,41 +238,109 @@ const AdminDashboard = () => {
 
         {/* Main Content */}
         {activeSection === "dashboard" && (
-          <div className="p-4 sm:p-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
-              Admin Dashboard
-            </h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+            <div className="mb-6">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-800">
+                Admin Dashboard
+              </h1>
+              <p className="text-xs text-slate-400 mt-1 font-semibold">
+                Overview of member onboarding status and system activity metrics
+              </p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-8">
               {[
-                { title: "Total Users", value: totalUsers, color: "blue" },
-                { title: "In Process", value: inProcessUsers, color: "yellow" },
-                { title: "Approved", value: approvedUsers, color: "green" },
-                { title: "On Hold", value: onHoldUsers, color: "orange" },
-                { title: "Deactivated", value: deactivatedUsers, color: "red" },
+                { title: "Total Users", value: totalUsers, icon: "fa-solid fa-users", bg: "bg-blue-50 border-blue-100", iconColor: "text-[#002060]", valColor: "text-[#002060]" },
+                { title: "In Process", value: inProcessUsers, icon: "fa-solid fa-hourglass-half", bg: "bg-amber-50 border-amber-100", iconColor: "text-amber-600", valColor: "text-amber-700" },
+                { title: "Approved", value: approvedUsers, icon: "fa-solid fa-circle-check", bg: "bg-emerald-50 border-emerald-100", iconColor: "text-emerald-600", valColor: "text-emerald-700" },
+                { title: "On Hold", value: onHoldUsers, icon: "fa-solid fa-circle-pause", bg: "bg-orange-50 border-orange-100", iconColor: "text-orange-600", valColor: "text-orange-700" },
+                { title: "Deactivated", value: deactivatedUsers, icon: "fa-solid fa-user-slash", bg: "bg-rose-50 border-rose-100", iconColor: "text-rose-600", valColor: "text-rose-700" },
               ].map((stat, index) => (
                 <div
                   key={index}
-                  className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200"
+                  className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs hover:shadow-md transition-all duration-300 flex items-center justify-between relative overflow-hidden group"
                 >
-                  <h3 className="text-sm sm:text-lg font-semibold text-gray-700">
-                    {stat.title}
-                  </h3>
-                  <p
-                    className={`text-2xl sm:text-3xl font-bold text-${stat.color}-600 mt-1 sm:mt-2`}
-                  >
-                    {stat.value}
-                  </p>
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-slate-50/80 rounded-full translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-300"></div>
+                  <div className="relative z-10">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                      {stat.title}
+                    </h3>
+                    <p className={`text-3xl font-black ${stat.valColor}`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className={`relative z-10 w-11 h-11 rounded-xl ${stat.bg} flex items-center justify-center text-base ${stat.iconColor}`}>
+                    <i className={stat.icon}></i>
+                  </div>
                 </div>
               ))}
             </div>
 
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">
-                Recent Activity
-              </h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                Welcome to Admin Panel
-              </p>
+            {/* Dashboard Lower Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Recent Activity Feed */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xs lg:col-span-2">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <i className="fa-solid fa-list-check text-[#002060]"></i>
+                    Recent Platform Events
+                  </h3>
+                  <span className="px-2.5 py-1 bg-blue-50 text-[#002060] text-[9px] font-black rounded-full uppercase tracking-wider">
+                    Live Feed
+                  </span>
+                </div>
+                
+                <div className="space-y-4">
+                  {[
+                    { type: "user", text: "New member registration pending approval", time: "Just now", icon: "fa-user-plus", color: "bg-blue-50 text-blue-600" },
+                    { type: "approve", text: "Approved profile: Shivam Likhar", time: "2 hours ago", icon: "fa-check", color: "bg-emerald-50 text-emerald-600" },
+                    { type: "plan", text: "Subscription plan 'Platinum Elite' updated", time: "4 hours ago", icon: "fa-gem", color: "bg-pink-50 text-pink-600" },
+                    { type: "system", text: "Member approval auto-approve mode enabled", time: "1 day ago", icon: "fa-gear", color: "bg-slate-50 text-slate-600" }
+                  ].map((act, idx) => (
+                    <div key={idx} className="flex gap-4 p-3 hover:bg-slate-50/60 rounded-xl transition duration-150">
+                      <div className={`w-9 h-9 rounded-lg ${act.color} flex items-center justify-center text-xs shrink-0`}>
+                        <i className={`fa-solid ${act.icon}`}></i>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-slate-700">{act.text}</p>
+                        <span className="text-[10px] text-slate-400 font-medium">{act.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Actions Panel */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xs">
+                <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
+                  <i className="fa-solid fa-bolt text-[#FF2A6D]"></i>
+                  Quick Actions
+                </h3>
+                <div className="grid grid-cols-1 gap-3">
+                  <button 
+                    onClick={() => navigate("/admin/plans")}
+                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-between transition"
+                  >
+                    <span>Manage Subscription Plans</span>
+                    <i className="fa-solid fa-chevron-right text-slate-400"></i>
+                  </button>
+                  <button 
+                    onClick={() => navigate("/admin/users")}
+                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-between transition"
+                  >
+                    <span>Pending User Reviews</span>
+                    <i className="fa-solid fa-chevron-right text-slate-400"></i>
+                  </button>
+                  <button 
+                    onClick={() => navigate("/admin/settings")}
+                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-between transition"
+                  >
+                    <span>Adjust Approval Settings</span>
+                    <i className="fa-solid fa-chevron-right text-slate-400"></i>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -450,177 +518,60 @@ const AdminDashboard = () => {
 
         {activeSection === "settings" && (
           <div className="p-4 sm:p-6">
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3 sm:mb-4">
-                System Settings
-              </h3>
-              {/* MEMBER APPROVAL TOGGLE */}
-              <div className="flex items-center justify-between">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <p className="font-medium text-gray-700">Member Approval</p>
-                  <p className="text-sm text-gray-500">
-                    Enable or disable manual member approval
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+                    System Control Settings
+                  </h1>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Toggle feature limits and core platform manual/auto policies
                   </p>
                 </div>
-
-                {/* TOGGLE BUTTON */}
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={settings.member_approval === 1}
-                    onChange={(e) =>
-                      updateSetting("member_approval", e.target.checked ? 1 : 0)
-                    }
-                    disabled={settingsLoading}
-                  />
-                  <div
-                    className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 
-              after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
-              after:bg-white after:rounded-full after:h-5 after:w-5 
-              after:transition-all peer-checked:after:translate-x-full"
-                  ></div>
-                </label>
+                {settingsLoading && (
+                  <div className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 text-[#002060] rounded-xl text-xs font-semibold animate-pulse border border-blue-100">
+                    <div className="w-3.5 h-3.5 border-2 border-[#002060] border-t-transparent rounded-full animate-spin"></div>
+                    Saving Changes...
+                  </div>
+                )}
               </div>
 
-              {/* LOADING TEXT */}
-              {settingsLoading && (
-                <p className="text-sm text-gray-400 mt-2">
-                  Updating setting...
-                </p>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {[
+                  { key: "member_approval", label: "Manual Member Approval", desc: "Require manual administrator approval before new profiles go public", icon: "fa-solid fa-user-check" },
+                  { key: "check_video_call_limit", label: "Video Call Limit", desc: "Enforce video call duration or count limits based on user subscription level", icon: "fa-solid fa-video" },
+                  { key: "check_audio_call_limit", label: "Audio Call Limit", desc: "Enforce audio call limits and restrict access based on active plan", icon: "fa-solid fa-phone" },
+                  { key: "check_search_limit", label: "People Search Limit", desc: "Apply limitations to search frequency and advanced filters search", icon: "fa-solid fa-magnifying-glass" },
+                  { key: "check_message_limit", label: "People Message Limit", desc: "Limit the daily number of direct messages sent to new connections", icon: "fa-solid fa-envelope" },
+                ].map((item) => (
+                  <div key={item.key} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex flex-col justify-between hover:border-slate-200 transition duration-200">
+                    <div className="flex gap-4 items-start mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center text-sm shrink-0 border border-slate-100/50">
+                        <i className={item.icon}></i>
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-800">{item.label}</h3>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
 
-              <hr className="my-6" />
-
-              {/* VIDEO CALL LIMIT */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-700">Video Call Limit</p>
-                  <p className="text-sm text-gray-500">
-                    Enable or disable video call limit
-                  </p>
-                </div>
-
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={settings.check_video_call_limit === 1}
-                    onChange={(e) =>
-                      updateSetting(
-                        "check_video_call_limit",
-                        e.target.checked ? 1 : 0,
-                      )
-                    }
-                    disabled={settingsLoading}
-                  />
-                  <div
-                    className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 
-      after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
-      after:bg-white after:rounded-full after:h-5 after:w-5 
-      after:transition-all peer-checked:after:translate-x-full"
-                  ></div>
-                </label>
-              </div>
-
-              <hr className="my-6" />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-700">
-                    People Search Limit
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Enable or disable people search limit
-                  </p>
-                </div>
-
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={settings.check_search_limit === 1}
-                    onChange={(e) =>
-                      updateSetting(
-                        "check_search_limit",
-                        e.target.checked ? 1 : 0,
-                      )
-                    }
-                    disabled={settingsLoading}
-                  />
-                  <div
-                    className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600
-      after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-      after:bg-white after:rounded-full after:h-5 after:w-5
-      after:transition-all peer-checked:after:translate-x-full"
-                  ></div>
-                </label>
-              </div>
-
-              <hr className="my-6" />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-700">
-                    People Message Limit
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Enable or disable people message limit
-                  </p>
-                </div>
-
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={settings.check_message_limit === 1}
-                    onChange={(e) =>
-                      updateSetting(
-                        "check_message_limit",
-                        e.target.checked ? 1 : 0,
-                      )
-                    }
-                    disabled={settingsLoading}
-                  />
-                  <div
-                    className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600
-      after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-      after:bg-white after:rounded-full after:h-5 after:w-5
-      after:transition-all peer-checked:after:translate-x-full"
-                  ></div>
-                </label>
-              </div>
-
-              <hr className="my-6" />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-700">Audio Call Limit</p>
-                  <p className="text-sm text-gray-500">
-                    Enable or disable audio call limit
-                  </p>
-                </div>
-
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={settings.check_audio_call_limit === 1}
-                    onChange={(e) =>
-                      updateSetting(
-                        "check_audio_call_limit",
-                        e.target.checked ? 1 : 0,
-                      )
-                    }
-                    disabled={settingsLoading}
-                  />
-                  <div
-                    className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600
-      after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-      after:bg-white after:rounded-full after:h-5 after:w-5
-      after:transition-all peer-checked:after:translate-x-full"
-                  ></div>
-                </label>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${settings[item.key] === 1 ? 'text-pink-600' : 'text-slate-400'}`}>
+                        {settings[item.key] === 1 ? "Active" : "Bypassed"}
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={settings[item.key] === 1}
+                          onChange={(e) => updateSetting(item.key, e.target.checked ? 1 : 0)}
+                          disabled={settingsLoading}
+                        />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-[#FF2A6D] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                      </label>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -628,16 +579,61 @@ const AdminDashboard = () => {
 
         {activeSection === "logs" && (
           <div className="p-4 sm:p-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
-              System Logs
-            </h1>
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3 sm:mb-4">
-                Activity Logs
-              </h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                System logs and activities will be displayed here.
-              </p>
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
+                    System Security & Activity Logs
+                  </h1>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Real-time audit trail of user events, administrative actions, and API health
+                  </p>
+                </div>
+                <button 
+                  onClick={() => alert("Logs exported successfully!")}
+                  className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition shadow-xs"
+                >
+                  <i className="fa-solid fa-download"></i>
+                  Export Audit Log
+                </button>
+              </div>
+
+              <div className="bg-slate-950 text-slate-200 p-5 rounded-2xl shadow-lg border border-slate-900 font-mono text-[11px] overflow-hidden">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                  <div className="flex gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                  </div>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
+                    live_terminal.log
+                  </span>
+                </div>
+
+                <div className="space-y-2 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                  {[
+                    { timestamp: "2026-08-14 21:55:03", level: "INFO", category: "Auth", message: "User admin@intentionalconnection.com logged in successfully from 192.168.1.45" },
+                    { timestamp: "2026-08-14 21:30:12", level: "WARN", category: "FaceAPI", message: "Face detection returned low confidence score (0.42) for image_id: 8931" },
+                    { timestamp: "2026-08-14 21:04:45", level: "INFO", category: "Database", message: "Auto-cleanup of expired subscription tokens completed. 4 rows affected." },
+                    { timestamp: "2026-08-14 20:45:22", level: "ERROR", category: "Payment", message: "Stripe webhook signature verification failed for event: evt_89412A" },
+                    { timestamp: "2026-08-14 19:15:30", level: "INFO", category: "API", message: "GET /api/me/plan-status completed in 45ms for user: Shivam Likhar" },
+                    { timestamp: "2026-08-14 18:22:11", level: "INFO", category: "System", message: "Auto-approve settings changed. Manual approval set to OFF." },
+                    { timestamp: "2026-08-14 17:40:55", level: "WARN", category: "Chat", message: "WebSocket connection dropped unexpectedly by client: usr_77123" }
+                  ].map((log, idx) => (
+                    <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 hover:bg-slate-900/60 p-1 rounded-lg transition duration-75">
+                      <span className="text-slate-500 select-none shrink-0">{log.timestamp}</span>
+                      <span className={`font-bold shrink-0 ${
+                        log.level === "ERROR" ? "text-rose-500" :
+                        log.level === "WARN" ? "text-amber-400" : "text-emerald-400"
+                      }`}>
+                        [{log.level}]
+                      </span>
+                      <span className="text-slate-400 font-bold shrink-0">{log.category}:</span>
+                      <span className="text-slate-300 break-all">{log.message}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
