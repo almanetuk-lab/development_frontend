@@ -11,10 +11,11 @@ import { useNavigate } from "react-router-dom";
 // import api from "../services/api";
 // import SubscriptionSettings from "../setting/SubscriptionSettings";
 import SubscriptionSettings from "../settings/SubscriptionSettings";
+import AIAgentSettings from "../settings/AIAgentSettings";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("subscription");
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState(null);
 
@@ -36,12 +37,8 @@ export default function Settings() {
 //   };
 
   const tabs = [
-//     { id: "profile", label: "Profile Settings", icon: "👤", component: ProfileSettings },
-//     { id: "account", label: "Account", icon: "🔐", component: AccountSettings },
-//     { id: "notifications", label: "Notifications", icon: "🔔", component: NotificationSettings },
-//     { id: "privacy", label: "Privacy", icon: "🛡️", component: PrivacySettings },
     { id: "subscription", label: "Subscription", icon: "💳", component: SubscriptionSettings },
-//     { id: "preferences", label: "Preferences", icon: "⚙️", component: PreferencesSettings },
+    { id: "ai-agent", label: "AI Agent", icon: "🤖", component: AIAgentSettings },
   ];
 
   const ActiveComponent = tabs.find(t => t.id === activeTab)?.component;
