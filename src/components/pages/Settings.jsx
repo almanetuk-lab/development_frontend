@@ -52,7 +52,7 @@ export default function Settings() {
     {
       id: "ai-agent",
       label: "AI Agent",
-      icon: "🤖",
+      icon:<i className="fa-solid fa-robot"></i>,
       component: AIAgentSettings,
     },
   ];
