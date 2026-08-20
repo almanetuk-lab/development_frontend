@@ -42,7 +42,11 @@ export default function MessagesSection() {
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [messageLimitReached, setMessageLimitReached] = useState(false);
   const [aiTyping, setAiTyping] = useState(false);  // AI typing indicator
-  const [incompatiblePartnerIds, setIncompatiblePartnerIds] = useState(new Set()); // tracks incompatible conversation partner IDs
+  // API-driven incompatibility state (replaces unreliable socket-only approach)
+  const [isIncompatibleWithSelected, setIsIncompatibleWithSelected] = useState(false);
+  const [compatibilityScores, setCompatibilityScores] = useState(null);
+  // Keep socket-driven set as a bonus fast-path (still fires when socket works)
+  const [incompatiblePartnerIds, setIncompatiblePartnerIds] = useState(new Set());
 
   // Ref so the incompatible_match handler always reads the latest currentUserId
   // without needing it in the effect's dependency array (avoids re-registration races).
@@ -233,6 +237,8 @@ export default function MessagesSection() {
       setShouldAutoScroll(true);
       setUserScrolled(false);
       setAiTyping(false); // clear typing indicator when switching conversations
+      setIsIncompatibleWithSelected(false); // reset until API responds
+      setCompatibilityScores(null);
       if (messagesContainerRef.current) {
         messagesContainerRef.current.scrollTop = 0;
       }
@@ -520,7 +526,52 @@ export default function MessagesSection() {
 
 
 
-  // FUNCTION TO REMOVE NUMBERS FROM USERNAME
+  // ─────────────────────────────────────────────
+  // API-based compatibility check (reliable, refresh-safe)
+  // ─────────────────────────────────────────────
+  const checkCompatibility = async (partnerUserId) => {
+    if (!partnerUserId || !currentUserId) return;
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch(
+        `${API_BASE_URL}/api/ai-agent/compatibility/check/${partnerUserId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      // data.compatible: true = compatible, false = incompatible, null = no data yet
+      if (data.compatible === false) {
+        setIsIncompatibleWithSelected(true);
+        setCompatibilityScores(data.scores);
+        // Also sync socket-driven set so sidebar badge works for non-selected chats
+        setIncompatiblePartnerIds((prev) => new Set([...prev, String(partnerUserId)]));
+      } else if (data.compatible === true) {
+        setIsIncompatibleWithSelected(false);
+        setCompatibilityScores(data.scores);
+        // Clear from set if previously marked incompatible
+        setIncompatiblePartnerIds((prev) => {
+          const next = new Set(prev);
+          next.delete(String(partnerUserId));
+          return next;
+        });
+      }
+      // compatible === null → no data yet, keep current state (don't show warning)
+    } catch (err) {
+      console.error("❌ [MessagesSection] checkCompatibility error:", err);
+    }
+  };
+
+  // Poll compatibility every 60s while a conversation is open
+  useEffect(() => {
+    if (!selectedUser || !currentUserId) return;
+    // Run immediately on mount / user change
+    checkCompatibility(selectedUser.id);
+    const intervalId = setInterval(() => {
+      checkCompatibility(selectedUser.id);
+    }, 60_000);
+    return () => clearInterval(intervalId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUser?.id, currentUserId]);
   const cleanUserName = (name) => {
     if (!name) return "User";
     // Remove numbers from the end of the username
@@ -793,6 +844,9 @@ export default function MessagesSection() {
 
       console.log(" Message sent successfully");
       fetchRecentChats();
+      // Re-check compatibility after send — backend may have just computed scores
+      // for the first time (cache-miss path in aiAgentService triggers background calc)
+      setTimeout(() => checkCompatibility(selectedUser.id), 3500);
 
       setTimeout(() => {
         setMessages((prev) => {
@@ -1128,6 +1182,29 @@ export default function MessagesSection() {
                 </p>
                 <p className="text-[10px] font-bold text-slate-400">Online</p>
               </div>
+
+              {/* ⚠️ Incompatibility warning icon — mobile header */}
+              {isIncompatibleWithSelected && (
+                <div className="relative ml-auto shrink-0 group" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-amber-500 text-base cursor-default select-none">⚠️</span>
+                  {/* Hover tooltip */}
+                  <div className="absolute right-0 top-7 z-50 w-64 bg-slate-900 text-white text-[11px] rounded-xl px-3 py-2.5 shadow-xl
+                                  opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200">
+                    <p className="font-bold text-amber-400 mb-1">⚠️ Match Not Compatible</p>
+                    <p className="leading-relaxed text-slate-200">
+                      Compatibility scores are below the required threshold.
+                      The AI agent is paused for this conversation.
+                    </p>
+                    {compatibilityScores && (
+                      <div className="mt-2 pt-2 border-t border-slate-700 flex flex-col gap-0.5 text-slate-400">
+                        <span>Overall: <strong className="text-white">{compatibilityScores.overall}</strong>/100 (need 70)</span>
+                        <span>Communication: <strong className="text-white">{compatibilityScores.communication}</strong>/100 (need 65)</span>
+                        <span>Emotional: <strong className="text-white">{compatibilityScores.emotional}</strong>/100 (need 65)</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1251,11 +1328,11 @@ export default function MessagesSection() {
                           <p className="text-xs text-slate-500 truncate">
                             {chat.last_message || "No messages yet"}
                           </p>
-                          {chat.unread_count > 0 && (
-                            <span className="bg-[#FF2A6D] text-white text-[10px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
-                              {chat.unread_count}
-                            </span>
-                          )}
+                            {chat.unread_count > 0 && (
+                              <span className="bg-[#FF2A6D] text-white text-[10px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
+                                {chat.unread_count}
+                              </span>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -1378,7 +1455,13 @@ export default function MessagesSection() {
                   {selectedUser.name?.charAt(0)?.toUpperCase() || "U"}
                 </div>
 
-                <div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-4">
+
+
+
+                  <div>
+
                   <p className="font-bold text-slate-800 text-sm">
                     {selectedUser.name}
                   </p>
@@ -1387,8 +1470,51 @@ export default function MessagesSection() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Now</span>
                   </div>
                 </div>
-                      {/* ⚠️ INCOMPATIBLE MATCH BANNER — outside ternary so it always renders */}
-             
+
+
+                {/* ⚠️ Incompatibility warning icon — desktop header */}
+                {isIncompatibleWithSelected && (
+                  <div className="relative  shrink-0 group" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-xl cursor-default">
+                      <i className="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    </div>
+                    {/* Hover tooltip */}
+                    <div className="absolute right-0 top-10 z-50 w-72 bg-slate-900 text-white text-[11px] rounded-xl px-3.5 py-3 shadow-2xl
+                                    opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200">
+                      <p className="font-bold text-amber-400 mb-1.5">⚠️ Match Not Compatible</p>
+                      <p className="leading-relaxed text-slate-200">
+                        Compatibility scores for this conversation are below the required threshold.
+                        The AI agent flow is paused for both parties.
+                      </p>
+                      {compatibilityScores && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-700 flex flex-col gap-1 text-slate-400 text-[10.5px]">
+                          <div className="flex justify-between">
+                            <span>Overall score</span>
+                            <span className={compatibilityScores.overall >= 70 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                              {compatibilityScores.overall}/100
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Communication</span>
+                            <span className={compatibilityScores.communication >= 65 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                              {compatibilityScores.communication}/100
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Emotional</span>
+                            <span className={compatibilityScores.emotional >= 65 ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                              {compatibilityScores.emotional}/100
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                  </div>
+
+                  </div>
               </div>
 
               {/* Messages Area */}
@@ -1593,8 +1719,8 @@ export default function MessagesSection() {
                             />
                           </div>
                         </div>
-                      </div>
-                    )}
+                   </div>
+                 )}
 
                     <div ref={messagesEndRef} />
                   </div>
