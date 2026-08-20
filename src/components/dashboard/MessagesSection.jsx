@@ -42,6 +42,11 @@ export default function MessagesSection() {
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [messageLimitReached, setMessageLimitReached] = useState(false);
   const [aiTyping, setAiTyping] = useState(false);  // AI typing indicator
+  const [incompatiblePartnerIds, setIncompatiblePartnerIds] = useState(new Set()); // tracks incompatible conversation partner IDs
+
+  // Ref so the incompatible_match handler always reads the latest currentUserId
+  // without needing it in the effect's dependency array (avoids re-registration races).
+  const currentUserIdRef = useRef(null);
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
@@ -390,11 +395,11 @@ export default function MessagesSection() {
     };
   }, [showImageModal]);
 
-  // SOCKET WITH REACTION HANDLING
+  // SOCKET — selectedUser-dependent events (new_message, new_reaction, ai_typing)
   useEffect(() => {
     if (!currentUserId || !socket) return;
 
-    console.log("🔌 Subscribing to global socket events for user:", currentUserId);
+    console.log("🔌 Subscribing to selectedUser-scoped socket events for user:", currentUserId);
 
     // HANDLE NEW REACTIONS VIA SOCKET
     const handleNewReaction = (reactionData) => {
@@ -481,6 +486,37 @@ export default function MessagesSection() {
       socket.off("ai_typing", handleAiTyping);
     };
   }, [currentUserId, selectedUser, socket]);
+
+  // Keep the ref in sync with the latest currentUserId on every render.
+  // This lets the socket handler below always read the correct value without
+  // being listed as a dependency (which would cause re-registration races).
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  });
+
+  // SOCKET — incompatible_match gets its own maximally-stable effect.
+  // Deps: [socket] only — the listener is registered once per socket instance
+  // and is NEVER torn down due to React state updates (new messages, re-renders,
+  // etc.). The handler reads currentUserId via ref so it always has the latest
+  // value without needing it in the dependency array.
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleIncompatibleMatch = ({ sender_id, receiver_id }) => {
+      const myId = String(currentUserIdRef.current);
+      if (!myId || myId === 'null') return; // user not yet identified
+      const otherId =
+        String(sender_id) === myId ? String(receiver_id) : String(sender_id);
+      console.log(`⚠️ [Frontend] incompatible_match received — other party: ${otherId}`);
+      setIncompatiblePartnerIds((prev) => new Set([...prev, otherId]));
+    };
+
+    socket.on("incompatible_match", handleIncompatibleMatch);
+
+    return () => {
+      socket.off("incompatible_match", handleIncompatibleMatch);
+    };
+  }, [socket]); // NOTE: currentUserId intentionally read via ref, not listed here
 
 
 
@@ -1351,6 +1387,8 @@ export default function MessagesSection() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Now</span>
                   </div>
                 </div>
+                      {/* ⚠️ INCOMPATIBLE MATCH BANNER — outside ternary so it always renders */}
+             
               </div>
 
               {/* Messages Area */}
@@ -1359,6 +1397,8 @@ export default function MessagesSection() {
                 onScroll={handleScroll}
                 className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-slate-50/50"
               >
+          
+
                 {loading ? (
                   <div className="flex items-center justify-center h-32">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#002060]"></div>
@@ -1562,6 +1602,31 @@ export default function MessagesSection() {
               </div>
               {/* Input Area */}
               <div className="p-2.5 sm:p-3.5 border-t border-slate-100 bg-white shrink-0">
+                   {selectedUser && incompatiblePartnerIds.has(String(selectedUser.id)) &&
+                    (
+                  <div className="mb-4 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 shadow-sm">
+                    <span className="text-amber-500 text-lg mt-0.5 shrink-0">⚠️</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-amber-800 leading-snug">Match Not Compatible</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                        Compatibility scores for this conversation are below the required threshold. The AI agent flow will <strong>not</strong> run for either party.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setIncompatiblePartnerIds((prev) => {
+                          const next = new Set(prev);
+                          next.delete(String(selectedUser.id));
+                          return next;
+                        })
+                      }
+                      className="shrink-0 text-amber-400 hover:text-amber-600 transition-colors text-xl leading-none cursor-pointer"
+                      title="Dismiss"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     onClick={() => fileInputRef.current?.click()}
