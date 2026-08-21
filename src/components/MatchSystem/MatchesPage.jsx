@@ -284,6 +284,18 @@ export default function MatchesPage() {
     ? Math.round(filteredMatches.reduce((sum, match) => sum + (match.match_score || 0), 0) / filteredMatches.length)
     : 0;
 
+  if (planLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!planActive) {
+    return <PlanRestrictionModal feature="matches" />;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6">
@@ -310,10 +322,6 @@ export default function MatchesPage() {
         </div>
       </div>
     );
-  }
-
-  if (!planLoading && !planActive) {
-    return <PlanRestrictionModal feature="matches" />;
   }
 
   return (
