@@ -3,9 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { getSuggestedMatches } from "../services/chatApi";
 import api from "../services/api"; 
 import ImageModal from "../comman/ImageModal";
+import { useUserProfile } from "../context/UseProfileContext";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 export default function MatchesPage() {
   const navigate = useNavigate();
+  const { activePlan, planLoading } = useUserProfile();
+  const planActive = activePlan?.active === true;
 
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -210,8 +214,10 @@ export default function MatchesPage() {
   };
 
   useEffect(() => {
-    fetchMatches();
-  }, []);
+    if (!planLoading && planActive) {
+      fetchMatches();
+    }
+  }, [planLoading, planActive]);
 
   // Reset page to 1 when filters are changed
   useEffect(() => {
@@ -304,6 +310,10 @@ export default function MatchesPage() {
         </div>
       </div>
     );
+  }
+
+  if (!planLoading && !planActive) {
+    return <PlanRestrictionModal feature="matches" />;
   }
 
   return (
