@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { adminAPI } from "../services/adminApi";
 import api from "../services/api";
 import { FiEye, FiMessageSquare } from "react-icons/fi";
+import { useUserProfile } from "../context/UseProfileContext";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 export default function AdvancedSearch() {
   const location = useLocation();
@@ -36,11 +38,12 @@ export default function AdvancedSearch() {
     lon: "",
   });
 
-  const [plan, setPlan] = useState({
-    loading: true,
-    active: false,
-    daysLeft: 0,
-  });
+  const { activePlan, planLoading } = useUserProfile();
+  const plan = {
+    loading: planLoading,
+    active: activePlan?.active === true,
+    daysLeft: activePlan?.days_left || 0,
+  };
 
   const [locationDenied, setLocationDenied] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -84,26 +87,7 @@ export default function AdvancedSearch() {
     }
   };
 
-  useEffect(() => {
-    const fetchPlanStatus = async () => {
-      try {
-        const res = await api.get("api/me/plan-status");
-        setPlan({
-          loading: false,
-          active: res.data?.active,
-          daysLeft: res.data?.days_left,
-        });
-      } catch (err) {
-        setPlan({
-          loading: false,
-          active: false,
-          daysLeft: 0,
-        });
-      }
-    };
-
-    fetchPlanStatus();
-  }, []);
+  // Plan status is now handled globally by UserProfileContext
 
   useEffect(() => {
     if (activeTab === "nearme") {
@@ -287,6 +271,10 @@ export default function AdvancedSearch() {
     if (e) e.preventDefault();
     performSearch();
   };
+
+  if (!plan.loading && !plan.active) {
+    return <PlanRestrictionModal feature="search" />;
+  }
 
   return (
     <div className="w-full">

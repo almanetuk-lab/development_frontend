@@ -4,6 +4,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import profileViewApi from "../services/profileViewApi";
 import ImageModal from "../comman/ImageModal";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 // Error boundary to prevent full white page on render crash
 class ProfileErrorBoundary extends Component {
@@ -145,7 +146,7 @@ export default function WrappedProfilePage() {
 }
 
 function ProfilePage() {
-  const { profile: currentUserProfile } = useUserProfile();
+  const { profile: currentUserProfile, activePlan, planLoading } = useUserProfile();
   const [displayProfile, setDisplayProfile] = useState(null);
   const { userId } = useParams();
   const location = useLocation();
@@ -312,6 +313,12 @@ function ProfilePage() {
   };
 
   const lifeRhythmsData = getLifeRhythmsData();
+
+  const myId = currentUserProfile?.id || currentUserProfile?.user_id;
+  const viewedId = userId;
+  if (viewedId && myId && myId != viewedId && !planLoading && !activePlan?.active) {
+    return <PlanRestrictionModal feature="profiles" />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/60 py-6 px-3 sm:px-6 lg:px-8">

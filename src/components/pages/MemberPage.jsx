@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { userAPI } from "../services/userApi";
 import api from "../services/api"; 
 import ImageModal from "../comman/ImageModal";
+import { useUserProfile } from "../context/UseProfileContext";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 const MemberPage = () => {
   const navigate = useNavigate();
@@ -27,25 +29,8 @@ const MemberPage = () => {
   // State for Image Modal
   const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
-  // Plan Status State
-  const [planActive, setPlanActive] = useState(false);
-  const [planLoading, setPlanLoading] = useState(true);
-
-  // Check Plan Status
-  useEffect(() => {
-    const checkPlanStatus = async () => {
-      try {
-        const res = await userAPI.getPlanStatus();
-        setPlanActive(res.data?.active === true);
-      } catch (error) {
-        setPlanActive(false);
-      } finally {
-        setPlanLoading(false);
-      }
-    };
-
-    checkPlanStatus();
-  }, []);
+  const { activePlan, planLoading } = useUserProfile();
+  const planActive = activePlan?.active === true;
 
   // Initial load of members with plan check
   useEffect(() => {
@@ -385,26 +370,7 @@ const MemberPage = () => {
       
       {/* Plan Restricted Modal Backdrop */}
       {!planLoading && !planActive && (
-        <div className="fixed inset-0 bg-slate-950/60 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-8 max-w-md text-center shadow-xl border border-slate-200 mx-4 space-y-5">
-            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-2xl">
-              <i className="fa-solid fa-lock"></i>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-black text-slate-900">Membership Required</h2>
-              <p className="text-sm text-slate-500">
-                Please upgrade your plan to unlock full search capabilities, detailed profiles, and member chat features.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate("/dashboard/upgrade")}
-              className="w-full py-3 text-white rounded-xl text-xs uppercase tracking-wider font-bold transition shadow-sm hover:opacity-95"
-              style={{ backgroundColor: "#002060" }}
-            >
-              Upgrade Subscription
-            </button>
-          </div>
-        </div>
+        <PlanRestrictionModal feature="members" />
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">

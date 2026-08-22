@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { getUserProfile } from "../services/api";
 import io from "socket.io-client";
 import { chatApi } from "../services/chatApi";
+import { userAPI } from "../services/userApi";
 
 const UserProfileContext = createContext();
 
@@ -17,6 +18,29 @@ export const useUserProfile = () => {
 export const UserProfileProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activePlan, setActivePlan] = useState({ active: false, days_left: 0, plan_name: "Free Plan" });
+  const [planLoading, setPlanLoading] = useState(true);
+
+  const fetchPlanStatus = async () => {
+    let token = localStorage.getItem("accessToken");
+    if (!token) {
+      setActivePlan({ active: false, days_left: 0, plan_name: "Free Plan" });
+      setPlanLoading(false);
+      return;
+    }
+    try {
+      setPlanLoading(true);
+      const res = await userAPI.getPlanStatus();
+      if (res.data) {
+        setActivePlan(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching plan status in context:", error);
+      setActivePlan({ active: false, days_left: 0, plan_name: "Free Plan" });
+    } finally {
+      setPlanLoading(false);
+    }
+  };
 
   const loadProfile = async () => {
     let token = localStorage.getItem("accessToken");
@@ -195,6 +219,7 @@ export const UserProfileProvider = ({ children }) => {
     const token = localStorage.getItem("accessToken");
     if (token) {
       loadProfile();
+      fetchPlanStatus();
     } else {
       console.log("⏸️ No token - clearing profile data");
       clearProfile();
@@ -323,6 +348,8 @@ export const UserProfileProvider = ({ children }) => {
     setNotifications([]);
     setUnreadCount(0);
     setProfile(null);
+    setActivePlan({ active: false, days_left: 0, plan_name: "Free Plan" });
+    setPlanLoading(false);
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userProfile");
@@ -333,6 +360,7 @@ export const UserProfileProvider = ({ children }) => {
     console.log("🔄 Manually refreshing profile");
     setLoading(true);
     loadProfile();
+    fetchPlanStatus();
   };
 
   const hasCompleteProfile = () => {
@@ -351,6 +379,9 @@ export const UserProfileProvider = ({ children }) => {
     refreshProfile,
     loading,
     hasCompleteProfile: hasCompleteProfile(),
+    activePlan,
+    planLoading,
+    refreshPlanStatus: fetchPlanStatus,
     notifications,
     unreadCount,
     notificationsLoading,
