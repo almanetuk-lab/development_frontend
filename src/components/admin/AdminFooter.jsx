@@ -12,20 +12,20 @@ export default function AdminFooter() {
   };
 
   return (
-    <footer className="bg-white border-t border-gray-200 mt-auto">
-      <div className="px-4 sm:px-6 py-4">
+    <footer className="bg-slate-50 border-t border-slate-200/80 mt-auto py-8">
+      <div className="px-4 sm:px-6 max-w-7xl mx-auto">
         {/* Footer Grid - 4 Columns for Admin */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-6">
           {/* Column 1: Dashboard */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3.5">
               Dashboard
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               <li>
                 <button
                   onClick={() => handleNavigation('/admin')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Overview
                 </button>
@@ -33,7 +33,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/users')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Users
                 </button>
@@ -41,7 +41,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/reports')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Reports
                 </button>
@@ -51,14 +51,14 @@ export default function AdminFooter() {
 
           {/* Column 2: Management */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3.5">
               Management
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/plans')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Plans
                 </button>
@@ -66,7 +66,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/blogs')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Blogs
                 </button>
@@ -74,7 +74,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/settings')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Settings
                 </button>
@@ -84,14 +84,14 @@ export default function AdminFooter() {
 
           {/* Column 3: System */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3.5">
               System
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/logs')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Logs
                 </button>
@@ -99,7 +99,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/messages')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Messages
                 </button>
@@ -107,7 +107,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/coming-soon')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Coming Soon
                 </button>
@@ -117,14 +117,14 @@ export default function AdminFooter() {
 
           {/* Column 4: Support */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3.5">
               Support
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/about')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   About Us
                 </button>
@@ -132,7 +132,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/contact')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Contact
                 </button>
@@ -140,7 +140,7 @@ export default function AdminFooter() {
               <li>
                 <button
                   onClick={() => handleNavigation('/admin/privacy-policy')}
-                  className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  className="text-xs font-semibold text-slate-600 hover:text-[#FF2A6D] transition-colors"
                 >
                   Privacy
                 </button>
@@ -150,21 +150,18 @@ export default function AdminFooter() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-gray-200 my-3"></div>
+        <div className="border-t border-slate-200/60 my-5"></div>
 
         {/* Bottom Section */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-          {/* Social Links */}
-        
-
           {/* Copyright */}
-          <div className="text-xs text-gray-500">
-            © {currentYear} Admin Panel v1.0. All rights reserved.
+          <div className="text-xs font-medium text-slate-400">
+            © {currentYear} Admin Portal. All rights reserved.
           </div>
 
           {/* Version/Time */}
-          <div className="text-xs text-gray-400">
-            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            V1.0.0
           </div>
         </div>
       </div>

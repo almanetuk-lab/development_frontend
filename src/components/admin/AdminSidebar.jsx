@@ -1,8 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 
-const AdminSidebar = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOpen }) => {
+  const [localOpen, setLocalOpen] = useState(false);
+  const sidebarOpen = externalOpen !== undefined ? externalOpen : localOpen;
+  const setSidebarOpen = setExternalOpen !== undefined ? setExternalOpen : setLocalOpen;
 
   const menuItems = [
     { path: '/admin', label: 'Dashboard', icon: 'fa-solid fa-gauge', end: true },
@@ -25,7 +27,7 @@ const AdminSidebar = () => {
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-20 sm:hidden backdrop-blur-xs transition-opacity duration-300"
+          className="fixed inset-0 bg-slate-950/60 z-40 sm:hidden backdrop-blur-xs transition-opacity duration-300 animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -33,27 +35,29 @@ const AdminSidebar = () => {
       {/* Sidebar */}
       <div
         className={`
-          fixed sm:relative z-30
-          w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-300 ease-in-out
+          fixed sm:relative z-50
+          w-64 bg-slate-950 border-r border-slate-900 transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}
-          h-full flex flex-col
+          h-full flex flex-col shadow-2xl sm:shadow-none
         `}
       >
-        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#FF2A6D] flex items-center justify-center shadow-md">
+        {/* Brand Header */}
+        <div className="p-6 border-b border-slate-900 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#002060] to-[#FF2A6D] flex items-center justify-center shadow-lg shadow-pink-500/10">
             <span className="text-white text-base">🛡️</span>
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white tracking-wider uppercase">
+            <h2 className="text-xs font-bold text-white tracking-wider uppercase">
               Admin Portal
             </h2>
-            <span className="text-[10px] text-[#FF2A6D] font-bold tracking-widest uppercase">
+            <span className="text-[9px] text-[#FF2A6D] font-bold tracking-widest uppercase block mt-0.5">
               Intentional Conn
             </span>
           </div>
         </div>
 
-        <nav className="mt-6 flex-1 px-4 space-y-1.5 overflow-y-auto">
+        {/* Navigation Menu */}
+        <nav className="mt-8 flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <NavLink
               key={item.path}
@@ -61,16 +65,16 @@ const AdminSidebar = () => {
               end={item.end}
               onClick={handleLinkClick}
               className={({ isActive }) =>
-                `flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-semibold group ${
+                `flex items-center gap-4.5 px-4.5 py-3.5 rounded-xl transition-all duration-200 text-xs font-bold tracking-wide uppercase group ${
                   isActive
-                    ? 'bg-[#FF2A6D] text-white shadow-md shadow-pink-500/20'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#FF2A6D] to-[#e0105a] text-white shadow-lg shadow-pink-500/20 translate-x-1'
+                    : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <i className={`${item.icon} text-base transition-colors duration-200 ${
+                  <i className={`${item.icon} text-sm transition-colors duration-200 ${
                     isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'
                   }`}></i>
                   <span>{item.label}</span>
@@ -79,17 +83,12 @@ const AdminSidebar = () => {
             </NavLink>
           ))}
         </nav>
-      </div>
 
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="sm:hidden fixed top-4 left-4 z-40 text-gray-600 hover:text-gray-800 bg-white p-2 rounded shadow"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
+        {/* Minimal info banner */}
+        <div className="p-5 border-t border-slate-900 bg-slate-950/60 text-center">
+          <p className="text-[10px] font-bold text-slate-500 tracking-wider">SYSTEM SECURE</p>
+        </div>
+      </div>
     </>
   );
 };

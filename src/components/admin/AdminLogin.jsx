@@ -27,7 +27,7 @@ const AdminLogin = () => {
       if (response.data.status === "success") {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('adminData', JSON.stringify(response.data.admin));
-        navigate('/admin-dashboard');
+        navigate('/admin');
       } else {
         setError(response.data.message || 'Login failed!');
       }
@@ -65,36 +65,40 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4 py-8">
-      <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-8 w-full max-w-md border border-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-[#F8F9FA] via-white to-[#E3F2FD] flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Flat solid skewed geometric background stripes (matching landing/user login) */}
+      <div className="absolute top-0 left-[-15%] sm:left-[-10%] w-[55%] sm:w-[30%] h-full bg-[#E3F2FD] transform -skew-x-12 z-0 pointer-events-none opacity-60 sm:opacity-100"></div>
+      <div className="absolute top-0 right-[-15%] sm:right-[-10%] w-[55%] sm:w-[30%] h-full bg-pink-100/40 transform -skew-x-12 z-0 pointer-events-none opacity-60 sm:opacity-100"></div>
+      
+      <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-100 relative z-10 animate-scaleIn">
         
         {/* Header - HOME PAGE STYLE */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-blue-100 rounded-2xl">
-              <span className="text-2xl text-blue-600">🔐</span>
+            <div className="w-12 h-12 bg-gradient-to-tr from-[#FF2A6D] to-[#002060] rounded-2xl flex items-center justify-center shadow-md">
+              <span className="text-white text-base">🛡️</span>
             </div>
           </div>
-          <h1 className="text-3xl font-extrabold mb-2">
-            <span className="text-blue-700">Intentional</span>
-            <span className="text-pink-500"> Connections</span>
+          <h1 className="text-2xl font-black text-center mb-1 tracking-tight text-[#002060]">
+            <span>Intentional</span>
+            <span className="text-[#FF2A6D]"> Connections</span>
           </h1>
-          <p className="text-gray-600 text-sm mt-2">Admin Panel Login</p>
+          <p className="text-[10px] text-slate-400 font-black tracking-widest uppercase mt-2">Admin Portal Login</p>
         </div>
-
+ 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-            <span className="text-red-500 text-lg">⚠️</span>
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 animate-pulse">
+            <span className="text-red-500 text-base">⚠️</span>
+            <p className="text-red-700 text-xs font-semibold">{error}</p>
           </div>
         )}
-
+ 
         {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-5">
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
               Email Address
             </label>
             <input 
@@ -105,13 +109,13 @@ const AdminLogin = () => {
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               required
               disabled={loading}
-              className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#002060] focus:border-transparent outline-none text-xs font-semibold text-slate-800 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-inner"
             />
           </div>
-
+ 
           {/* Password Field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="password" className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
               Password
             </label>
             <input 
@@ -122,19 +126,19 @@ const AdminLogin = () => {
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               required
               disabled={loading}
-              className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#002060] focus:border-transparent outline-none text-xs font-semibold text-slate-800 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-inner"
             />
           </div>
-
-          {/* BLUE BUTTON like home page */}
+ 
+          {/* BRAND NAVY BLUE BUTTON */}
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-bold shadow-md hover:shadow-lg transition duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            className="w-full bg-[#002060] hover:bg-[#001740] text-white py-3 px-4 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-200 text-xs uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 Signing In...
               </>
             ) : (
@@ -142,11 +146,11 @@ const AdminLogin = () => {
             )}
           </button>
         </form>
-
+ 
         {/* Footer */}
-        <div className="mt-8 text-center">
-          <div className="flex items-center justify-center gap-2 text-gray-500 text-sm">
-            <span className="text-blue-500">🔒</span>
+        <div className="mt-8 text-center border-t border-slate-100 pt-5">
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+            <span>🔒</span>
             <p>Secure Admin Access</p>
           </div>
         </div>
@@ -154,7 +158,7 @@ const AdminLogin = () => {
     </div>
   );
 };
-
+ 
 export default AdminLogin;
 
 

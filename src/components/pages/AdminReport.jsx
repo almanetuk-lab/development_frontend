@@ -109,8 +109,11 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold">Admin Usage Report</h1>
+    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto w-full">
+      <div className="mb-4">
+        <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Admin Usage Report</h1>
+        <p className="text-xs text-slate-400 mt-1 font-semibold">Generate granular timeline intelligence of platform growth and engagement metrics</p>
+      </div>
 
       <DateRangePicker
         fromDate={fromDate}
@@ -120,40 +123,41 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
         onGenerate={handleGenerate}
       />
 
-      {loading && <p className="text-blue-600">Loading report...</p>}
+      {loading && (
+        <div className="flex items-center gap-2 text-[#FF2A6D] text-xs font-bold animate-pulse py-4">
+          <div className="w-3.5 h-3.5 border-2 border-[#FF2A6D] border-t-transparent rounded-full animate-spin"></div>
+          Compiling report timeline analytics...
+        </div>
+      )}
 
       {!loading && report && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
               title="Total Users"
               value={report.summary.users.total_users}
               onClick={() => navigate("/admin/users/all")} 
-                          />
+            />
             <StatCard
               title="Approved Users"
               value={report.summary.users.approved_users}
               onClick={() => navigate("/admin/users/approved")}
-             
             />
             <StatCard
               title="Hold Users"
               value={report.summary.users.hold_users}
-               onClick={() => navigate("/admin/users/hold")}
+              onClick={() => navigate("/admin/users/hold")}
             />
             <StatCard
               title="In-process Users"
               value={report.summary.users.in_process_users}
               onClick={() => navigate("/admin/users/process")}
-              
             />
-
             <StatCard
               title="Deactivated Users"
               value={report.summary.users.deactivated_users}
               onClick={() => navigate("/admin/users/deactivated")}
             />
-
             <StatCard
               title="Subscriptions"
               value={report.summary.subscriptions.total_subscriptions}
@@ -167,7 +171,6 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
                 })
               }
             />
-
             <StatCard
               title="Total Messages"
               value={report.summary.messages.total_messages}
@@ -180,13 +183,6 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
                 })
               }
             />
-
-            {/* <StatCard
-              title="Not Renewed Users"
-              value={notRenewedCount}
-              onClick={() => navigate("/admin/users/not-renewed")}
-            /> */}
-
             <StatCard
               title="Not Renewed Users"
               value={notRenewedLoading ? "..." : notRenewedCount}
@@ -194,8 +190,8 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="min-w-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200/60 shadow-xs hover:shadow-sm transition">
               <BarChart
                 title="Users Growth"
                 data={report.timeline.users.map((u) => ({
@@ -205,7 +201,7 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
               />
             </div>
 
-            <div className="min-w-0">
+            <div className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200/60 shadow-xs hover:shadow-sm transition">
               <LineChart
                 title="Messages Trend"
                 data={report.timeline.messages.map((m) => ({
@@ -215,7 +211,7 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
               />
             </div>
 
-            <div className="min-w-0">
+            <div className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200/60 shadow-xs hover:shadow-sm transition">
               <PieChart
                 title="User Status"
                 data={[
@@ -233,7 +229,7 @@ const [notRenewedLoading, setNotRenewedLoading] = useState(false);
               />
             </div>
 
-            <div className="min-w-0">
+            <div className="min-w-0 bg-white p-5 rounded-2xl border border-slate-200/60 shadow-xs hover:shadow-sm transition">
               <StackedBarChart
                 title="Plan Purchases"
                 data={processPlanData(report.timeline.plans)}

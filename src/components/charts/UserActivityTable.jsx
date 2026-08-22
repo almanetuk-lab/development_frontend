@@ -11,71 +11,61 @@ const UserActivityTable = ({ data = [] }) => {
 
   if (!data.length) {
     return (
-      <p className="text-gray-500 text-center py-6">
+      <p className="text-slate-400 text-xs font-semibold text-center py-10">
         No user activity found
       </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-      <table className="min-w-full text-sm text-left">
-        <thead className="bg-gray-50 border-b">
+    <div className="overflow-x-auto rounded-xl border border-slate-100 bg-white">
+      <table className="min-w-full text-xs text-left divide-y divide-slate-100">
+        <thead className="bg-slate-50/70">
           <tr>
-            <th className="px-6 py-3 font-semibold text-gray-600">S. No.</th>
-            <th className="px-6 py-3 font-semibold text-gray-600">User</th>
-            <th className="px-6 py-3 font-semibold text-gray-600">Email</th>
-            <th className="px-6 py-3 font-semibold text-gray-600">Plan</th>
-            <th className="px-6 py-3 font-semibold text-gray-600">Status</th>
-            <th className="px-6 py-3 font-semibold text-gray-600">Amount</th>
-            <th className="px-6 py-3 font-semibold text-gray-600">Payment</th>
-            <th className="px-6 py-3 font-semibold text-gray-600">
-              Purchase Date
-            </th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">S. No.</th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan</th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment</th>
+            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Purchase Date</th>
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-slate-100 bg-white">
           {data.map((item, index) => (
-            <tr key={index} className="hover:bg-gray-50 transition-colors">
-              <td className="px-6 py-4 text-gray-800">{index + 1}</td>
-              <td className="px-6 py-4 font-medium text-gray-800">
-                {item.user_name}
-              </td>
-
-              <td className="px-6 py-4 text-gray-600">{item.email}</td>
-
-              <td className="px-6 py-4 text-gray-700">{item.plan_name}</td>
-
+            <tr key={index} className="hover:bg-slate-50/40 transition">
+              <td className="px-6 py-4 font-bold text-slate-400">{index + 1}</td>
+              <td className="px-6 py-4 font-bold text-slate-800">{item.user_name}</td>
+              <td className="px-6 py-4 font-semibold text-slate-500">{item.email}</td>
+              <td className="px-6 py-4 font-medium text-slate-600">{item.plan_name}</td>
               <td className="px-6 py-4">
                 <span
-                  className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                  className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border ${
                     String(item.plan_status).toLowerCase() === "active"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                      : "bg-rose-50 text-rose-700 border-rose-100"
                   }`}
                 >
                   {item.plan_status}
                 </span>
               </td>
-
-              <td className="px-6 py-4 text-gray-700">
-                {item.amount ? `${item.amount} ${item.currency}` : "-"}
+              <td className="px-6 py-4 font-bold text-slate-800">
+                {item.amount ? `£${item.amount} ${item.currency}` : "-"}
               </td>
-
               <td className="px-6 py-4">
                 <span
-                  className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                    item.payment_status === "paid"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
+                  className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                    String(item.payment_status).toLowerCase() === "paid"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                      : "bg-amber-50 text-amber-700 border-amber-100"
                   }`}
                 >
-                  {item.payment_status || "N/A"}
+                  {item.payment_status || "PENDING"}
                 </span>
               </td>
-
-              <td className="px-6 py-4 text-gray-600">
+              <td className="px-6 py-4 font-medium text-slate-400">
                 {item.plan_purchase_date
                   ? new Date(item.plan_purchase_date).toLocaleDateString()
                   : "-"}
@@ -85,9 +75,11 @@ const UserActivityTable = ({ data = [] }) => {
         </tbody>
       </table>
 
-      <h3 className="font-semibold text-xl text-center">
-        Total Amount : {totalAmount}
-      </h3>
+      <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+        <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          Total Revenue Collected: <span className="text-[#FF2A6D] text-lg font-black">£{totalAmount.toFixed(2)}</span>
+        </h3>
+      </div>
     </div>
   );
 };

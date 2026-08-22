@@ -633,34 +633,34 @@ export default function AdminModelDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-2 sm:p-4 md:p-6">
-      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-lg p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5 sm:p-6 md:p-8 animate-fade-in">
         {/* Header with Actions */}
-        <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Model Profile</h1>
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 mt-1 sm:mt-2">
-                <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold
-                  ${model.status === "approve" ? "bg-green-100 text-green-800" :
-                    model.status === "in process" ? "bg-yellow-100 text-yellow-800" :
-                    model.status === "on hold" ? "bg-orange-100 text-orange-800" :
-                    "bg-red-100 text-red-800"}`}>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Model Profile Review</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-full border
+                  ${model.status === "approve" ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                    model.status === "in process" ? "bg-amber-50 text-amber-700 border-amber-100" :
+                    model.status === "on hold" ? "bg-orange-50 text-orange-700 border-orange-100" :
+                    "bg-rose-50 text-rose-700 border-rose-100"}`}>
                   {model.status?.toUpperCase() || "IN PROCESS"}
                 </span>
-                <span className="text-xs sm:text-sm text-gray-600 px-2 rounded-xl bg-gray-100">
+                <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-full bg-slate-100/80 border border-slate-200/30">
                   ID: {model.user_id || model.id}
                 </span>
               </div>
-          
+            </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Actions Toggle */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="sm:hidden px-3 py-1.5 bg-gray-100 rounded-lg flex items-center justify-center"
+              className="sm:hidden px-4 py-2 bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2"
             >
-              <span className="text-gray-700 font-medium">Actions</span>
-              <span className="ml-2">{showMobileMenu ? "▲" : "▼"}</span>
+              <span>Actions Menu</span>
+              <span className="text-[10px]">{showMobileMenu ? "▲" : "▼"}</span>
             </button>
           </div>
 
@@ -668,56 +668,55 @@ export default function AdminModelDetails() {
           <div className="hidden sm:flex flex-wrap gap-2">
             <button
               onClick={handleBack} 
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-xs sm:text-sm"
+              className="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150"
             >
-              Back to Dashboard
+              Back to List
             </button>
             
             <button
               onClick={handleOnHold}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-xs sm:text-sm"
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150"
             >
               On Hold
             </button>
             <button
               onClick={handleDeactivate}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-xs sm:text-sm"
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150"
             >
               Deactivate
             </button>
             <button
               onClick={handleApprove}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs sm:text-sm"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 shadow-sm shadow-emerald-500/10"
             >
-              Approve User
+              Approve Profile
             </button>
           </div>
-            </div>
 
           {/* Action Buttons - Mobile (Collapsible) */}
           {showMobileMenu && (
-            <div className="sm:hidden grid grid-cols-2 gap-2 animate-fadeIn">
+            <div className="sm:hidden grid grid-cols-2 gap-2 bg-slate-50 p-4 border border-slate-100 rounded-2xl animate-fade-in">
               <button
                 onClick={handleBack} 
-                className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-xs"
+                className="px-3 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold uppercase tracking-wider transition duration-150"
               >
                 Back
               </button>
               <button
                 onClick={handleOnHold}
-                className="px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-xs"
+                className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-150"
               >
                 On Hold
               </button>
               <button
                 onClick={handleDeactivate}
-                className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-xs"
+                className="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-150"
               >
                 Deactivate
               </button>
               <button
                 onClick={handleApprove}
-                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs"
+                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition duration-150"
               >
                 Approve
               </button>
@@ -726,7 +725,7 @@ export default function AdminModelDetails() {
         </div>
 
         {/* Profile Header */}
-        <div className="flex flex-col items-center gap-4 sm:gap-6 mb-6 p-4 sm:p-6 bg-gray-50 rounded-lg">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 p-6 sm:p-8 bg-slate-50 border border-slate-100 rounded-2xl mb-8">
           <div className="relative">
             {model.image_url ? (
               <div
@@ -745,31 +744,31 @@ export default function AdminModelDetails() {
                 <img
                   src={model.image_url}
                   alt="Profile"
-                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white shadow-lg group-hover:scale-105 transition-all duration-300"
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-md group-hover:scale-102 transition-all duration-300"
                 />
-                <div className="absolute inset-0 rounded-full bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-xs font-bold bg-black/60 px-2 py-1 rounded-full">
+                <div className="absolute inset-0 rounded-2xl bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-[10px] font-bold bg-black/60 px-2 py-1 rounded-full uppercase tracking-wider">
                     🔍 View
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-lg">
-                <span className="text-2xl sm:text-4xl font-bold text-gray-400">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-slate-200 flex items-center justify-center border-4 border-white shadow-md">
+                <span className="text-2xl sm:text-3xl font-black text-slate-400 uppercase select-none">
                   {(model.first_name?.[0] || model.name?.[0] || "M").toUpperCase()}
                 </span>
               </div>
             )}
-            <div className={`absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-white ${
-              model.status === "approve" ? "bg-green-500" :
-              model.status === "in process" ? "bg-yellow-500" :
+            <div className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full border-4 border-white ${
+              model.status === "approve" ? "bg-emerald-500" :
+              model.status === "in process" ? "bg-amber-500" :
               model.status === "on hold" ? "bg-orange-500" :
-              "bg-red-500"
+              "bg-rose-500"
             }`}></div>
           </div>
 
-          <div className="text-center flex-1 w-full">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 break-words">
+          <div className="text-center md:text-left flex-1 w-full mt-2 md:mt-0">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-800 break-words tracking-tight">
               {model.first_name || model.last_name
                 ? `${model.first_name || ""} ${model.last_name || ""}`.trim()
                 : model.name || "Model"}
