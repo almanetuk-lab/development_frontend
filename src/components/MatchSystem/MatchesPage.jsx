@@ -3,9 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { getSuggestedMatches } from "../services/chatApi";
 import api from "../services/api"; 
 import ImageModal from "../comman/ImageModal";
+import { useUserProfile } from "../context/UseProfileContext";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 export default function MatchesPage() {
   const navigate = useNavigate();
+  const { activePlan, planLoading } = useUserProfile();
+  const planActive = activePlan?.active === true;
 
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -210,8 +214,10 @@ export default function MatchesPage() {
   };
 
   useEffect(() => {
-    fetchMatches();
-  }, []);
+    if (!planLoading && planActive) {
+      fetchMatches();
+    }
+  }, [planLoading, planActive]);
 
   // Reset page to 1 when filters are changed
   useEffect(() => {
@@ -277,6 +283,18 @@ export default function MatchesPage() {
   const averageMatchScore = filteredMatches.length > 0
     ? Math.round(filteredMatches.reduce((sum, match) => sum + (match.match_score || 0), 0) / filteredMatches.length)
     : 0;
+
+  if (planLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!planActive) {
+    return <PlanRestrictionModal feature="matches" />;
+  }
 
   if (loading) {
     return (

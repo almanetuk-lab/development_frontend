@@ -89,6 +89,7 @@ export default function AdminAddNewPlan() {
                 editingId={editingId}
                 setEditingId={setEditingId}
                 formData={formData}
+                setFormData={setFormData}
                 config={config} //  pass config to form
                 onCancel={() => navigate("/admin/plans")}
             />

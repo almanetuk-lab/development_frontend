@@ -217,40 +217,45 @@ export default function EditPlanModal({
   };
 
   return (
-    <div className="fixed inset-0 overflow-auto bg-black/60 flex items-center justify-center z-[999] p-5">
+    <div className="fixed inset-0 overflow-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-[999] p-5">
       <div
         className="
-    bg-white
-    w-full
-    max-w-[420px]
-    rounded-xl
-    shadow-2xl
-    p-6
-    my-6
-    max-h-[90vh]
-    overflow-y-auto
-  "
+          bg-white
+          w-full
+          max-w-[420px]
+          rounded-2xl
+          shadow-2xl
+          p-6
+          my-6
+          max-h-[90vh]
+          overflow-y-auto
+          border border-slate-100/80
+          animate-fade-in
+        "
       >
-        <h3 className="text-center text-xl font-semibold mb-5">Edit Plan</h3>
+        <div className="text-center mb-6 pb-4 border-b border-slate-100">
+          <h3 className="text-base font-black text-slate-800 tracking-tight">Edit Plan</h3>
+          <p className="text-xs text-slate-400 font-semibold mt-0.5">Modify pricing limits and configuration parameters</p>
+        </div>
 
-        <form onSubmit={handleUpdate} className="space-y-4">
+        <form onSubmit={handleUpdate} className="space-y-4.5">
           {Object.keys(formData)
             .filter(
               (key) => !hiddenFields.includes(key) && formData[key] !== -1,
             )
             .map((key) => (
               <div key={key} className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1 capitalize">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
                   {key.replaceAll("_", " ")}
                 </label>
                 {renderField(key)}
               </div>
             ))}
 
-          <div className="flex gap-4 mt-6">
+          <div className="flex gap-4 mt-6 pt-4 border-t border-slate-100">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 font-medium"
+              className="flex-1 bg-[#002060] hover:bg-[#001740] text-white rounded-xl py-2.5 font-bold text-xs uppercase tracking-wider transition-all duration-150"
             >
               Update
             </button>
@@ -258,7 +263,7 @@ export default function EditPlanModal({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg py-2 font-medium"
+              className="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl py-2.5 font-bold text-xs uppercase tracking-wider transition-all duration-150"
             >
               Cancel
             </button>
@@ -268,9 +273,21 @@ export default function EditPlanModal({
 
       <style>{`
         .input {
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 8px;
+          width: 100%;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 10px 16px;
+          background-color: #f8fafc;
+          outline: none;
+          font-size: 13px;
+          font-weight: 600;
+          color: #1e293b;
+          transition: all 0.15s ease-in-out;
+        }
+        .input:focus {
+          background-color: #fff;
+          border-color: transparent;
+          box-shadow: 0 0 0 2px #002060;
         }
       `}</style>
     </div>

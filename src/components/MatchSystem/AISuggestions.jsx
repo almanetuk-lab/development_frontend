@@ -9,6 +9,8 @@ import {
 } from "../services/chatApi";
 import api from "../services/api";
 import SpiderGraph from "./SpiderGraph";
+import { useUserProfile } from "../context/UseProfileContext";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 import { 
   HiHeart, 
   HiBriefcase, 
@@ -52,6 +54,8 @@ const PRIORITY_CHIPS = [
 
 export default function AISuggestions() {
   const navigate = useNavigate();
+  const { activePlan, planLoading } = useUserProfile();
+  const planActive = activePlan?.active === true;
 
   // ── Suggestion state ────────────────────────────────────────
   const [suggestions, setSuggestions] = useState([]);
@@ -142,10 +146,12 @@ export default function AISuggestions() {
   }, []);
 
   useEffect(() => {
-    checkActiveSession();
-    fetchSuggestions();
-    fetchTrustStatus();
-  }, [checkActiveSession, fetchSuggestions, fetchTrustStatus]);
+    if (!planLoading && planActive) {
+      checkActiveSession();
+      fetchSuggestions();
+      fetchTrustStatus();
+    }
+  }, [planLoading, planActive, checkActiveSession, fetchSuggestions, fetchTrustStatus]);
 
   // Reset pagination when suggestions count changes
   useEffect(() => {
@@ -303,6 +309,10 @@ export default function AISuggestions() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  if (!planLoading && !planActive) {
+    return <PlanRestrictionModal feature="suggestions" />;
+  }
 
   return (
     <>

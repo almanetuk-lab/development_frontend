@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { UserProfileProvider, useUserProfile } from "./components/context/UseProfileContext";
+import { useUserProfile } from "./components/context/UseProfileContext";
 import Header from "./components/home/Header";
 import Footer from "./components/home/Footer";
 import Sidebar from "./components/dashboard/Sidebar";
@@ -139,7 +139,7 @@ const AdminLayout = () => {
 
 export default function App() {
   return (
-    <UserProfileProvider>
+    <>
       <Routes>
         {/* Admin Routes - NEW STRUCTURE */}
         <Route path="/admin-login" element={<AdminLogin />} />
@@ -559,7 +559,7 @@ export default function App() {
       </Routes>
       <ToastContainer />
       <CookieConsentBanner />
-    </UserProfileProvider>
+    </>
   );
 }
 

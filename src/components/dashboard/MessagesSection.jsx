@@ -4,6 +4,8 @@ import api from "../services/api";
 import { useLocation, useNavigate } from "react-router-dom";
 import EmojiPicker from "emoji-picker-react";
 import { useUserProfile } from "../context/UseProfileContext";
+import { toast } from "react-toastify";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 import {
   FiArrowLeft,
   FiPaperclip,
@@ -69,20 +71,18 @@ export default function MessagesSection() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
 
-  // plant states
-  const [planStatus, setPlanStatus] = useState({
-    loading: true,
-    active: false,
-    daysLeft: 0,
-  });
-
-  const { socket, fetchNotifications } = useUserProfile();
+  const { socket, fetchNotifications, activePlan, planLoading } = useUserProfile();
+  const planStatus = {
+    loading: planLoading,
+    active: activePlan?.active === true,
+    daysLeft: activePlan?.days_left || 0,
+  };
   const fileInputRef = useRef();
   const messagesEndRef = useRef();
   const [socketConnected, setSocketConnected] = useState(false);
   const location = useLocation();
 
-  // User ne manually scroll kiya to auto-scroll band karo - YEH NAYA FUNCTION
+  // User ne manually scrolal kiya to auto-scroll band karo - YEH NAYA FUNCTION
   const handleScroll = () => {
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
@@ -357,28 +357,7 @@ export default function MessagesSection() {
     }
   }, []);
 
-  // PLAN STATUS FETCH USEEFFECT
-  useEffect(() => {
-    const fetchPlanStatus = async () => {
-      try {
-        const token = localStorage.getItem("accessToken");
-        const res = await fetch(`${API_BASE_URL}/api/me/plan-status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-
-        setPlanStatus({
-          loading: false,
-          active: !!data?.active,
-          daysLeft: data?.days_left || 0,
-        });
-      } catch {
-        setPlanStatus({ loading: false, active: false, daysLeft: 0 });
-      }
-    };
-
-    if (currentUserId) fetchPlanStatus();
-  }, [currentUserId]);
+  // Plan status is now handled globally by UserProfileContext
 
   // Image Modal Effects
   useEffect(() => {
@@ -474,13 +453,23 @@ export default function MessagesSection() {
       }
     };
 
-    // Handle AI typing indicator
-    const handleAiTyping = ({ aiUserId, isTyping }) => {
-      // Show indicator only if we're currently chatting with the AI owner
-      if (selectedUser && String(aiUserId) === String(selectedUser.id)) {
-        setAiTyping(isTyping);
-      }
-    };
+   const handleAiTyping = (data) => {
+  console.log("🔥🔥 AI TYPING HANDLER FIRED 🔥🔥", data);
+  console.log("selectedUser:", selectedUser);
+  console.log("selectedUser.id:", selectedUser?.id);
+
+  const { aiUserId, isTyping } = data;
+
+  if (selectedUser && String(aiUserId) === String(selectedUser.id)) {
+    console.log("✅ MATCH — setting aiTyping:", isTyping);
+    setAiTyping(isTyping);
+  } else {
+    console.log("❌ AI TYPING ID MISMATCH", {
+      aiUserId,
+      selectedUserId: selectedUser?.id,
+    });
+  }
+};
 
     socket.on("new_reaction", handleNewReaction);
     socket.on("new_message", handleIncomingMessage);
@@ -523,6 +512,25 @@ export default function MessagesSection() {
       socket.off("incompatible_match", handleIncompatibleMatch);
     };
   }, [socket]); // NOTE: currentUserId intentionally read via ref, not listed here
+
+  // SOCKET — ai_agent_error listener (stable, registered once per socket)
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleAiError = ({ code, message }) => {
+      console.error(`🚨 [MessagesSection] AI agent error: ${code} — ${message}`);
+      toast.error(message || "AI agent encountered an error", {
+        toastId: `ai-error-${code}`,  // prevent duplicate toasts for same error
+        autoClose: 5000,
+        position: "top-right",
+      });
+      // Clear typing indicator since the AI failed
+      setAiTyping(false);
+    };
+
+    socket.on("ai_agent_error", handleAiError);
+    return () => socket.off("ai_agent_error", handleAiError);
+  }, [socket]);
 
 
 
@@ -1115,6 +1123,10 @@ export default function MessagesSection() {
         <p className="text-slate-400 text-sm">You need to sign in to access your direct messages.</p>
       </div>
     );
+  }
+
+  if (!planStatus.loading && !planStatus.active) {
+    return <PlanRestrictionModal feature="messaging" />;
   }
 
   return (

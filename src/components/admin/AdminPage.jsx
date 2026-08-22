@@ -7,10 +7,12 @@ import AdminFooter from "./AdminFooter.jsx";
 import AdminReport from "../pages/AdminReport.jsx";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
+import AdminHeader from "./AdminHeader.jsx";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Determine active section from URL
   const getActiveSectionFromURL = () => {
@@ -205,36 +207,20 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
       {/* Use your new AdminSidebar */}
-      <AdminSidebar />
+      <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto min-w-0">
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-base sm:text-lg font-semibold text-gray-800 capitalize">
-                {activeSection}
-              </h1>
-            </div>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <span className="text-xs sm:text-sm text-gray-600 hidden sm:inline">
-                Welcome, Admin
-              </span>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("adminToken");
-                  localStorage.removeItem("adminData");
-                  window.location.href = "/#/";
-                }}
-                className="bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </header>
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 relative">
+        <AdminHeader
+          activeSection={activeSection}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
+
+        <div className="flex-1 overflow-y-auto flex flex-col justify-between">
+          <div className="flex-grow">
 
         {/* Main Content */}
         {activeSection === "dashboard" && (
@@ -346,19 +332,25 @@ const AdminDashboard = () => {
         )}
 
         {activeSection === "users" && (
-          <div className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 mb-4 sm:mb-6">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-                User Management
-              </h1>
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 mb-6">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-800">
+                  User Management
+                </h1>
+                <p className="text-xs text-slate-400 mt-1 font-semibold">
+                  Review and verify registered user profiles and set approval statuses
+                </p>
+              </div>
 
-              <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">Status Filter:</label>
                 <select
                   value={userStatusFilter}
                   onChange={(e) => setUserStatusFilter(e.target.value)}
-                  className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base w-full sm:w-auto"
+                  className="px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#FF2A6D] focus:border-transparent text-xs font-bold text-slate-700 w-full sm:w-auto shadow-sm outline-none transition-all cursor-pointer"
                 >
-                  <option value="all">All Users</option>
+                  <option value="all">All Statuses</option>
                   <option value="in process">In Process</option>
                   <option value="approve">Approved</option>
                   <option value="on hold">On Hold</option>
@@ -368,135 +360,141 @@ const AdminDashboard = () => {
             </div>
 
             {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500"></div>
+              <div className="flex justify-center items-center py-16">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-[#FF2A6D]"></div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
                 {/* Mobile Cards View */}
-                <div className="block sm:hidden">
+                <div className="block sm:hidden divide-y divide-slate-100">
                   {filteredUsers.map((user) => (
                     <div
                       key={user.user_id || user.id}
-                      className="p-4 border-b border-gray-200"
+                      className="p-5 hover:bg-slate-50/50 transition duration-150"
                     >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.first_name && user.last_name
-                              ? `${user.first_name} ${user.last_name}`
-                              : user.first_name || user.last_name || "No Name"}
+                      <div className="flex justify-between items-start gap-2 mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-600 select-none uppercase">
+                            {user.first_name?.[0] || user.last_name?.[0] || "?"}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {user.email}
+                          <div>
+                            <div className="text-sm font-bold text-slate-800">
+                              {user.first_name && user.last_name
+                                ? `${user.first_name} ${user.last_name}`
+                                : user.first_name || user.last_name || "No Name"}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-0.5">
+                              {user.email}
+                            </div>
                           </div>
                         </div>
                         <span
-                          className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full
+                          className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-full border
                           ${
                             user.status === "approve"
-                              ? "bg-green-100 text-green-800 border border-green-200"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                               : user.status === "in process"
-                                ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                ? "bg-amber-50 text-amber-700 border-amber-100"
                                 : user.status === "on hold"
-                                  ? "bg-orange-100 text-orange-800 border border-orange-200"
+                                  ? "bg-orange-50 text-orange-700 border-orange-100"
                                   : user.status === "deactivate"
-                                    ? "bg-red-100 text-red-800 border border-red-200"
-                                    : "bg-gray-100 text-gray-800 border border-gray-200"
+                                    ? "bg-rose-50 text-rose-700 border-rose-100"
+                                    : "bg-slate-50 text-slate-700 border-slate-100"
                           }`}
                         >
-                          {user.status
-                            ? user.status.toUpperCase()
-                            : "IN PROCESS"}
+                          {user.status || "IN PROCESS"}
                         </span>
                       </div>
-                      <div className="text-xs text-gray-600 mb-3">
-                        Profession: {user.profession || "Not specified"}
+                      <div className="text-xs text-slate-600 mb-4 bg-slate-50 p-2.5 rounded-xl border border-slate-100/50">
+                        <span className="font-semibold text-slate-400">Profession:</span> {user.profession || "Not specified"}
                       </div>
                       <button
                         onClick={() => handleViewDetails(user)}
-                        className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                        className="w-full bg-[#002060] text-white py-2.5 rounded-xl hover:bg-[#001740] transition font-bold text-xs uppercase tracking-wider"
                       >
-                        View Details
+                        View Profile Details
                       </button>
                     </div>
                   ))}
 
                   {filteredUsers.length === 0 && (
                     <div className="text-center py-8">
-                      <p className="text-gray-500">No users found</p>
+                      <p className="text-slate-400 text-xs font-semibold">No users found</p>
                     </div>
                   )}
                 </div>
 
                 {/* Desktop Table View */}
-                <table className="hidden sm:table min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="hidden sm:table min-w-full divide-y divide-slate-100">
+                  <thead className="bg-slate-50/70">
                     <tr>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Name
                       </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Email
                       </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Profession
                       </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Status
                       </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3.5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-slate-100">
                     {filteredUsers.map((user) => (
                       <tr
                         key={user.user_id || user.id}
-                        className="hover:bg-gray-50"
+                        className="hover:bg-slate-50/55 transition duration-100"
                       >
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.first_name && user.last_name
-                              ? `${user.first_name} ${user.last_name}`
-                              : user.first_name || user.last_name || "No Name"}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200/60 flex items-center justify-center text-xs font-bold text-slate-600 select-none uppercase">
+                              {user.first_name?.[0] || user.last_name?.[0] || "?"}
+                            </div>
+                            <div className="text-sm font-bold text-slate-800">
+                              {user.first_name && user.last_name
+                                ? `${user.first_name} ${user.last_name}`
+                                : user.first_name || user.last_name || "No Name"}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs font-semibold text-slate-500">
                             {user.email}
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs text-slate-600 font-medium">
                             {user.profession || "Not specified"}
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                            className={`px-3 py-1 inline-flex text-[9px] font-black uppercase tracking-wider rounded-full border
                             ${
                               user.status === "approve"
-                                ? "bg-green-100 text-green-800 border border-green-200"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                 : user.status === "in process"
-                                  ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                  ? "bg-amber-50 text-amber-700 border-amber-100"
                                   : user.status === "on hold"
-                                    ? "bg-orange-100 text-orange-800 border border-orange-200"
+                                    ? "bg-orange-50 text-orange-700 border-orange-100"
                                     : user.status === "deactivate"
-                                      ? "bg-red-100 text-red-800 border border-red-200"
-                                      : "bg-gray-100 text-gray-800 border border-gray-200"
+                                      ? "bg-rose-50 text-rose-700 border-rose-100"
+                                      : "bg-slate-50 text-slate-700 border-slate-100"
                             }`}
                           >
-                            {user.status
-                              ? user.status.toUpperCase()
-                              : "IN PROCESS"}
+                            {user.status || "IN PROCESS"}
                           </span>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-medium">
                           <button
                             onClick={() => handleViewDetails(user)}
-                            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base"
+                            className="bg-[#002060] hover:bg-[#001740] text-white px-4 py-2 rounded-xl transition-all duration-150 font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-md"
                           >
                             View Details
                           </button>
@@ -508,7 +506,7 @@ const AdminDashboard = () => {
 
                 {filteredUsers.length === 0 && (
                   <div className="hidden sm:block text-center py-8">
-                    <p className="text-gray-500">No users found</p>
+                    <p className="text-slate-400 text-xs font-semibold">No users found</p>
                   </div>
                 )}
               </div>
@@ -654,12 +652,13 @@ const AdminDashboard = () => {
         )}
 
         {activeSection === "reports" && (
-          <div className="p-4 sm:p-6">
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
             <AdminReport />
           </div>
         )}
-        
-        <AdminFooter />
+          </div>
+          <AdminFooter />
+        </div>
       </div>
     </div>
   );

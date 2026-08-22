@@ -22,39 +22,40 @@ export default function ManagePlanModal({ plan, onClose, onUpdated }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999]">
-      <div className="bg-white rounded-xl shadow-xl p-6 w-[350px] text-center relative">
+    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-[999]">
+      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-2xl p-7 w-[350px] text-center relative animate-fade-in">
         <button
           onClick={onClose}
-          className="absolute top-2 right-3 text-gray-500 hover:text-red-600 text-lg"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-sm transition"
         >
           ✕
         </button>
 
-        <h3 className="text-xl font-semibold mb-4">Manage Plan</h3>
-        <p className="mb-4 text-gray-700 font-medium">
-          {plan.name} —{" "}
+        <h3 className="text-base font-black text-slate-800 tracking-tight mb-5">Manage Plan Status</h3>
+        
+        <div className="mb-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-2">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{plan.name}</span>
           <span
-            className={
+            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border ${
               isActive
-                ? "text-green-600 font-semibold"
-                : "text-red-600 font-semibold"
-            }
+                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                : "bg-rose-50 text-rose-700 border-rose-100"
+            }`}
           >
             {isActive ? "Active" : "Inactive"}
           </span>
-        </p>
+        </div>
 
         {/* Toggle Button */}
         <button
           onClick={handleToggle}
-          className={`px-5 py-2 rounded-lg font-semibold transition-all shadow ${
+          className={`w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-150 shadow-xs ${
             isActive
-              ? "bg-green-600 hover:bg-green-700 text-white"
-              : "bg-gray-400 hover:bg-gray-500 text-white"
+              ? "bg-[#FF2A6D] hover:bg-[#e0105a] text-white"
+              : "bg-[#002060] hover:bg-[#001740] text-white"
           }`}
         >
-          {isActive ? "Deactivate" : "Activate"}
+          {isActive ? "Deactivate Plan" : "Activate Plan"}
         </button>
       </div>
     </div>

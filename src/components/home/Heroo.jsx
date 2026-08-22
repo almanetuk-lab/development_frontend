@@ -2,11 +2,74 @@
 import React, { useEffect, useState } from "react";
 import AOS from "aos";
 import { FaLinkedin, FaApple, FaGoogle } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
+import { googleAuth } from "../services/api";
+import { useUserProfile } from "../context/UseProfileContext";
 
 export default function Heroo() {
   const bannerImage = "/images/4.jpg.jpg";
   const [linkedinLoading, setLinkedinLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { updateProfile, refreshProfile } = useUserProfile();
+  const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (codeResponse) => {
+    try {
+      setGoogleLoading(true);
+      const code = codeResponse?.code;
+      if (!code) throw new Error("No authorization code received from Google");
+
+      const { token, refresh, user } = await googleAuth(code);
+      if (!token) throw new Error("No token received from server");
+
+      localStorage.setItem("accessToken", token);
+      if (refresh) localStorage.setItem("refreshToken", refresh);
+
+      if (user) {
+        updateProfile(user);
+        localStorage.setItem("currentUser", JSON.stringify(user));
+      }
+
+      setTimeout(() => {
+        refreshProfile();
+      }, 500);
+
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Google login error:", err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Google login failed";
+      alert(msg);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = (errorResponse) => {
+    console.error("Google login error:", errorResponse?.error || errorResponse);
+    alert("Google login failed. Please try again.");
+    setGoogleLoading(false);
+  };
+
+  const handleGoogleNonOAuthError = () => {
+    setGoogleLoading(false);
+  };
+
+  const googleLogin = useGoogleLogin({
+    flow: "auth-code",
+    onSuccess: handleGoogleSuccess,
+    onError: handleGoogleError,
+    onNonOAuthError: handleGoogleNonOAuthError,
+  });
+
+  const handleGoogleClick = () => {
+    setGoogleLoading(true);
+    googleLogin();
+  };
 
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
@@ -117,14 +180,23 @@ export default function Heroo() {
                   <span>Apple</span>
                 </Link>
 
-                <Link
-                  to="/coming-soon"
-                  className="flex items-center justify-center gap-2.5 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm shadow-sm"
-                  onClick={() => window.scrollTo(0, 0)}
+                <button
+                  onClick={handleGoogleClick}
+                  disabled={googleLoading}
+                  className="flex items-center justify-center gap-2.5 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:border-slate-300 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm shadow-sm cursor-pointer disabled:opacity-50"
                 >
-                  <FaGoogle size={16} className="text-red-500" />
-                  <span>Google</span>
-                </Link>
+                  {googleLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#FF2A6D]"></div>
+                      <span>Connecting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaGoogle size={16} className="text-red-500" />
+                      <span>Google</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* OR Divider */}
