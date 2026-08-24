@@ -1,6 +1,9 @@
 // src/components/pages/Contact.jsx (Refined, Premium UI Design with Popups)
 import React, { useState } from 'react';
+import axios from 'axios';
 import { FiPhone, FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -76,17 +79,17 @@ const ContactPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await axios.post(`${API_BASE}/api/contact`, { name, email, subject, message });
       setIsSubmitted(true);
       
-      // Reset form after 3 seconds
+      // Reset form after 4 seconds
       setTimeout(() => {
         setIsSubmitted(false);
         setFormData({ name: '', email: '', subject: '', message: '' });
-      }, 3000);
+      }, 4000);
     } catch (err) {
-      setError("Failed to send message. Please try again.");
+      const msg = err?.response?.data?.error || "Failed to send message. Please try again.";
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
