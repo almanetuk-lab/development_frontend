@@ -6,7 +6,7 @@ import ActivityItem from "../comman/ActivityItem";
 import SuggestedMatches from "../MatchSystem/SuggetionMatches";
 import { chatApi, getSuggestedMatches } from "../services/chatApi";
 import profileViewApi from "../services/profileViewApi";
-import { updateUserLocation } from "../services/api";
+import api, { updateUserLocation } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
 import ImageModal from "../comman/ImageModal";
 import {
@@ -20,15 +20,124 @@ import {
   FiCheckCircle,
   FiMapPin,
   FiX,
-  FiActivity
+  FiActivity,
+  FiShield
 } from "react-icons/fi";
 
 export default function DashboardHome({ profile }) {
+  const [displayProfile, setDisplayProfile] = useState(null);
   const navigate = useNavigate();
   const { updateProfile } = useUserProfile();
   const isLocationSavingRef = useRef(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationError, setLocationError] = useState("");
+
+  const [trustStatus, setTrustStatus] = useState(null);
+  const [showTrustTooltip, setShowTrustTooltip] = useState(false);
+
+  const fetchTrustData = async (id) => {
+    try {
+      const res = await api.get(`/api/users/${id}/trust`);
+      setTrustStatus(res.data);
+    } catch (err) {
+      console.warn("Failed to fetch user trust status on dashboard:", err);
+    }
+  };
+
+  const renderTrustBadge = () => {
+    const score = profile?.trust_score ?? 100;
+    
+    let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-250 hover:bg-emerald-100/50";
+    let textClass = "text-emerald-500";
+    
+    if (score < 50) {
+      colorClass = "bg-rose-50 text-rose-700 border-rose-250 hover:bg-rose-100/50";
+      textClass = "text-rose-500";
+    } else if (score < 75) {
+      colorClass = "bg-amber-50 text-amber-700 border-amber-250 hover:bg-amber-100/50";
+      textClass = "text-amber-500";
+    } else if (score < 90) {
+      colorClass = "bg-blue-50 text-blue-700 border-blue-250 hover:bg-blue-100/50";
+      textClass = "text-blue-500";
+    }
+
+    return (
+      <div 
+        className="relative inline-block align-middle"
+        onMouseEnter={() => setShowTrustTooltip(true)}
+        onMouseLeave={() => setShowTrustTooltip(false)}
+      >
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-black tracking-wide cursor-pointer transition ${colorClass} shadow-xs`}>
+          <span className="relative flex h-2 w-2">
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${textClass.replace('text', 'bg')}`}></span>
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${textClass.replace('text', 'bg')}`}></span>
+          </span>
+          <FiShield className="w-3.5 h-3.5" />
+          <span>Trust Score: {score}</span>
+        </div>
+
+        {showTrustTooltip && trustStatus && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-72 bg-white rounded-3xl p-5 border border-slate-100 shadow-2xl z-50 text-left space-y-4 animate-scale-up font-sans">
+            
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Integrity Check</h4>
+                <p className="text-sm font-extrabold text-slate-800 mt-0.5">Anti-Ghosting Score</p>
+              </div>
+              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${colorClass}`}>
+                {trustStatus.trustLevel}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-50 border border-slate-100/50 rounded-2xl p-3 text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Trust Rating</p>
+                <p className="text-lg font-black text-slate-800 mt-1">{trustStatus.trustScore}%</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-100/50 rounded-2xl p-3 text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Ghost Risk</p>
+                <p className={`text-xs font-black mt-2 ${trustStatus.ghostingRisk === "Low" ? "text-emerald-600" : trustStatus.ghostingRisk === "Moderate" ? "text-amber-600" : "text-rose-600"}`}>
+                  {trustStatus.ghostingRisk} Risk
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-1 text-xs">
+              <div className="flex justify-between items-center text-slate-600 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Active Connections
+                </span>
+                <span className="font-extrabold text-slate-800">{trustStatus.successfulConversations}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                  Ghosted Chats
+                </span>
+                <span className="font-extrabold text-slate-800">{trustStatus.ghostedConversations}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                  Engagement Level
+                </span>
+                <span className="font-extrabold text-indigo-700 bg-indigo-50/50 border border-indigo-100 px-2 py-0.5 rounded-md text-[9px] uppercase">
+                  {trustStatus.engagementStatus}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[10px] leading-relaxed text-slate-400 font-semibold border-t border-slate-100 pt-3 flex items-start gap-1">
+              <FiShield className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+              <span>Points are deducted automatically when messages are left unanswered for more than 48 hours.</span>
+            </p>
+
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const autoDetectAndSaveLocation = async () => {
     if (isLocationSavingRef.current) return;
@@ -218,6 +327,7 @@ export default function DashboardHome({ profile }) {
   useEffect(() => {
     if (userId && userId !== "null") {
       fetchDashboardData();
+      fetchTrustData(userId);
 
       const interval = setInterval(() => {
         fetchUnreadMessages();
@@ -327,8 +437,9 @@ export default function DashboardHome({ profile }) {
                 <span className="w-2 h-2 rounded-full bg-[#FF2A6D]"></span>
                 <span>Dashboard Overview</span>
               </div>
-              <h1 className="text-xl sm:text-2xl lg:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
-                Welcome back, <span className="text-[#002060] font-black">{userFirstName}</span>
+              <h1 className="text-xl sm:text-2xl lg:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight flex flex-wrap items-center gap-3">
+                <span>Welcome back, <span className="text-[#002060] font-black">{userFirstName}</span></span>
+                {renderTrustBadge()}
               </h1>
               <p className="text-slate-500 text-xs sm:text-sm lg:text-base font-medium">
                 Here is a summary of your profile performance, activity, and member interactions.
