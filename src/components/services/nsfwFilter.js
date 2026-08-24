@@ -1,58 +1,30 @@
 // src/components/services/nsfwFilter.js
-// Lightweight client-side NSFW filtering utility using TensorFlow.js and NSFWJS from CDN
+// Client-side NSFW filtering using nsfwjs npm package (no CDN scripts needed)
 
-let modelPromise = null;
-
-// Dynamically load scripts from CDN
-const loadScript = (src) => {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = (err) => reject(err);
-    document.body.appendChild(script);
-  });
-};
+let modelCache = null;
 
 const initNSFWModel = async () => {
-  if (modelPromise) return modelPromise;
+  if (modelCache) return modelCache;
 
-  modelPromise = (async () => {
-    try {
-      console.log("⚡ Loading TensorFlow.js & NSFWJS from CDN...");
-      
-      // Load TensorFlow.js first (stable version)
-      await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js");
-      
-      // Load NSFWJS minified production package
-      await loadScript("https://cdn.jsdelivr.net/npm/nsfwjs/dist/nsfwjs.min.js");
+  // Dynamic import to keep it out of the initial bundle (lazy loaded)
+  const [tf, nsfwjs] = await Promise.all([
+    import("@tensorflow/tfjs"),
+    import("nsfwjs"),
+  ]);
 
-      if (!window.nsfwjs) {
-        throw new Error("NSFWJS library failed to initialize on window object");
-      }
-
-      console.log("⚡ Initializing NSFWJS MobileNetV2 model...");
-      // load() with no arguments defaults to the hosted MobileNetV2 model
-      const model = await window.nsfwjs.load();
-      console.log("✅ NSFWJS Model initialized successfully");
-      return model;
-    } catch (error) {
-      modelPromise = null; // reset for retries
-      console.error("❌ NSFWJS initialization failed:", error);
-      throw error;
-    }
-  })();
-
-  return modelPromise;
+  console.log("⚡ Loading NSFWJS MobileNetV2 model...");
+  // Use the public NSFWJS model URL — hosted on GitHub Pages, reliable CORS
+  const model = await nsfwjs.load(
+    "https://nsfwjs.com/quant_nsfw_mobilenet/",
+    { size: 224 }
+  );
+  console.log("✅ NSFWJS Model loaded");
+  modelCache = model;
+  return model;
 };
 
 /**
- * Checks if an image file contains NSFW (nude, explicit, or highly suggestive) content.
+ * Checks if an image File contains NSFW content (nudity, explicit, highly suggestive).
  * @param {File} imageFile - The file to check.
  * @returns {Promise<{isSafe: boolean, reason?: string, predictions?: any[]}>}
  */
@@ -60,61 +32,47 @@ export const checkImageSafety = async (imageFile) => {
   try {
     const model = await initNSFWModel();
 
-    // Create an HTML Image element to pass to the model
+    // Build an HTMLImageElement from the File so NSFWJS can classify it
     const imgUrl = URL.createObjectURL(imageFile);
-    const img = new Image();
-    img.src = imgUrl;
-
-    await new Promise((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load image for safety analysis"));
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = imgUrl;
     });
 
-    // Run prediction
     const predictions = await model.classify(img);
-    
-    // Revoke object URL to prevent memory leaks
     URL.revokeObjectURL(imgUrl);
 
-    console.log("🔍 NSFW Detections:", predictions);
+    console.log("🔍 NSFW predictions:", predictions);
 
-    // Map predictions to a simpler key-value object for quick checks
+    // Map predictions to easy lookup
     const scores = {};
-    predictions.forEach(p => {
+    predictions.forEach((p) => {
       scores[p.className] = p.probability;
     });
 
-    // Safety Threshold limits:
-    // - Porn: > 35% probability is highly likely sexually explicit
-    // - Hentai: > 40% probability is explicit illustrations
-    // - Sexy: > 60% probability is highly revealing or suggestive undergarments
-    const isPorn = (scores["Porn"] || 0) > 0.35;
-    const isHentai = (scores["Hentai"] || 0) > 0.40;
-    const isSexy = (scores["Sexy"] || 0) > 0.60;
+    const isPorn   = (scores["Porn"]   || 0) > 0.30;
+    const isHentai = (scores["Hentai"] || 0) > 0.35;
+    const isSexy   = (scores["Sexy"]   || 0) > 0.55;
 
     if (isPorn || isHentai || isSexy) {
-      let reason = "This image appears to contain suggestive or explicit content.";
-      if (isPorn) reason = "This photo matches content flagged as sexually explicit.";
-      if (isHentai) reason = "This image matches content flagged as sexually explicit illustrations.";
-      if (isSexy) reason = "This photo matches content flagged as highly revealing or suggestive.";
+      let reason = "This image contains inappropriate content and cannot be uploaded.";
+      if (isPorn)   reason = "🚫 Sexually explicit content detected. This photo cannot be uploaded.";
+      if (isHentai) reason = "🚫 Explicit illustrated content detected. This photo cannot be uploaded.";
+      if (isSexy)   reason = "⚠️ Highly revealing content detected. Please use an appropriate profile photo.";
 
-      return {
-        isSafe: false,
-        reason,
-        predictions
-      };
+      return { isSafe: false, reason, predictions };
     }
 
-    return {
-      isSafe: true,
-      predictions
-    };
+    return { isSafe: true, predictions };
+
   } catch (error) {
-    console.warn("⚠️ NSFW validation failed, bypassing filter to ensure uptime:", error);
-    // Return safe if model fails to load, preventing user blockage during network issues
+    // Fail CLOSED — if model fails, BLOCK the upload rather than silently pass
+    console.error("❌ NSFW check error:", error);
     return {
-      isSafe: true,
-      error: error.message
+      isSafe: false,
+      reason: "⚠️ Photo safety check failed. Please try again or use a different photo.",
     };
   }
 };
