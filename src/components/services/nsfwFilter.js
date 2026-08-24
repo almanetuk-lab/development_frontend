@@ -19,7 +19,6 @@ const loadScript = (src) => {
   });
 };
 
-// Ensure TensorFlow.js and NSFWJS are loaded and initialize the model
 const initNSFWModel = async () => {
   if (modelPromise) return modelPromise;
 
@@ -27,19 +26,19 @@ const initNSFWModel = async () => {
     try {
       console.log("⚡ Loading TensorFlow.js & NSFWJS from CDN...");
       
-      // Load TensorFlow.js first
-      await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js");
+      // Load TensorFlow.js first (stable version)
+      await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js");
       
-      // Load NSFWJS
-      await loadScript("https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/index.js");
+      // Load NSFWJS minified production package
+      await loadScript("https://cdn.jsdelivr.net/npm/nsfwjs/dist/nsfwjs.min.js");
 
       if (!window.nsfwjs) {
         throw new Error("NSFWJS library failed to initialize on window object");
       }
 
       console.log("⚡ Initializing NSFWJS MobileNetV2 model...");
-      // MobileNetV2 is lightweight (~5MB) and executes quickly in-browser
-      const model = await window.nsfwjs.load("mobilenet_v2", { size: 224 });
+      // load() with no arguments defaults to the hosted MobileNetV2 model
+      const model = await window.nsfwjs.load();
       console.log("✅ NSFWJS Model initialized successfully");
       return model;
     } catch (error) {
