@@ -186,7 +186,7 @@ export default function App() {
           path="/admin/users/:type"
           element={
             <ProtectedRoute>
-              <UsersList />
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
@@ -210,7 +210,7 @@ export default function App() {
           path="/admin/users/not-renewed"
           element={
             <ProtectedRoute>
-              <NotRenewedUsers />
+              <AdminDashboard />
             </ProtectedRoute>
           }
         /> 
@@ -220,7 +220,7 @@ export default function App() {
           path="/admin/users/:userId"
           element={
             <ProtectedRoute>
-              <AdminModelDetails />
+              <AdminDashboard />
             </ProtectedRoute>
           }
         /> 
@@ -229,16 +229,7 @@ export default function App() {
           path="/admin/models/:userId"
           element={
             <ProtectedRoute>
-              <AdminModelDetails />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/users/:userId"
-          element={
-            <ProtectedRoute>
-              <AdminModelDetails />
+              <AdminDashboard />
             </ProtectedRoute>
           }
         /> 
@@ -263,8 +254,8 @@ export default function App() {
         <Route path="/auth/linkedin/callback" element={<LinkedInCallback />} />
  
         <Route path="/admin-plans-new" element={<PlanFormWrapper />} />
-        <Route path="/admin/blogs/create" element={<CreateArticle />} />
-        <Route path="/admin/blogs/edit/:id" element={<EditArticle />} />
+        <Route path="/admin/blogs/create" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/blogs/edit/:id" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         <Route
           path="/blogs/:id"
           element={

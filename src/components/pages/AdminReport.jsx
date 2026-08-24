@@ -18,23 +18,43 @@ const AdminReport = () => {
     useAdminReport();
 
   const [loading, setLoading] = useState(false);
-
-  //  Not Renewed count for StatCard
   const [notRenewedCount, setNotRenewedCount] = useState(0);
-const [notRenewedLoading, setNotRenewedLoading] = useState(false);
-  // useEffect(() => {
-  //   const fetchNotRenewedCount = async () => {
-  //     try {
-  //       const res = await fetchNotRenewedUsers(); // returns response.data
-  //       setNotRenewedCount((res?.data || []).length);
-  //     } catch (e) {
-  //       console.error("Not renewed count error:", e);
-  //       setNotRenewedCount(0);
-  //     }
-  //   };
+  const [notRenewedLoading, setNotRenewedLoading] = useState(false);
 
-  //   fetchNotRenewedCount();
-  // }, []);
+  // Auto-fetch default report (last 30 days) on mount so it's not blank at start
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    const init = async () => {
+      let currentFrom = fromDate;
+      let currentTo = toDate;
+
+      if (!fromDate || !toDate) {
+        setFromDate(thirtyDaysAgo);
+        setToDate(today);
+        currentFrom = thirtyDaysAgo;
+        currentTo = today;
+      }
+
+      if (!report) {
+        try {
+          setLoading(true);
+          const response = await fetchAdminReport(currentFrom, currentTo);
+          const actualData = response?.data?.data || response?.data || response;
+          if (actualData?.summary) {
+            setReport(actualData);
+          }
+        } catch (err) {
+          console.error("Auto fetch report error:", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    init();
+  }, []);
 
   useEffect(() => {
   const fetchNotRenewedCount = async () => {

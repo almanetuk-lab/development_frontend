@@ -3,11 +3,16 @@ import { useState, useEffect } from "react";
 import { adminAPI } from "../services/adminApi";
 import AdminPlans from "./AdminAllPlan.jsx";
 import AdminBlog from "../pages/AdminBlog.jsx";
+import CreateArticle from "../pages/CreateArticle.jsx";
+import EditArticle from "../pages/EditArticle.jsx";
 import AdminFooter from "./AdminFooter.jsx";
 import AdminReport from "../pages/AdminReport.jsx";
+import UsersList from "../pages/UsersList.jsx";
+import NotRenewedUsers from "../pages/NotRenewedUsers.jsx";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader.jsx";
+import AdminModelDetails from "./AdminModelDetails.jsx";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -17,10 +22,23 @@ const AdminDashboard = () => {
   // Determine active section from URL
   const getActiveSectionFromURL = () => {
     const path = location.pathname;
+    if (path.includes("/admin/users/")) {
+      if (path.includes("/admin/users/not-renewed")) return "not_renewed";
+      const parts = path.split("/");
+      const param = parts[parts.length - 1];
+      if (isNaN(Number(param))) {
+        return "users_by_type";
+      } else {
+        return "user_details";
+      }
+    }
+    if (path.includes("/admin/models/")) return "user_details";
     if (path.includes("/admin/users")) return "users";
     if (path.includes("/admin/settings")) return "settings";
     if (path.includes("/admin/logs")) return "logs";
     if (path.includes("/admin/plans")) return "plans";
+    if (path.includes("/admin/blogs/create")) return "blogs_create";
+    if (path.includes("/admin/blogs/edit")) return "blogs_edit";
     if (path.includes("/admin/blogs")) return "blogs";
     if (path.includes("/admin/reports")) return "reports";
     return "dashboard";
@@ -47,7 +65,72 @@ const AdminDashboard = () => {
     check_message_limit: 0,
   });
 
-  //We are getting Admin details from Localstorage :-
+  // Audit Logs States
+  const [logs, setLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsTotal, setLogsTotal] = useState(0);
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsLimit] = useState(25);
+  const [logFilterAction, setLogFilterAction] = useState("");
+  const [logStartDate, setLogStartDate] = useState("");
+  const [logEndDate, setLogEndDate] = useState("");
+  const [logSearchUser, setLogSearchUser] = useState("");
+  const [selectedLogDetails, setSelectedLogDetails] = useState(null);
+
+  const fetchAuditLogs = async (page = 1) => {
+    try {
+      setLogsLoading(true);
+      const offset = (page - 1) * logsLimit;
+      const params = {
+        limit: logsLimit,
+        offset,
+        start_date: logStartDate || undefined,
+        end_date: logEndDate || undefined,
+        action: logFilterAction || undefined,
+        user_id: logSearchUser || undefined,
+      };
+      const res = await adminAPI.getAuditLogs(params);
+      if (res.data) {
+        setLogs(res.data.logs || []);
+        setLogsTotal(res.data.total || 0);
+        setLogsPage(page);
+      }
+    } catch (err) {
+      console.error("Failed to fetch audit logs:", err);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  const handleExportLogs = () => {
+    try {
+      const headers = ["Timestamp", "User ID", "User Email", "Action", "IP Address", "User Agent", "Details"];
+      const rows = logs.map(log => [
+        new Date(log.created_at).toLocaleString(),
+        log.user_id || "",
+        log.user_email || "",
+        log.action,
+        log.ip_address || "",
+        log.user_agent || "",
+        log.details || ""
+      ]);
+
+      const csvContent = "data:text/csv;charset=utf-8," 
+        + [headers.join(","), ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))].join("\n");
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `security_audit_logs_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Failed to export logs:", err);
+    }
+  };
+
+  // We are getting Admin details from Localstorage :-
   let [loggedInUser, setLoggedInUser] = useState({});
 
   useEffect(() => {
@@ -67,6 +150,12 @@ const AdminDashboard = () => {
       fetchMemberApproval();
     }
   }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection === "logs") {
+      fetchAuditLogs(1);
+    }
+  }, [activeSection, logFilterAction, logStartDate, logEndDate]);
 
   // Member_approval function end here ----
 
@@ -578,7 +667,7 @@ const AdminDashboard = () => {
         {activeSection === "logs" && (
           <div className="p-4 sm:p-6">
             <div className="max-w-5xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
                     System Security & Activity Logs
@@ -588,49 +677,280 @@ const AdminDashboard = () => {
                   </p>
                 </div>
                 <button 
-                  onClick={() => alert("Logs exported successfully!")}
-                  className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition shadow-xs"
+                  onClick={handleExportLogs}
+                  disabled={logs.length === 0}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition shadow-xs cursor-pointer"
                 >
                   <i className="fa-solid fa-download"></i>
-                  Export Audit Log
+                  Export Audit Log (CSV)
                 </button>
               </div>
 
-              <div className="bg-slate-950 text-slate-200 p-5 rounded-2xl shadow-lg border border-slate-900 font-mono text-[11px] overflow-hidden">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-                  <div className="flex gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+              {/* Filters Panel */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-xs mb-6 flex flex-col gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={logStartDate}
+                      onChange={(e) => setLogStartDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:bg-white focus:ring-1 focus:ring-slate-400 transition"
+                    />
                   </div>
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">
-                    live_terminal.log
-                  </span>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={logEndDate}
+                      onChange={(e) => setLogEndDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:bg-white focus:ring-1 focus:ring-slate-400 transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      Action Type
+                    </label>
+                    <select
+                      value={logFilterAction}
+                      onChange={(e) => setLogFilterAction(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:bg-white focus:ring-1 focus:ring-slate-400 transition cursor-pointer"
+                    >
+                      <option value="">All Actions</option>
+                      <option value="SEARCH_BASIC">Basic Search</option>
+                      <option value="SEARCH_ADVANCED">Advanced Search</option>
+                      <option value="SEARCH_NEARME">Near Me Search</option>
+                      <option value="CHAT_SEND">Chat Message Sent</option>
+                      <option value="CHAT_REACTION">Reaction Added</option>
+                      <option value="CHAT_DELETE">Message Deleted</option>
+                      <option value="PROFILE_VIEW">Profile Viewed</option>
+                      <option value="PROFILE_EDIT">Profile Updated</option>
+                      <option value="AI_AGENT_TOGGLE">AI Settings Updated</option>
+                      <option value="AI_AGENT_RESPONSE">AI Twin Automated Chat</option>
+                      <option value="PLAN_CREATE">Plan Created</option>
+                      <option value="PLAN_UPDATE">Plan Updated</option>
+                      <option value="PLAN_TOGGLE_STATUS">Plan Status Toggle</option>
+                      <option value="USER_APPROVE">User Approved</option>
+                      <option value="USER_HOLD">User Put on Hold</option>
+                      <option value="USER_DEACTIVATE">User Deactivated</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      User Search
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="User ID..."
+                      value={logSearchUser}
+                      onChange={(e) => setLogSearchUser(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:bg-white focus:ring-1 focus:ring-slate-400 transition"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-                  {[
-                    { timestamp: "2026-08-14 21:55:03", level: "INFO", category: "Auth", message: "User admin@intentionalconnection.com logged in successfully from 192.168.1.45" },
-                    { timestamp: "2026-08-14 21:30:12", level: "WARN", category: "FaceAPI", message: "Face detection returned low confidence score (0.42) for image_id: 8931" },
-                    { timestamp: "2026-08-14 21:04:45", level: "INFO", category: "Database", message: "Auto-cleanup of expired subscription tokens completed. 4 rows affected." },
-                    { timestamp: "2026-08-14 20:45:22", level: "ERROR", category: "Payment", message: "Stripe webhook signature verification failed for event: evt_89412A" },
-                    { timestamp: "2026-08-14 19:15:30", level: "INFO", category: "API", message: "GET /api/me/plan-status completed in 45ms for user: Shivam Likhar" },
-                    { timestamp: "2026-08-14 18:22:11", level: "INFO", category: "System", message: "Auto-approve settings changed. Manual approval set to OFF." },
-                    { timestamp: "2026-08-14 17:40:55", level: "WARN", category: "Chat", message: "WebSocket connection dropped unexpectedly by client: usr_77123" }
-                  ].map((log, idx) => (
-                    <div key={idx} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 hover:bg-slate-900/60 p-1 rounded-lg transition duration-75">
-                      <span className="text-slate-500 select-none shrink-0">{log.timestamp}</span>
-                      <span className={`font-bold shrink-0 ${
-                        log.level === "ERROR" ? "text-rose-500" :
-                        log.level === "WARN" ? "text-amber-400" : "text-emerald-400"
-                      }`}>
-                        [{log.level}]
-                      </span>
-                      <span className="text-slate-400 font-bold shrink-0">{log.category}:</span>
-                      <span className="text-slate-300 break-all">{log.message}</span>
-                    </div>
-                  ))}
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 mt-1">
+                  {(logStartDate || logEndDate || logFilterAction || logSearchUser) && (
+                    <button
+                      onClick={() => {
+                        setLogStartDate("");
+                        setLogEndDate("");
+                        setLogFilterAction("");
+                        setLogSearchUser("");
+                        setTimeout(() => fetchAuditLogs(1), 0);
+                      }}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition cursor-pointer"
+                    >
+                      Reset Filters
+                    </button>
+                  )}
+                  <button
+                    onClick={() => fetchAuditLogs(1)}
+                    className="px-5 py-2.5 bg-[#002060] hover:bg-opacity-95 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Apply Filters
+                  </button>
                 </div>
+              </div>
+
+              {/* Logs Table / Cards Wrapper */}
+              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-xs overflow-hidden">
+                {logsLoading ? (
+                  <div className="p-12 text-center text-slate-500 font-semibold text-sm">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#002060] mx-auto mb-3"></div>
+                    Loading audit trail...
+                  </div>
+                ) : logs.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 font-semibold text-sm">
+                    <i className="fa-solid fa-terminal text-2xl block mb-2 text-slate-300"></i>
+                    No audit logs found for the selected criteria.
+                  </div>
+                ) : (
+                  <div>
+                    {/* DESKTOP TABLE VIEW */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200/50">
+                            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Date / Time</th>
+                            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
+                            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Client metadata</th>
+                            <th className="px-6 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Details</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {logs.map((log) => (
+                            <tr key={log.id} className="hover:bg-slate-50/50 transition duration-75">
+                              <td className="px-6 py-4.5 text-xs font-semibold text-slate-600">
+                                {new Date(log.created_at).toLocaleString()}
+                              </td>
+                              <td className="px-6 py-4.5">
+                                {log.user_id ? (
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-slate-700">
+                                      {log.first_name ? `${log.first_name} ${log.last_name}` : `User #${log.user_id}`}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">{log.user_email}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs font-bold text-slate-400 italic">System / Public</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4.5">
+                                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                  log.action.startsWith("CHAT_") ? "bg-cyan-50 text-cyan-600 border border-cyan-100" :
+                                  log.action.startsWith("PLAN_") ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                                  log.action.startsWith("USER_") ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                                  log.action.startsWith("AI_") ? "bg-violet-50 text-violet-600 border border-violet-100" :
+                                  "bg-slate-50 text-slate-500 border border-slate-100"
+                                }`}>
+                                  {log.action.replace(/_/g, " ")}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4.5">
+                                <div className="flex flex-col gap-0.5 text-[10px] font-semibold text-slate-500 max-w-[180px] truncate">
+                                  <span>IP: <code className="font-mono text-slate-700 bg-slate-100 px-1 py-0.2 rounded">{log.ip_address || "Localhost"}</code></span>
+                                  <span className="truncate text-slate-400" title={log.user_agent}>{log.user_agent || "N/A"}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4.5 text-right">
+                                {log.details ? (
+                                  <button
+                                    onClick={() => {
+                                      try {
+                                        setSelectedLogDetails(JSON.parse(log.details));
+                                      } catch (e) {
+                                        setSelectedLogDetails(log.details);
+                                      }
+                                    }}
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer"
+                                  >
+                                    Inspect
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-slate-350 italic">None</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* MOBILE CARDS VIEW */}
+                    <div className="block md:hidden divide-y divide-slate-100">
+                      {logs.map((log) => (
+                        <div key={log.id} className="p-4 hover:bg-slate-50/50 transition duration-75">
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                              log.action.startsWith("CHAT_") ? "bg-cyan-50 text-cyan-600 border border-cyan-100" :
+                              log.action.startsWith("PLAN_") ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                              log.action.startsWith("USER_") ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                              log.action.startsWith("AI_") ? "bg-violet-50 text-violet-600 border border-violet-100" :
+                              "bg-slate-50 text-slate-500 border border-slate-100"
+                            }`}>
+                              {log.action.replace(/_/g, " ")}
+                            </span>
+                            <span className="text-[10px] font-extrabold text-slate-400">
+                              {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5 text-xs">
+                            <div className="flex justify-between items-start gap-4">
+                              <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wide">User:</span>
+                              <span className="text-slate-800 font-bold text-right text-xs">
+                                {log.user_id ? (log.first_name ? `${log.first_name} ${log.last_name}` : `User #${log.user_id}`) : "System / Public"}
+                              </span>
+                            </div>
+
+                            {log.user_email && (
+                              <div className="flex justify-between items-start gap-4">
+                                <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wide">Email:</span>
+                                <span className="text-slate-500 font-medium break-all text-right text-[11px]">{log.user_email}</span>
+                              </div>
+                            )}
+
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wide">IP Address:</span>
+                              <span className="font-mono text-slate-700 bg-slate-100 px-1 py-0.2 rounded text-[10px]">{log.ip_address || "Localhost"}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+                            <span className="text-[10px] text-slate-400 font-bold">
+                              {new Date(log.created_at).toLocaleDateString()}
+                            </span>
+                            {log.details ? (
+                              <button
+                                onClick={() => {
+                                  try {
+                                    setSelectedLogDetails(JSON.parse(log.details));
+                                  } catch (e) {
+                                    setSelectedLogDetails(log.details);
+                                  }
+                                }}
+                                className="px-4.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-black uppercase tracking-wider transition cursor-pointer"
+                              >
+                                Inspect Details
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-slate-300 italic">No details</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {logsTotal > logsLimit && (
+                      <div className="p-4 bg-slate-50 border-t border-slate-200/50 flex items-center justify-between">
+                        <button
+                          onClick={() => fetchAuditLogs(logsPage - 1)}
+                          disabled={logsPage === 1 || logsLoading}
+                          className="px-3.5 py-1.5 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer bg-white"
+                        >
+                          Previous
+                        </button>
+                        <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest text-center px-2">
+                          Page {logsPage} of {Math.ceil(logsTotal / logsLimit)} ({logsTotal} logs)
+                        </span>
+                        <button
+                          onClick={() => fetchAuditLogs(logsPage + 1)}
+                          disabled={logsPage === Math.ceil(logsTotal / logsLimit) || logsLoading}
+                          className="px-3.5 py-1.5 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer bg-white"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -651,6 +971,36 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {activeSection === "blogs_create" && (
+          <div className="p-4 sm:p-6">
+            <CreateArticle user={loggedInUser} />
+          </div>
+        )}
+
+        {activeSection === "blogs_edit" && (
+          <div className="p-4 sm:p-6">
+            <EditArticle user={loggedInUser} />
+          </div>
+        )}
+
+        {activeSection === "user_details" && (
+          <div className="p-4 sm:p-6">
+            <AdminModelDetails />
+          </div>
+        )}
+
+        {activeSection === "users_by_type" && (
+          <div className="p-4 sm:p-6">
+            <UsersList />
+          </div>
+        )}
+
+        {activeSection === "not_renewed" && (
+          <div className="p-4 sm:p-6">
+            <NotRenewedUsers />
+          </div>
+        )}
+
         {activeSection === "reports" && (
           <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
             <AdminReport />
@@ -660,6 +1010,29 @@ const AdminDashboard = () => {
           <AdminFooter />
         </div>
       </div>
+      {selectedLogDetails && (
+        <div className="fixed inset-0 overflow-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-[999] p-5 animate-fade-in">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 my-6 border border-slate-100/80">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <h3 className="text-base font-black text-slate-800 tracking-tight">Audit Log Details</h3>
+              <button onClick={() => setSelectedLogDetails(null)} className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="bg-slate-950 text-emerald-400 p-4 rounded-xl font-mono text-xs overflow-x-auto max-h-[300px]">
+              <pre>{JSON.stringify(selectedLogDetails, null, 2)}</pre>
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <button
+                onClick={() => setSelectedLogDetails(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

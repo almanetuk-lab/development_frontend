@@ -146,7 +146,7 @@ export default function WrappedProfilePage() {
 }
 
 function ProfilePage() {
-  const { profile: currentUserProfile, activePlan, planLoading } = useUserProfile();
+  const { profile: currentUserProfile, activePlan, planLoading, isFeatureAllowed } = useUserProfile();
   const [displayProfile, setDisplayProfile] = useState(null);
   const { userId } = useParams();
   const location = useLocation();
@@ -316,7 +316,7 @@ function ProfilePage() {
 
   const myId = currentUserProfile?.id || currentUserProfile?.user_id;
   const viewedId = userId;
-  if (viewedId && myId && myId != viewedId && !planLoading && !activePlan?.active) {
+  if (viewedId && myId && myId != viewedId && !planLoading && !isFeatureAllowed("profile")) {
     return <PlanRestrictionModal feature="profiles" />;
   }
 

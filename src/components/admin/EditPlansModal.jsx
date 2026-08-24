@@ -100,7 +100,19 @@
 //   );
 // }
 
-import React from "react";
+const AVAILABLE_FEATURES = [
+  { key: "dashboard", label: "Dashboard Access" },
+  { key: "profile", label: "View Profiles" },
+  { key: "message", label: "Direct Messaging" },
+  { key: "basic_search", label: "Basic Search" },
+  { key: "advance_search", label: "Advanced Search" },
+  { key: "edit_profile", label: "Edit Profile" },
+  { key: "my_matches", label: "My Matches" },
+  { key: "ai_suggestion", label: "AI Suggestions" },
+  { key: "near_me", label: "Near Me Search" },
+  { key: "browse_members", label: "Browse Members" },
+  { key: "ai_agent", label: "AI Agent Settings" },
+];
 
 export default function EditPlanModal({
   formData,
@@ -108,9 +120,22 @@ export default function EditPlanModal({
   handleUpdate,
   setIsOpen,
 }) {
-  const hiddenFields = ["id", "created_at", "updated_at","is_active"];
+  const hiddenFields = ["id", "created_at", "updated_at","is_active", "allowed_features"];
 
   console.log(formData);
+
+  const handleFeatureToggle = (featureKey, isChecked) => {
+    const updatedFeatures = {
+      ...(formData.allowed_features || {}),
+      [featureKey]: isChecked
+    };
+    handleChange({
+      target: {
+        name: "allowed_features",
+        value: updatedFeatures
+      }
+    });
+  };
 
   const renderField = (key) => {
     const value = formData[key] ?? "";
@@ -251,6 +276,26 @@ export default function EditPlanModal({
                 {renderField(key)}
               </div>
             ))}
+
+          {/* Dynamic Allowed Features Checkboxes */}
+          <div className="border-t border-slate-100 pt-4 mt-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+              🛡️ Feature Access Guards
+            </label>
+            <div className="grid grid-cols-1 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200/50 max-h-[180px] overflow-y-auto">
+              {AVAILABLE_FEATURES.map((feat) => (
+                <label key={feat.key} className="flex items-center gap-3 cursor-pointer p-1.5 hover:bg-slate-100/50 rounded-lg transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={!!formData.allowed_features?.[feat.key]}
+                    onChange={(e) => handleFeatureToggle(feat.key, e.target.checked)}
+                    className="rounded text-[#002060] focus:ring-[#002060] h-4 w-4 border-slate-300"
+                  />
+                  <span className="text-xs font-semibold text-slate-700">{feat.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
 
           <div className="flex gap-4 mt-6 pt-4 border-t border-slate-100">
             <button

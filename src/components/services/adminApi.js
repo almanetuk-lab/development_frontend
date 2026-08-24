@@ -89,6 +89,9 @@ export const adminAPI = {
 //  UPDATE MEMBER APPROVAL SETTING
 updateMemberApproval: (data) =>
   api.put('/api/settings/update-member-approval', data),
+
+  // Get Audit Logs
+  getAuditLogs: (params) => api.get('/api/admin/audit-logs', { params }),
 };
 
 

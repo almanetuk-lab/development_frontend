@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from '../services/axiosConfig.js';
-import TipTabEditor from "../blog/TiptapEditor.jsx";
 import { toast } from "react-toastify";
 import TiptapEditor from "../blog/TiptapEditor.jsx";
 
@@ -15,9 +14,11 @@ export default function EditArticle({ user }) {
   const [coverFile, setCoverFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(()=>{ fetch(); }, [id]);
+  useEffect(() => {
+    fetchArticle();
+  }, [id]);
 
-  const fetch = async () => {
+  const fetchArticle = async () => {
     try {
       const res = await api.get(`/api/blogs/${id}`);
       const a = res.data.article || res.data;
@@ -25,11 +26,17 @@ export default function EditArticle({ user }) {
       setTitle(a.title || "");
       setSubtitle(a.subtitle || "");
       setContentHtml(a.content || "");
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load article");
+    }
   };
 
   const handleUpdate = async () => {
-    if (!title || !contentHtml) { toast.error("Title and content required"); return; }
+    if (!title || !contentHtml) {
+      toast.error("Title and content required");
+      return;
+    }
     setLoading(true);
     try {
       const form = new FormData();
@@ -37,38 +44,173 @@ export default function EditArticle({ user }) {
       form.append("subtitle", subtitle);
       form.append("content", contentHtml);
       if (coverFile) form.append("cover_image", coverFile);
-      await api.put(`/api/blogs/update/${id}`, form, { headers: {"Content-Type":"multipart/form-data"} });
-      toast.success("Updated");
+      
+      await api.put(`/api/blogs/update/${id}`, form, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      toast.success("Article updated successfully");
       navigate("/admin-dashboard");
-    } catch (err) { console.error(err); toast.error("Update failed"); }
-    finally { setLoading(false); }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update article");
+    } finally {
+      setLoading(false);
+    }
   };
 
-   const handleBack = () => {
+  const handleBack = () => {
     navigate(-1);
   };
 
-  if (!article) return <div className="text-center py-10">Loading…</div>;
+  if (!article) {
+    return (
+      <div className="flex justify-center items-center py-24">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#FF2A6D]"></div>
+      </div>
+    );
+  }
 
-  //console.log("Content HTML:", contentHtml);
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white p-4 rounded shadow mb-4">
-        <input value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Title" className="w-full p-2 border rounded mb-2" />
-        <input value={subtitle} onChange={(e)=>setSubtitle(e.target.value)} placeholder="Subtitle" className="w-full p-2 border rounded mb-2" />
-        <div className="mb-2">
-          <label className="block text-sm mb-1">Cover image (optional)</label>
-          <input type="file" accept="image/*" onChange={(e)=>setCoverFile(e.target.files[0])} />
+    <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
+      {/* Header Area */}
+      <div className="flex items-center gap-3.5 mb-6">
+        <button
+          onClick={handleBack}
+          className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:shadow-xs transition duration-150 cursor-pointer"
+          title="Go back"
+        >
+          <i className="fa-solid fa-arrow-left text-xs"></i>
+        </button>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
+            Edit Article
+          </h1>
+          <p className="text-slate-400 text-xs mt-1 font-semibold">
+            Modify and save changes for the existing blog post
+          </p>
         </div>
-        <TiptapEditor content={contentHtml} onChange={setContentHtml} />
-        <div className="mt-3 flex gap-3">
-          <button onClick={handleUpdate} disabled={loading} className="px-4 py-2 bg-indigo-600 text-white rounded">{loading ? "Saving..." : "Save changes"}</button>
-           <button 
-    onClick={handleBack}
-    className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded"
-  >
-    Back  
-  </button>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-200/60 p-6 sm:p-8 shadow-xs space-y-6">
+        {/* Title Input */}
+        <div>
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            Article Title
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Type a captivating title..."
+            className="w-full text-base sm:text-lg font-bold px-4.5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] transition"
+          />
+        </div>
+
+        {/* Subtitle Input */}
+        <div>
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            Subtitle / Short Excerpt
+          </label>
+          <input
+            type="text"
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+            placeholder="Provide a brief summary of the article..."
+            className="w-full text-xs font-semibold px-4.5 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] transition"
+          />
+        </div>
+
+        {/* Cover Image Upload Area */}
+        <div>
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+            Cover Image
+          </label>
+          <div className="border-2 border-dashed border-slate-200 hover:border-[#FF2A6D]/40 rounded-2xl p-6 text-center transition bg-slate-50/50 cursor-pointer relative group">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files?.[0]) setCoverFile(e.target.files[0]);
+              }}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            {coverFile ? (
+              <div className="flex flex-col items-center">
+                <img
+                  src={URL.createObjectURL(coverFile)}
+                  alt="New Cover Preview"
+                  className="max-h-48 object-cover rounded-xl shadow-xs mb-3 border border-slate-100"
+                />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block truncate max-w-xs">
+                  {coverFile.name}
+                </span>
+                <span className="text-[9px] text-[#FF2A6D] font-black tracking-wider block mt-1 uppercase">
+                  Click to replace cover image
+                </span>
+              </div>
+            ) : article.cover_image ? (
+              <div className="flex flex-col items-center">
+                <img
+                  src={article.cover_image}
+                  alt="Current Cover"
+                  className="max-h-48 object-cover rounded-xl shadow-xs mb-3 border border-slate-100"
+                />
+                <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider block">
+                  Currently Saved Cover
+                </span>
+                <span className="text-[9px] text-[#FF2A6D] font-black tracking-wider block mt-1 uppercase">
+                  Click to upload a new cover image
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-2">
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-[#FF2A6D]/5 group-hover:text-[#FF2A6D] transition mb-3">
+                  <i className="fa-solid fa-image text-lg"></i>
+                </div>
+                <span className="text-xs font-bold text-slate-600">Select cover image</span>
+                <span className="text-[9px] text-slate-400 mt-1 font-semibold uppercase tracking-wider">
+                  PNG, JPG or WEBP (Max 5MB)
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tiptap Rich Text Editor */}
+        <div>
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            Article Content
+          </label>
+          <div className="border border-slate-200 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-[#FF2A6D]/20 focus-within:border-[#FF2A6D] transition">
+            <TiptapEditor content={contentHtml} onChange={setContentHtml} />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-8 flex items-center gap-3 pt-4 border-t border-slate-150">
+          <button
+            onClick={handleUpdate}
+            disabled={loading}
+            className="px-5 py-3 bg-[#002060] hover:bg-[#001740] disabled:bg-slate-300 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm flex items-center gap-2 cursor-pointer"
+          >
+            {loading ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </>
+            ) : (
+              <>
+                <i className="fa-solid fa-floppy-disk text-[10px]"></i>
+                Save Changes
+              </>
+            )}
+          </button>
+          <button
+            onClick={handleBack}
+            className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>

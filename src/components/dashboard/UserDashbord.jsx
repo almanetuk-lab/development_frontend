@@ -1,4 +1,3 @@
-// src/components/dashboard/UserDashboard.jsx
 import React, { useEffect } from "react";
 import {
   Routes,
@@ -16,9 +15,10 @@ import AISuggestions from "../MatchSystem/AISuggestions";
 import MemberPage from "../pages/MemberPage";
 import AdvancedSearch from "./SearchSection";
 import UserPlans from "../pages/UserPlans";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 export default function UserDashboard() {
-  const { profile, loading } = useUserProfile();
+  const { profile, loading, isFeatureAllowed } = useUserProfile();
   const navigate = useNavigate();
 
   // Redirect if no token
@@ -64,9 +64,9 @@ export default function UserDashboard() {
 
   return (
     <Routes>
-      <Route index element={<DashboardHome profile={profile} />} />
+      <Route index element={isFeatureAllowed("dashboard") ? <DashboardHome profile={profile} /> : <PlanRestrictionModal feature="dashboard" />} />
       <Route path="profile/:userId?" element={<ProfilePage />} />
-      <Route path="edit-profile" element={<EditProfilePage />} />
+      <Route path="edit-profile" element={isFeatureAllowed("edit_profile") ? <EditProfilePage /> : <PlanRestrictionModal feature="edit_profile" />} />
       <Route path="messages" element={<MessagesSection />} />
       <Route path="search" element={<AdvancedSearch />} />
       <Route path="matches" element={<MatchesPage />} />

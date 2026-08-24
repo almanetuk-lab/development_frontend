@@ -372,6 +372,32 @@ export const UserProfileProvider = ({ children }) => {
     );
   };
 
+  const isFeatureAllowed = (featureKey) => {
+    if (planLoading) return true; // prevent flashing while loading plan
+    if (!activePlan || !activePlan.active) {
+      // By default, if they have no active plan, we can allow a default set of features
+      const defaultFreeFeatures = {
+        edit_profile: true,
+        basic_search: true,
+        dashboard: true,
+      };
+      return !!defaultFreeFeatures[featureKey];
+    }
+    
+    // If they have an active plan, check allowed_features
+    if (activePlan.allowed_features) {
+      if (Array.isArray(activePlan.allowed_features)) {
+        return activePlan.allowed_features.includes(featureKey);
+      }
+      if (typeof activePlan.allowed_features === 'object') {
+        return !!activePlan.allowed_features[featureKey];
+      }
+    }
+    
+    // Legacy support: if allowed_features is not defined on the plan, allow all features by default
+    return true;
+  };
+
   const value = {
     profile,
     updateProfile,
@@ -382,6 +408,7 @@ export const UserProfileProvider = ({ children }) => {
     activePlan,
     planLoading,
     refreshPlanStatus: fetchPlanStatus,
+    isFeatureAllowed,
     notifications,
     unreadCount,
     notificationsLoading,

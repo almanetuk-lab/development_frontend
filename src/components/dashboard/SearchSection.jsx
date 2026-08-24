@@ -14,6 +14,7 @@ export default function AdvancedSearch() {
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searchLimitReached, setSearchLimitReached] = useState(false);
+  const [restrictionFeature, setRestrictionFeature] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
@@ -38,11 +39,18 @@ export default function AdvancedSearch() {
     lon: "",
   });
 
-  const { activePlan, planLoading } = useUserProfile();
+  const { activePlan, planLoading, isFeatureAllowed } = useUserProfile();
   const plan = {
     loading: planLoading,
     active: activePlan?.active === true,
     daysLeft: activePlan?.days_left || 0,
+  };
+
+  const getFeatureKey = (tab) => {
+    if (tab === "basic") return "basic_search";
+    if (tab === "advanced") return "advance_search";
+    if (tab === "nearme") return "near_me";
+    return "basic_search";
   };
 
   const [locationDenied, setLocationDenied] = useState(false);
@@ -113,10 +121,6 @@ export default function AdvancedSearch() {
   ]);
 
   const handleTabChange = (tabId) => {
-    if (!plan.loading && !plan.active) {
-      alert("Your subscription has expired. Please upgrade to use search features.");
-      return;
-    }
     setActiveTab(tabId);
     setSearchResults([]);
     setCurrentPage(1);
@@ -170,7 +174,7 @@ export default function AdvancedSearch() {
 
   const performSearch = async (pageNumber = 1) => {
     if (searchLimitReached) {
-      alert("Your people search limit is over. Please upgrade your plan.");
+      setRestrictionFeature(getFeatureKey(activeTab));
       return;
     }
 
@@ -252,12 +256,12 @@ export default function AdvancedSearch() {
 
       if (error.response?.status === 403 && error.response?.data?.code === "SEARCH_LIMIT_EXCEEDED") {
         setSearchLimitReached(true);
-        alert("Your people search limit is over. Please upgrade.");
+        setRestrictionFeature(getFeatureKey(activeTab));
         return;
       }
 
       if (error.response?.status === 403 && error.response?.data?.code === "NO_ACTIVE_PLAN") {
-        alert("No active subscription found. Please subscribe to search.");
+        setRestrictionFeature(getFeatureKey(activeTab));
         return;
       }
 
@@ -271,10 +275,6 @@ export default function AdvancedSearch() {
     if (e) e.preventDefault();
     performSearch();
   };
-
-  if (!plan.loading && !plan.active) {
-    return <PlanRestrictionModal feature="search" />;
-  }
 
   return (
     <div className="w-full">
@@ -315,8 +315,24 @@ export default function AdvancedSearch() {
             ))}
           </div>
 
-          {/* Forms Section */}
-          <div className="space-y-6">
+          {/* Dynamic Feature Guard Check */}
+          {!plan.loading && !isFeatureAllowed(getFeatureKey(activeTab)) ? (
+            <div className="py-6">
+              <PlanRestrictionModal 
+                feature={getFeatureKey(activeTab)} 
+                onClose={() => {
+                  if (isFeatureAllowed("basic_search") && activeTab !== "basic") {
+                    setActiveTab("basic");
+                  } else {
+                    navigate("/dashboard");
+                  }
+                }} 
+              />
+            </div>
+          ) : (
+            <>
+              {/* Forms Section */}
+              <div className="space-y-6">
             {/* Basic Search Tab */}
             {activeTab === "basic" && (
               <form onSubmit={handleSearch} className="space-y-6">
@@ -873,8 +889,16 @@ export default function AdvancedSearch() {
               No profiles found matching your filters.
             </div>
           )}
+            </>
+          )}
         </div>
       </div>
+      {restrictionFeature && (
+        <PlanRestrictionModal 
+          feature={restrictionFeature} 
+          onClose={() => setRestrictionFeature(null)} 
+        />
+      )}
     </div>
   );
 }

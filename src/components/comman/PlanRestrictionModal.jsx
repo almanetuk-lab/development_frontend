@@ -79,6 +79,79 @@ const FEATURE_DETAILS = {
       "Check love languages and relationship values",
       "Access complete lifestyle alignment reports"
     ]
+  },
+  dashboard: {
+    title: "Unlock Dashboard Access",
+    icon: "fa-solid fa-chart-pie",
+    color: "from-indigo-600 to-blue-600",
+    textColor: "text-indigo-605",
+    bgLight: "bg-indigo-50",
+    benefits: [
+      "Access your real-time compatibility dashboard",
+      "View recent profile visits and connection activity",
+      "Get instant matching alerts and system notifications",
+      "Keep track of your active session diagnostics"
+    ]
+  },
+  basic_search: {
+    title: "Unlock Basic Search",
+    icon: "fa-solid fa-magnifying-glass",
+    color: "from-cyan-500 to-blue-500",
+    textColor: "text-cyan-600",
+    bgLight: "bg-cyan-50",
+    benefits: [
+      "Search members by name, city, and profession",
+      "Find users with common interest and skill tags",
+      "Access base user profiles from query results"
+    ]
+  },
+  advance_search: {
+    title: "Unlock Advanced Search Features",
+    icon: "fa-solid fa-sliders",
+    color: "from-indigo-500 to-violet-500",
+    textColor: "text-indigo-600",
+    bgLight: "bg-indigo-50",
+    benefits: [
+      "Filter by detailed life pace and rhythm combinations",
+      "Search by marital status, age ranges, and lifestyle parameters",
+      "Access precise profiles from the intentional connection list"
+    ]
+  },
+  edit_profile: {
+    title: "Unlock Edit Profile Feature",
+    icon: "fa-solid fa-user-pen",
+    color: "from-amber-500 to-orange-500",
+    textColor: "text-amber-600",
+    bgLight: "bg-amber-50",
+    benefits: [
+      "Keep your professional and personal info updated",
+      "Modify your lifestyle rhythm questionnaire anytime",
+      "Add interests, skills, and custom self-expression prompts"
+    ]
+  },
+  near_me: {
+    title: "Unlock Near Me Search Feature",
+    icon: "fa-solid fa-location-dot",
+    color: "from-emerald-500 to-teal-500",
+    textColor: "text-emerald-600",
+    bgLight: "bg-emerald-50",
+    benefits: [
+      "Search members within a precise geographic radius",
+      "Discover aligned candidates in your immediate local area",
+      "Filter by proximity in real-time"
+    ]
+  },
+  ai_agent: {
+    title: "Unlock AI Chat Agent Feature",
+    icon: "fa-solid fa-robot",
+    color: "from-violet-600 to-purple-600",
+    textColor: "text-violet-600",
+    bgLight: "bg-violet-50",
+    benefits: [
+      "Let your digital twin AI respond to chats on your behalf",
+      "Train your agent with custom response instructions",
+      "Keep conversations active even when you are offline"
+    ]
   }
 };
 
@@ -94,7 +167,7 @@ export default function PlanRestrictionModal({ feature = "members", onClose }) {
     if (onClose) {
       onClose();
     } else {
-      navigate("/dashboard");
+      navigate(-1);
     }
   };
 

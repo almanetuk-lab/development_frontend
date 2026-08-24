@@ -8,6 +8,7 @@ import axios from "axios";
 import InterestsForm from "./InterestsForm";
 import ProfileQuestions from "./ProfileQuestions";
 import { theme } from "../comman/theme";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2";
 const inputClass = `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 shadow-2xs outline-none transition duration-200 hover:border-slate-300 ${theme.tailwind.focusPink}`;
@@ -446,9 +447,13 @@ const PROFILE_QUESTIONS = [
 // ================== COMPONENT ==================
 
 export default function EditProfilePage() {
-  const { profile, updateProfile } = useUserProfile();
+  const { profile, updateProfile, isFeatureAllowed } = useUserProfile();
   const navigate = useNavigate();
   const [finalProfileImage, setFinalProfileImage] = useState(null);
+
+  if (!isFeatureAllowed("edit_profile")) {
+    return <PlanRestrictionModal feature="edit_profile" />;
+  }
 
   const [showLifeRhythms, setShowLifeRhythms] = useState(false);
   const [isInterestsModalOpen, setIsInterestsModalOpen] = useState(false);

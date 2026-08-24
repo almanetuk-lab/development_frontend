@@ -22,6 +22,19 @@ export default function AdminAddNewPlan() {
         audio_call_limit: 0,
         type: "",
         billing_info: "",
+        allowed_features: {
+            dashboard: true,
+            profile: true,
+            message: true,
+            basic_search: true,
+            advance_search: true,
+            edit_profile: true,
+            my_matches: true,
+            ai_suggestion: true,
+            near_me: true,
+            browse_members: true,
+            ai_agent: true,
+        }
     });
     const [editingId, setEditingId] = useState(null);
 
@@ -72,6 +85,19 @@ export default function AdminAddNewPlan() {
                 audio_call_limit: 0,
                 type: "",
                 billing_info: "",
+                allowed_features: {
+                    dashboard: true,
+                    profile: true,
+                    message: true,
+                    basic_search: true,
+                    advance_search: true,
+                    edit_profile: true,
+                    my_matches: true,
+                    ai_suggestion: true,
+                    near_me: true,
+                    browse_members: true,
+                    ai_agent: true,
+                }
             });
 
             navigate("/admin-dashboard");
