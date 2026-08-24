@@ -9,6 +9,7 @@ import InterestsForm from "./InterestsForm";
 import ProfileQuestions from "./ProfileQuestions";
 import { theme } from "../comman/theme";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
+import { checkImageSafety } from "../services/nsfwFilter";
 
 const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2";
 const inputClass = `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 shadow-2xs outline-none transition duration-200 hover:border-slate-300 ${theme.tailwind.focusPink}`;
@@ -1298,6 +1299,14 @@ export default function EditProfilePage() {
         type: "image/png",
       });
 
+      // NSFW Nudity check
+      const safety = await checkImageSafety(file);
+      if (!safety.isSafe) {
+        toast.error(safety.reason || "Image contains inappropriate content and cannot be uploaded.");
+        closeCamera();
+        return;
+      }
+
       await handleFaceDetection(file);
       const imageUrl = await handleImageUpload(file);
       if (imageUrl) {
@@ -1415,6 +1424,14 @@ export default function EditProfilePage() {
   const handleImageSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // NSFW Nudity check
+    const safety = await checkImageSafety(file);
+    if (!safety.isSafe) {
+      toast.error(safety.reason || "Image contains inappropriate content and cannot be uploaded.");
+      e.target.value = ""; // Reset the input file selector
+      return;
+    }
 
     const reader = new FileReader();
 
