@@ -1,11 +1,13 @@
 // src/components/dashboard/DashboardHome.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import StatCard from "../comman/StatCard";
 import ActivityItem from "../comman/ActivityItem";
 import SuggestedMatches from "../MatchSystem/SuggetionMatches";
 import { chatApi, getSuggestedMatches } from "../services/chatApi";
 import profileViewApi from "../services/profileViewApi";
+import { updateUserLocation } from "../services/api";
+import { useUserProfile } from "../context/UseProfileContext";
 import ImageModal from "../comman/ImageModal";
 import {
   FiEye,
@@ -23,6 +25,93 @@ import {
 
 export default function DashboardHome({ profile }) {
   const navigate = useNavigate();
+  const { updateProfile } = useUserProfile();
+  const isLocationSavingRef = useRef(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  const autoDetectAndSaveLocation = async () => {
+    if (isLocationSavingRef.current) return;
+    try {
+      isLocationSavingRef.current = true;
+      setLocationError("");
+      const { getUserLocation } = await import("../services/geolocationService");
+      const coords = await getUserLocation();
+      const lat = Number(coords.latitude.toFixed(6));
+      const lon = Number(coords.longitude.toFixed(6));
+
+      // Check if coordinates are different or not set yet to avoid redundant API calls
+      if (
+        profile.latitude === null ||
+        profile.longitude === null ||
+        profile.latitude === "" ||
+        profile.longitude === "" ||
+        Number(profile.latitude).toFixed(6) !== coords.latitude.toFixed(6) ||
+        Number(profile.longitude).toFixed(6) !== coords.longitude.toFixed(6)
+      ) {
+        console.log("📍 Dashboard auto-detect: Saving new coordinates:", { lat, lon });
+        await updateUserLocation(lat, lon);
+        
+        if (updateProfile) {
+          updateProfile({
+            latitude: lat,
+            longitude: lon
+          });
+        }
+      }
+      setShowLocationModal(false);
+      setLocationError("");
+      return true;
+    } catch (err) {
+      console.warn("Dashboard location auto-save failed:", err.message);
+      setLocationError(err.message);
+      setShowLocationModal(true);
+      return false;
+    } finally {
+      isLocationSavingRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (profile) {
+      const checkPermissionAndLocation = async () => {
+        try {
+          if (navigator.permissions && navigator.permissions.query) {
+            const permissionStatus = await navigator.permissions.query({ name: "geolocation" });
+            if (permissionStatus.state === "granted") {
+              // Silently update in background if already granted
+              await autoDetectAndSaveLocation();
+            } else {
+              // Show modal to prompt user
+              setShowLocationModal(true);
+              if (permissionStatus.state === "denied") {
+                setLocationError("Location permission is currently blocked in your browser. Please allow it in settings.");
+              }
+            }
+
+            // Listen for permission change
+            permissionStatus.onchange = () => {
+              if (permissionStatus.state === "granted") {
+                setShowLocationModal(false);
+                setLocationError("");
+                autoDetectAndSaveLocation();
+              } else if (permissionStatus.state === "denied") {
+                setShowLocationModal(true);
+                setLocationError("Location permission is currently blocked in your browser. Please allow it in settings.");
+              }
+            };
+          } else {
+            // Fallback for browsers that don't support permissions API
+            setShowLocationModal(true);
+          }
+        } catch (err) {
+          setShowLocationModal(true);
+        }
+      };
+
+      checkPermissionAndLocation();
+    }
+  }, [profile?.id, profile?.user_id]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -545,6 +634,72 @@ export default function DashboardHome({ profile }) {
         title={modalImage.title}
         onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
       />
+
+      {/* Geolocation Lock Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 max-w-[440px] w-full flex flex-col items-center text-center animate-scale-up">
+            
+            {/* Pulsing Pin Icon */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping duration-1000"></div>
+              <div className="relative w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Content */}
+            <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">Location Services Required</h3>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">
+              Intentional Connection requires location access to show matches near you, calculate distance profiles, and verify active proximity.
+            </p>
+
+            {/* Check points */}
+            <div className="w-full bg-slate-50 rounded-2xl p-4 mb-6 text-left space-y-3 border border-slate-100/50">
+              <div className="flex items-center gap-3 text-xs text-slate-600 font-bold">
+                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">✓</span>
+                Discover local members near you
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-600 font-bold">
+                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">✓</span>
+                Accurate matches by distance
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-600 font-bold">
+                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">✓</span>
+                Required for safety compliance
+              </div>
+            </div>
+
+            {/* Error alerts */}
+            {locationError && (
+              <div className="w-full bg-rose-50/70 border border-rose-100 rounded-2xl p-4 mb-6 flex gap-3 text-xs text-rose-800 text-left">
+                <span className="text-base leading-none">⚠️</span>
+                <div>
+                  <p className="font-extrabold mb-1">Permission Required</p>
+                  <p className="leading-normal font-medium text-rose-700">
+                    {locationError.includes("denied") 
+                      ? "Location permissions are blocked. Click the lock/settings icon in your browser URL bar, change Location to 'Allow', then click retry."
+                      : locationError}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Action button */}
+            <button
+              type="button"
+              onClick={autoDetectAndSaveLocation}
+              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-black tracking-wide shadow-lg shadow-indigo-600/10 transition transform active:scale-98 cursor-pointer"
+            >
+              {locationError ? "🔄 Retry Permission Check" : "📍 Enable Location Services"}
+            </button>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

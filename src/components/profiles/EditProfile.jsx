@@ -838,53 +838,7 @@ export default function EditProfilePage() {
     }
   }, [profile?.user_id]);
 
-  useEffect(() => {
-    if (profile) {
-      const autoDetectAndSaveLocation = async () => {
-        if (isLocationSavingRef.current) return;
-        try {
-          const { getUserLocation } = await import("../services/geolocationService");
-          const coords = await getUserLocation();
-          const lat = Number(coords.latitude.toFixed(6));
-          const lon = Number(coords.longitude.toFixed(6));
 
-          // Check if coordinates are different or not set yet to avoid redundant API calls
-          if (
-            profile.latitude === null ||
-            profile.longitude === null ||
-            profile.latitude === "" ||
-            profile.longitude === "" ||
-            Number(profile.latitude).toFixed(6) !== coords.latitude.toFixed(6) ||
-            Number(profile.longitude).toFixed(6) !== coords.longitude.toFixed(6)
-          ) {
-            console.log("📍 Saving new location coordinates to database in background:", { lat, lon });
-            isLocationSavingRef.current = true;
-            
-            // 1. Save to DB using the API
-            await updateUserLocation(lat, lon);
-            
-            // 2. Update context so it doesn't trigger again
-            updateProfile({
-              latitude: lat,
-              longitude: lon
-            });
-            
-            // 3. Update local form state
-            setFormData(prev => ({
-              ...prev,
-              latitude: lat.toString(),
-              longitude: lon.toString()
-            }));
-          }
-        } catch (err) {
-          console.warn("Background auto-detect/save location failed:", err.message);
-        } finally {
-          isLocationSavingRef.current = false;
-        }
-      };
-      autoDetectAndSaveLocation();
-    }
-  }, [profile?.user_id, profile?.latitude, profile?.longitude]);
 
   // ================== FIELD VALIDATION LOGIC ==================
   const validateProfileFields = (silently = false) => {

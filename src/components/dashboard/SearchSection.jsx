@@ -39,7 +39,7 @@ export default function AdvancedSearch() {
     lon: "",
   });
 
-  const { activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const { profile, activePlan, planLoading, isFeatureAllowed } = useUserProfile();
   const plan = {
     loading: planLoading,
     active: activePlan?.active === true,
@@ -71,19 +71,26 @@ export default function AdvancedSearch() {
     setLocationLoading(true);
     setLocationDenied(false);
     try {
-      const { getUserLocation } = await import("../services/geolocationService");
-      const coords = await getUserLocation();
-      handleInputChange("lat", coords.latitude);
-      handleInputChange("lon", coords.longitude);
-      setLocationDenied(false);
-      
-      try {
-        await api.put("/api/profiles/location", {
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-        });
-      } catch (dbErr) {
-        console.warn("Failed to update user location in profile DB:", dbErr);
+      if (profile?.latitude && profile?.longitude) {
+        // Direct coordinates bypass from profile context
+        handleInputChange("lat", profile.latitude);
+        handleInputChange("lon", profile.longitude);
+        setLocationDenied(false);
+      } else {
+        // Fallback if profile doesn't have coordinates
+        const { getUserLocation } = await import("../services/geolocationService");
+        const coords = await getUserLocation();
+        handleInputChange("lat", coords.latitude);
+        handleInputChange("lon", coords.longitude);
+        setLocationDenied(false);
+        try {
+          await api.put("/api/profiles/location", {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          });
+        } catch (dbErr) {
+          console.warn("Failed to update user location in profile DB:", dbErr);
+        }
       }
     } catch (err) {
       console.error("Location permission denied or failed:", err);
@@ -101,7 +108,7 @@ export default function AdvancedSearch() {
     if (activeTab === "nearme") {
       getLiveLocation();
     }
-  }, [activeTab]);
+  }, [activeTab, profile?.latitude, profile?.longitude]);
 
   useEffect(() => {
     if (!plan.loading && plan.active) {
@@ -637,27 +644,32 @@ export default function AdvancedSearch() {
                       </button>
                     </div>
 
-                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-6 space-y-6">
+                    <div className="bg-slate-50/70 border border-slate-100/50 rounded-3xl p-6 sm:p-8 space-y-8 shadow-sm">
+
                       {/* Radius slider */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                            Search Radius
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <label className="text-xs font-black uppercase tracking-wider text-slate-400">
+                            Maximum Search Distance
                           </label>
-                          <span className="text-xs font-bold text-white px-2.5 py-1 rounded-full" style={{ backgroundColor: "#002060" }}>
-                            {filters.radius} km
+                          <span className="text-xs font-extrabold text-[#002060] bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+                            {filters.radius} kilometers
                           </span>
                         </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="100"
-                          step="1"
-                          value={filters.radius}
-                          onChange={(e) => handleInputChange("radius", e.target.value)}
-                          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-900 focus:outline-none focus:ring-2 focus:ring-slate-350"
-                        />
-                        <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-wider">
+                        
+                        <div className="relative pt-2">
+                          <input
+                            type="range"
+                            min="1"
+                            max="100"
+                            step="1"
+                            value={filters.radius}
+                            onChange={(e) => handleInputChange("radius", e.target.value)}
+                            className="w-full h-2 bg-slate-200 rounded-lg cursor-pointer accent-[#002060] focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex justify-between text-[10px] text-slate-400 font-bold tracking-wider pt-1">
                           <span>1 km</span>
                           <span>25 km</span>
                           <span>50 km</span>
@@ -667,10 +679,10 @@ export default function AdvancedSearch() {
                       </div>
 
                       {/* Precise radius input + City */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                            Radius (km)
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+                        <div className="space-y-2">
+                          <label className="block text-xs font-black uppercase tracking-wider text-slate-400">
+                            Custom Distance (km)
                           </label>
                           <div className="relative">
                             <input
@@ -680,24 +692,31 @@ export default function AdvancedSearch() {
                               placeholder="e.g. 25"
                               value={filters.radius}
                               onChange={(e) => handleInputChange("radius", e.target.value)}
-                              className="w-full pl-3 pr-10 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm font-medium"
+                              className="w-full pl-4 pr-12 py-3.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-100 transition text-sm font-semibold text-slate-800"
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none font-bold">km</span>
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-extrabold">km</span>
                           </div>
                         </div>
-                        <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                            City Filter
+                        
+                        <div className="space-y-2">
+                          <label className="block text-xs font-black uppercase tracking-wider text-slate-400">
+                            Specific City Filter
                           </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. London"
-                            value={filters.city}
-                            onChange={(e) => handleInputChange("city", e.target.value)}
-                            className="w-full px-3 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 transition text-sm"
-                          />
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="e.g. London"
+                              value={filters.city}
+                              onChange={(e) => handleInputChange("city", e.target.value)}
+                              className="w-full pl-10 pr-4 py-3.5 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-100 transition text-sm font-semibold text-slate-800"
+                            />
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                              <i className="fa-solid fa-city"></i>
+                            </span>
+                          </div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 )}
