@@ -1,5 +1,5 @@
 // src/components/services/nsfwFilter.js
-// Client-side NSFW filtering using nsfwjs npm package (no CDN scripts needed)
+// Client-side NSFW filtering using nsfwjs npm package (built-in bundled model)
 
 let modelCache = null;
 
@@ -12,13 +12,14 @@ const initNSFWModel = async () => {
     import("nsfwjs"),
   ]);
 
-  console.log("⚡ Loading NSFWJS MobileNetV2 model...");
-  // Use the public NSFWJS model URL — hosted on GitHub Pages, reliable CORS
-  const model = await nsfwjs.load(
-    "https://nsfwjs.com/quant_nsfw_mobilenet/",
-    { size: 224 }
-  );
-  console.log("✅ NSFWJS Model loaded");
+  console.log("⚡ Initializing TensorFlow.js and NSFWJS...");
+  await tf.ready();
+
+  console.log("⚡ Loading bundled NSFWJS model (No external network request)...");
+  // load() with no arguments automatically uses the built-in bundled model definitions.
+  // This avoids all CORS issues, offline blocks, and 404 CDN errors.
+  const model = await nsfwjs.load();
+  console.log("✅ NSFWJS Model loaded successfully");
   modelCache = model;
   return model;
 };
