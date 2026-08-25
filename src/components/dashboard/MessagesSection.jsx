@@ -857,24 +857,23 @@ export default function MessagesSection() {
       // for the first time (cache-miss path in aiAgentService triggers background calc)
       setTimeout(() => checkCompatibility(selectedUser.id), 3500);
 
-      setTimeout(() => {
-        setMessages((prev) => {
-          const realMessageExists = prev.some(
-            (msg) =>
-              !msg.isTemporary &&
-              msg.sender_id === currentUserId &&
-              msg.content === messageContent,
-          );
+      setMessages((prev) => {
+        const tempExists = prev.some((msg) => msg.id === tempMsg.id);
+        const realExists = prev.some((msg) => msg.id === response.data?.id);
 
-          if (!realMessageExists && response.data) {
+        if (tempExists) {
+          if (realExists) {
+            console.log("🔄 Socket already added real message, removing temp");
+            return prev.filter((msg) => msg.id !== tempMsg.id);
+          } else if (response.data) {
             console.log("🔄 Replacing temporary with real message");
             return prev.map((msg) =>
               msg.id === tempMsg.id ? response.data : msg,
             );
           }
-          return prev;
-        });
-      }, 3000);
+        }
+        return prev;
+      });
     } catch (error) {
       console.error("❌ Send failed:", error);
       setMessages((prev) => prev.filter((msg) => msg.id !== tempMsg.id));
