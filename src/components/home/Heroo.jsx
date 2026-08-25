@@ -1,18 +1,37 @@
 // src/components/home/Heroo.jsx (Refined Buttons, Blueish Gradient Background)
 import React, { useEffect, useState } from "react";
 import AOS from "aos";
-import { FaLinkedin, FaApple, FaGoogle } from "react-icons/fa";
+import { FaLinkedin, FaGoogle, FaEnvelope } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
-import { googleAuth } from "../services/api";
+import { googleAuth, subscribeNewsletter } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
+import { toast } from "react-toastify";
 
 export default function Heroo() {
   const bannerImage = "/images/4.jpg.jpg";
   const [linkedinLoading, setLinkedinLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [subscribeEmail, setSubscribeEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { updateProfile, refreshProfile } = useUserProfile();
   const navigate = useNavigate();
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!subscribeEmail) return;
+    setSubmitting(true);
+    try {
+      await subscribeNewsletter(subscribeEmail);
+      toast.success("Thank you for subscribing! We'll keep you updated.");
+      setSubscribeEmail("");
+    } catch (err) {
+      const errMsg = err.response?.data?.error || "Failed to subscribe. Please try again.";
+      toast.error(errMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleGoogleSuccess = async (codeResponse) => {
     try {
@@ -172,12 +191,12 @@ export default function Heroo() {
                 </button>
 
                 <Link
-                  to="/Coming-soon"
-                  className="flex items-center justify-center gap-2.5 px-6 py-3 bg-neutral-900 text-white rounded-xl font-bold hover:bg-black hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm shadow-sm"
+                  to="/register"
+                  className="flex items-center justify-center gap-2.5 px-6 py-3 bg-[#FF2A6D] text-white rounded-xl font-bold hover:bg-[#e01f5c] hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm shadow-sm"
                   onClick={() => window.scrollTo(0, 0)}
                 >
-                  <FaApple size={16} />
-                  <span>Apple</span>
+                  <FaEnvelope size={16} />
+                  <span>Email</span>
                 </Link>
 
                 <button
@@ -206,25 +225,36 @@ export default function Heroo() {
                 <div className="flex-grow border-t border-slate-200/60"></div>
               </div>
 
-              {/* Email Waitlist */}
+              {/* Newsletter Subscription */}
               <div className="max-w-md">
-                <div className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="email"
-                    placeholder="Enter your email address"
-                    className="flex-grow px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] transition-all duration-200 text-sm shadow-inner"
+                    required
+                    disabled={submitting}
+                    value={subscribeEmail}
+                    onChange={(e) => setSubscribeEmail(e.target.value)}
+                    placeholder="Enter your email for updates"
+                    className="flex-grow px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] transition-all duration-200 text-sm shadow-inner disabled:opacity-75"
                   />
 
-                  <Link
-                    onClick={() => window.scrollTo(0, 0)}
-                    to="/register"
-                    className="px-8 py-3 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md transition-all duration-200 whitespace-nowrap text-sm text-center inline-block shadow-md"
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-8 py-3 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md transition-all duration-200 whitespace-nowrap text-sm text-center inline-block shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Join Waitlist
-                  </Link>
-                </div>
+                    {submitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Subscribing...</span>
+                      </>
+                    ) : (
+                      "Subscribe"
+                    )}
+                  </button>
+                </form>
                 <p className="text-xs text-slate-400 mt-3">
-                  We'll notify you when we launch. No spam, ever.
+                  Subscribe to our newsletter for matchmaking updates and relationship tips.
                 </p>
               </div>
             </div>

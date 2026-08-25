@@ -14,6 +14,8 @@ const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOp
     { path: '/admin/plans', label: 'Plans', icon: 'fa-solid fa-credit-card' },
     { path: '/admin/blogs', label: 'Blogs', icon: 'fa-solid fa-blog' },
     { path: '/admin/reports', label: 'Reports', icon: 'fa-solid fa-flag' },
+    { path: '/admin/contacts', label: 'Contacts', icon: 'fa-solid fa-envelope' },
+    { path: '/admin/newsletter', label: 'Newsletter', icon: 'fa-solid fa-paper-plane' },
   ];
 
   const handleLinkClick = () => {

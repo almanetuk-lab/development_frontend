@@ -92,8 +92,18 @@ updateMemberApproval: (data) =>
 
   // Get Audit Logs
   getAuditLogs: (params) => api.get('/api/admin/audit-logs', { params }),
+
+  // Get Contact Us form submissions
+  getContactMessages: () => api.get('/api/admin/contact-messages'),
+
+  // Get Newsletter subscriptions list
+  getNewsletterSubscriptions: () => api.get('/api/admin/newsletter-subscriptions'),
+
+  // Delete Contact message submission
+  deleteContactMessage: (id) => api.delete(`/api/admin/contact-messages/${id}`),
+
+  // Delete Newsletter subscription entry
+  deleteNewsletterSubscription: (id) => api.delete(`/api/admin/newsletter-subscriptions/${id}`),
 };
-
-
 
 export default api;
