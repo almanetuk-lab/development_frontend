@@ -111,7 +111,7 @@ const MainLayout = ({ children }) => {
             <div className="flex-grow">
               {children}
             </div>
-            <Footer />
+            {activeSection !== "messages" && <Footer />}
           </main>
         </div>
       </div>
@@ -122,7 +122,7 @@ const MainLayout = ({ children }) => {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow">{children}</main>
-      <Footer />
+      {activeSection !== "messages" && <Footer />}
     </div>
   );
 };
