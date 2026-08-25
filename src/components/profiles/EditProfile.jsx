@@ -841,96 +841,190 @@ export default function EditProfilePage() {
 
 
   // ================== FIELD VALIDATION LOGIC ==================
-  const validateProfileFields = (silently = false) => {
-    const firstName = (formData.first_name || "").trim();
-    if (!firstName) {
-      if (!silently) toast.error("First name is required.");
-      return false;
-    }
-    if (firstName.length < 2) {
-      if (!silently) toast.error("First name must be at least 2 characters long.");
-      return false;
-    }
-    if (!/^[a-zA-Z\s]+$/.test(firstName)) {
-      if (!silently) toast.error("First name can only contain letters and spaces.");
-      return false;
+  const validateProfileFields = (silently = false, step = null) => {
+    // If step is 1, no validation needed (profile picture has no textual validation constraints here)
+    if (step === 1) {
+      return true;
     }
 
-    const lastName = (formData.last_name || "").trim();
-    if (!lastName) {
-      if (!silently) toast.error("Last name is required.");
-      return false;
-    }
-    if (lastName.length < 2) {
-      if (!silently) toast.error("Last name must be at least 2 characters long.");
-      return false;
-    }
-    if (!/^[a-zA-Z\s]+$/.test(lastName)) {
-      if (!silently) toast.error("Last name can only contain letters and spaces.");
-      return false;
-    }
-
-    const username = (formData.username || "").trim();
-    if (!username) {
-      if (!silently) toast.error("Username is required.");
-      return false;
-    }
-    if (username.length < 3) {
-      if (!silently) toast.error("Username must be at least 3 characters long.");
-      return false;
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      if (!silently) toast.error("Username can only contain letters, numbers, and underscores.");
-      return false;
-    }
-
-    const email = (formData.email || "").trim();
-    if (!email) {
-      if (!silently) toast.error("Email address is required.");
-      return false;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      if (!silently) toast.error("Please enter a valid email address.");
-      return false;
-    }
-
-    const phone = (formData.phone || "").trim();
-    if (phone) {
-      if (!/^[+0-9\s\-()]+$/.test(phone)) {
-        if (!silently) toast.error("Phone number can only contain digits, spaces, hyphens, parentheses, and +.");
+    // Step 2 validations (Personal Info)
+    if (step === null || step === 2) {
+      const firstName = (formData.first_name || "").trim();
+      if (!firstName) {
+        if (!silently) toast.error("First name is required.");
         return false;
       }
-      const digitsCount = phone.replace(/[^0-9]/g, "").length;
-      if (digitsCount < 7 || digitsCount > 15) {
-        if (!silently) toast.error("Phone number should be between 7 and 15 digits long.");
+      if (firstName.length < 2 || firstName.length > 50) {
+        if (!silently) toast.error("First name must be between 2 and 50 characters.");
         return false;
+      }
+      if (!/^[a-zA-Z\s\-]+$/.test(firstName)) {
+        if (!silently) toast.error("First name can only contain letters, spaces, and hyphens.");
+        return false;
+      }
+
+      const lastName = (formData.last_name || "").trim();
+      if (!lastName) {
+        if (!silently) toast.error("Last name is required.");
+        return false;
+      }
+      if (lastName.length < 2 || lastName.length > 50) {
+        if (!silently) toast.error("Last name must be between 2 and 50 characters.");
+        return false;
+      }
+      if (!/^[a-zA-Z\s\-]+$/.test(lastName)) {
+        if (!silently) toast.error("Last name can only contain letters, spaces, and hyphens.");
+        return false;
+      }
+
+      const username = (formData.username || "").trim();
+      if (!username) {
+        if (!silently) toast.error("Username is required.");
+        return false;
+      }
+      const usernameRegex = /^(?!.*\.\.)(?!\.)(?!.*\.$)[a-z0-9._]{3,30}$/;
+      if (!usernameRegex.test(username.toLowerCase())) {
+        if (!silently) toast.error("Username must be 3–30 characters, lowercase, and can contain letters, numbers, dots (.), or underscores (_). Dots cannot be consecutive or at the start/end.");
+        return false;
+      }
+
+      const email = (formData.email || "").trim();
+      if (!email) {
+        if (!silently) toast.error("Email address is required.");
+        return false;
+      }
+      if (email.length > 100) {
+        if (!silently) toast.error("Email address cannot exceed 100 characters.");
+        return false;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        if (!silently) toast.error("Please enter a valid email address.");
+        return false;
+      }
+
+      const phone = (formData.phone || "").trim();
+      if (phone) {
+        if (!/^[+0-9\s\-()]+$/.test(phone)) {
+          if (!silently) toast.error("Phone number can only contain digits, spaces, hyphens, parentheses, and +.");
+          return false;
+        }
+        const digitsCount = phone.replace(/[^0-9]/g, "").length;
+        if (digitsCount < 7 || digitsCount > 15) {
+          if (!silently) toast.error("Phone number should be between 7 and 15 digits long.");
+          return false;
+        }
+      }
+
+      if (formData.dob) {
+        const dobDate = new Date(formData.dob);
+        const today = new Date();
+        if (dobDate >= today) {
+          if (!silently) toast.error("Date of Birth must be in the past.");
+          return false;
+        }
+        let calculatedAge = today.getFullYear() - dobDate.getFullYear();
+        const monthDiff = today.getMonth() - dobDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+          calculatedAge--;
+        }
+        if (calculatedAge < 18) {
+          if (!silently) toast.error("You must be at least 18 years old.");
+          return false;
+        }
+      }
+
+      if (formData.age) {
+        const ageNum = Number(formData.age);
+        if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
+          if (!silently) toast.error("Age must be a valid number between 18 and 120.");
+          return false;
+        }
+      }
+
+      if (formData.height && String(formData.height).trim() !== "") {
+        const parts = String(formData.height).split(".");
+        if (parts.length !== 2) {
+          if (!silently) toast.error("Height must be in feet.inches format (e.g., 5.6).");
+          return false;
+        }
+        const ft = parseInt(parts[0]);
+        const inch = parseInt(parts[1]);
+        if (isNaN(ft) || isNaN(inch) || ft < 3 || ft > 8 || inch < 0 || inch > 11) {
+          if (!silently) toast.error("Invalid height. Feet must be between 3 and 8, inches must be between 0 and 11.");
+          return false;
+        }
+      }
+
+      const step2MaxLimits = [
+        { name: "City", val: formData.city, max: 100 },
+        { name: "State", val: formData.state, max: 100 },
+        { name: "Country", val: formData.country, max: 100 },
+        { name: "Pincode", val: formData.pincode, max: 20 },
+        { name: "Address", val: formData.address, max: 500 },
+      ];
+      for (const item of step2MaxLimits) {
+        if (item.val && typeof item.val === "string" && item.val.length > item.max) {
+          if (!silently) toast.error(`${item.name} cannot exceed ${item.max} characters.`);
+          return false;
+        }
       }
     }
 
-    if (formData.dob) {
-      const dobDate = new Date(formData.dob);
-      const today = new Date();
-      if (dobDate >= today) {
-        if (!silently) toast.error("Date of Birth must be in the past.");
-        return false;
+    // Step 3 validations (Professional Details)
+    if (step === null || step === 3) {
+      if (formData.experience !== undefined && formData.experience !== null && formData.experience !== "") {
+        const expNum = Number(formData.experience);
+        if (isNaN(expNum) || expNum < 0 || expNum > 80) {
+          if (!silently) toast.error("Experience must be a number between 0 and 80.");
+          return false;
+        }
       }
-      let calculatedAge = today.getFullYear() - dobDate.getFullYear();
-      const monthDiff = today.getMonth() - dobDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
-        calculatedAge--;
-      }
-      if (calculatedAge < 18) {
-        if (!silently) toast.error("You must be at least 18 years old.");
-        return false;
+
+      const step3MaxLimits = [
+        { name: "Headline", val: formData.headline, max: 200 },
+        { name: "Company", val: formData.company, max: 100 },
+        { name: "Position", val: formData.position, max: 100 },
+        { name: "Profession", val: formData.profession, max: 100 },
+        { name: "Education Institution", val: formData.education_institution_name, max: 150 },
+      ];
+      for (const item of step3MaxLimits) {
+        if (item.val && typeof item.val === "string" && item.val.length > item.max) {
+          if (!silently) toast.error(`${item.name} cannot exceed ${item.max} characters.`);
+          return false;
+        }
       }
     }
 
-    if (formData.age) {
-      const ageNum = Number(formData.age);
-      if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
-        if (!silently) toast.error("Age must be a valid number between 18 and 120.");
-        return false;
+    // Step 4 validations (About & Lifestyle)
+    if (step === null || step === 4) {
+      const step4MaxLimits = [
+        { name: "Zodiac Sign", val: formData.zodiac_sign, max: 50 },
+        { name: "About Me", val: formData.about_me, max: 1000 },
+      ];
+      for (const item of step4MaxLimits) {
+        if (item.val && typeof item.val === "string" && item.val.length > item.max) {
+          if (!silently) toast.error(`${item.name} cannot exceed ${item.max} characters.`);
+          return false;
+        }
+      }
+    }
+
+    // Step 5 validations (Relationship Preferences / Location)
+    if (step === null || step === 5) {
+      if (formData.latitude !== undefined && formData.latitude !== null && formData.latitude !== "") {
+        const lat = Number(formData.latitude);
+        if (isNaN(lat) || lat < -90 || lat > 90) {
+          if (!silently) toast.error("Latitude must be a number between -90 and 90.");
+          return false;
+        }
+      }
+      if (formData.longitude !== undefined && formData.longitude !== null && formData.longitude !== "") {
+        const lon = Number(formData.longitude);
+        if (isNaN(lon) || lon < -180 || lon > 180) {
+          if (!silently) toast.error("Longitude must be a number between -180 and 180.");
+          return false;
+        }
       }
     }
 
@@ -938,8 +1032,8 @@ export default function EditProfilePage() {
   };
 
   // ================== Reusable Save Logic ==================
-  const saveProfileData = async (silently = true) => {
-    if (!validateProfileFields(silently)) {
+  const saveProfileData = async (silently = true, step = currentStep) => {
+    if (!validateProfileFields(silently, step)) {
       return false;
     }
 
@@ -1139,12 +1233,11 @@ export default function EditProfilePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ================== SUBMIT HANDLER ==================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!validateProfileFields(false)) {
+    if (!validateProfileFields(false, null)) {
       setLoading(false);
       return;
     }
@@ -1161,7 +1254,7 @@ export default function EditProfilePage() {
       return;
     }
 
-    const success = await saveProfileData(false);
+    const success = await saveProfileData(false, null);
     setLoading(false);
     if (success) {
       navigate("/dashboard");
