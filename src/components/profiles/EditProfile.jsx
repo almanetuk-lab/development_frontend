@@ -8,6 +8,8 @@ import axios from "axios";
 import InterestsForm from "./InterestsForm";
 import ProfileQuestions from "./ProfileQuestions";
 import { theme } from "../comman/theme";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
+import { checkImageSafety } from "../services/nsfwFilter";
 
 const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2";
 const inputClass = `w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 placeholder-slate-400 shadow-2xs outline-none transition duration-200 hover:border-slate-300 ${theme.tailwind.focusPink}`;
@@ -446,9 +448,13 @@ const PROFILE_QUESTIONS = [
 // ================== COMPONENT ==================
 
 export default function EditProfilePage() {
-  const { profile, updateProfile } = useUserProfile();
+  const { profile, updateProfile, isFeatureAllowed } = useUserProfile();
   const navigate = useNavigate();
   const [finalProfileImage, setFinalProfileImage] = useState(null);
+
+  if (!isFeatureAllowed("edit_profile")) {
+    return <PlanRestrictionModal feature="edit_profile" />;
+  }
 
   const [showLifeRhythms, setShowLifeRhythms] = useState(false);
   const [isInterestsModalOpen, setIsInterestsModalOpen] = useState(false);
@@ -832,145 +838,193 @@ export default function EditProfilePage() {
     }
   }, [profile?.user_id]);
 
-  useEffect(() => {
-    if (profile) {
-      const autoDetectAndSaveLocation = async () => {
-        if (isLocationSavingRef.current) return;
-        try {
-          const { getUserLocation } = await import("../services/geolocationService");
-          const coords = await getUserLocation();
-          const lat = Number(coords.latitude.toFixed(6));
-          const lon = Number(coords.longitude.toFixed(6));
 
-          // Check if coordinates are different or not set yet to avoid redundant API calls
-          if (
-            profile.latitude === null ||
-            profile.longitude === null ||
-            profile.latitude === "" ||
-            profile.longitude === "" ||
-            Number(profile.latitude).toFixed(6) !== coords.latitude.toFixed(6) ||
-            Number(profile.longitude).toFixed(6) !== coords.longitude.toFixed(6)
-          ) {
-            console.log("📍 Saving new location coordinates to database in background:", { lat, lon });
-            isLocationSavingRef.current = true;
-            
-            // 1. Save to DB using the API
-            await updateUserLocation(lat, lon);
-            
-            // 2. Update context so it doesn't trigger again
-            updateProfile({
-              latitude: lat,
-              longitude: lon
-            });
-            
-            // 3. Update local form state
-            setFormData(prev => ({
-              ...prev,
-              latitude: lat.toString(),
-              longitude: lon.toString()
-            }));
-          }
-        } catch (err) {
-          console.warn("Background auto-detect/save location failed:", err.message);
-        } finally {
-          isLocationSavingRef.current = false;
-        }
-      };
-      autoDetectAndSaveLocation();
-    }
-  }, [profile?.user_id, profile?.latitude, profile?.longitude]);
 
   // ================== FIELD VALIDATION LOGIC ==================
-  const validateProfileFields = (silently = false) => {
-    const firstName = (formData.first_name || "").trim();
-    if (!firstName) {
-      if (!silently) toast.error("First name is required.");
-      return false;
-    }
-    if (firstName.length < 2) {
-      if (!silently) toast.error("First name must be at least 2 characters long.");
-      return false;
-    }
-    if (!/^[a-zA-Z\s]+$/.test(firstName)) {
-      if (!silently) toast.error("First name can only contain letters and spaces.");
-      return false;
+  const validateProfileFields = (silently = false, step = null) => {
+    // If step is 1, no validation needed (profile picture has no textual validation constraints here)
+    if (step === 1) {
+      return true;
     }
 
-    const lastName = (formData.last_name || "").trim();
-    if (!lastName) {
-      if (!silently) toast.error("Last name is required.");
-      return false;
-    }
-    if (lastName.length < 2) {
-      if (!silently) toast.error("Last name must be at least 2 characters long.");
-      return false;
-    }
-    if (!/^[a-zA-Z\s]+$/.test(lastName)) {
-      if (!silently) toast.error("Last name can only contain letters and spaces.");
-      return false;
-    }
-
-    const username = (formData.username || "").trim();
-    if (!username) {
-      if (!silently) toast.error("Username is required.");
-      return false;
-    }
-    if (username.length < 3) {
-      if (!silently) toast.error("Username must be at least 3 characters long.");
-      return false;
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      if (!silently) toast.error("Username can only contain letters, numbers, and underscores.");
-      return false;
-    }
-
-    const email = (formData.email || "").trim();
-    if (!email) {
-      if (!silently) toast.error("Email address is required.");
-      return false;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      if (!silently) toast.error("Please enter a valid email address.");
-      return false;
-    }
-
-    const phone = (formData.phone || "").trim();
-    if (phone) {
-      if (!/^[+0-9\s\-()]+$/.test(phone)) {
-        if (!silently) toast.error("Phone number can only contain digits, spaces, hyphens, parentheses, and +.");
+    // Step 2 validations (Personal Info)
+    if (step === null || step === 2) {
+      const firstName = (formData.first_name || "").trim();
+      if (!firstName) {
+        if (!silently) toast.error("First name is required.");
         return false;
       }
-      const digitsCount = phone.replace(/[^0-9]/g, "").length;
-      if (digitsCount < 7 || digitsCount > 15) {
-        if (!silently) toast.error("Phone number should be between 7 and 15 digits long.");
+      if (firstName.length < 2 || firstName.length > 50) {
+        if (!silently) toast.error("First name must be between 2 and 50 characters.");
         return false;
+      }
+      if (!/^[a-zA-Z\s\-]+$/.test(firstName)) {
+        if (!silently) toast.error("First name can only contain letters, spaces, and hyphens.");
+        return false;
+      }
+
+      const lastName = (formData.last_name || "").trim();
+      if (!lastName) {
+        if (!silently) toast.error("Last name is required.");
+        return false;
+      }
+      if (lastName.length < 2 || lastName.length > 50) {
+        if (!silently) toast.error("Last name must be between 2 and 50 characters.");
+        return false;
+      }
+      if (!/^[a-zA-Z\s\-]+$/.test(lastName)) {
+        if (!silently) toast.error("Last name can only contain letters, spaces, and hyphens.");
+        return false;
+      }
+
+      const username = (formData.username || "").trim();
+      if (!username) {
+        if (!silently) toast.error("Username is required.");
+        return false;
+      }
+      const usernameRegex = /^(?!.*\.\.)(?!\.)(?!.*\.$)[a-z0-9._]{3,30}$/;
+      if (!usernameRegex.test(username.toLowerCase())) {
+        if (!silently) toast.error("Username must be 3–30 characters, lowercase, and can contain letters, numbers, dots (.), or underscores (_). Dots cannot be consecutive or at the start/end.");
+        return false;
+      }
+
+      const email = (formData.email || "").trim();
+      if (!email) {
+        if (!silently) toast.error("Email address is required.");
+        return false;
+      }
+      if (email.length > 100) {
+        if (!silently) toast.error("Email address cannot exceed 100 characters.");
+        return false;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        if (!silently) toast.error("Please enter a valid email address.");
+        return false;
+      }
+
+      const phone = (formData.phone || "").trim();
+      if (phone) {
+        if (!/^[+0-9\s\-()]+$/.test(phone)) {
+          if (!silently) toast.error("Phone number can only contain digits, spaces, hyphens, parentheses, and +.");
+          return false;
+        }
+        const digitsCount = phone.replace(/[^0-9]/g, "").length;
+        if (digitsCount < 7 || digitsCount > 15) {
+          if (!silently) toast.error("Phone number should be between 7 and 15 digits long.");
+          return false;
+        }
+      }
+
+      if (formData.dob) {
+        const dobDate = new Date(formData.dob);
+        const today = new Date();
+        if (dobDate >= today) {
+          if (!silently) toast.error("Date of Birth must be in the past.");
+          return false;
+        }
+        let calculatedAge = today.getFullYear() - dobDate.getFullYear();
+        const monthDiff = today.getMonth() - dobDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+          calculatedAge--;
+        }
+        if (calculatedAge < 18) {
+          if (!silently) toast.error("You must be at least 18 years old.");
+          return false;
+        }
+      }
+
+      if (formData.age) {
+        const ageNum = Number(formData.age);
+        if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
+          if (!silently) toast.error("Age must be a valid number between 18 and 120.");
+          return false;
+        }
+      }
+
+      if (formData.height && String(formData.height).trim() !== "") {
+        const parts = String(formData.height).split(".");
+        if (parts.length !== 2) {
+          if (!silently) toast.error("Height must be in feet.inches format (e.g., 5.6).");
+          return false;
+        }
+        const ft = parseInt(parts[0]);
+        const inch = parseInt(parts[1]);
+        if (isNaN(ft) || isNaN(inch) || ft < 3 || ft > 8 || inch < 0 || inch > 11) {
+          if (!silently) toast.error("Invalid height. Feet must be between 3 and 8, inches must be between 0 and 11.");
+          return false;
+        }
+      }
+
+      const step2MaxLimits = [
+        { name: "City", val: formData.city, max: 100 },
+        { name: "State", val: formData.state, max: 100 },
+        { name: "Country", val: formData.country, max: 100 },
+        { name: "Pincode", val: formData.pincode, max: 20 },
+        { name: "Address", val: formData.address, max: 500 },
+      ];
+      for (const item of step2MaxLimits) {
+        if (item.val && typeof item.val === "string" && item.val.length > item.max) {
+          if (!silently) toast.error(`${item.name} cannot exceed ${item.max} characters.`);
+          return false;
+        }
       }
     }
 
-    if (formData.dob) {
-      const dobDate = new Date(formData.dob);
-      const today = new Date();
-      if (dobDate >= today) {
-        if (!silently) toast.error("Date of Birth must be in the past.");
-        return false;
+    // Step 3 validations (Professional Details)
+    if (step === null || step === 3) {
+      if (formData.experience !== undefined && formData.experience !== null && formData.experience !== "") {
+        const expNum = Number(formData.experience);
+        if (isNaN(expNum) || expNum < 0 || expNum > 80) {
+          if (!silently) toast.error("Experience must be a number between 0 and 80.");
+          return false;
+        }
       }
-      let calculatedAge = today.getFullYear() - dobDate.getFullYear();
-      const monthDiff = today.getMonth() - dobDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
-        calculatedAge--;
-      }
-      if (calculatedAge < 18) {
-        if (!silently) toast.error("You must be at least 18 years old.");
-        return false;
+
+      const step3MaxLimits = [
+        { name: "Headline", val: formData.headline, max: 200 },
+        { name: "Company", val: formData.company, max: 100 },
+        { name: "Position", val: formData.position, max: 100 },
+        { name: "Profession", val: formData.profession, max: 100 },
+        { name: "Education Institution", val: formData.education_institution_name, max: 150 },
+      ];
+      for (const item of step3MaxLimits) {
+        if (item.val && typeof item.val === "string" && item.val.length > item.max) {
+          if (!silently) toast.error(`${item.name} cannot exceed ${item.max} characters.`);
+          return false;
+        }
       }
     }
 
-    if (formData.age) {
-      const ageNum = Number(formData.age);
-      if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
-        if (!silently) toast.error("Age must be a valid number between 18 and 120.");
-        return false;
+    // Step 4 validations (About & Lifestyle)
+    if (step === null || step === 4) {
+      const step4MaxLimits = [
+        { name: "Zodiac Sign", val: formData.zodiac_sign, max: 50 },
+        { name: "About Me", val: formData.about_me, max: 1000 },
+      ];
+      for (const item of step4MaxLimits) {
+        if (item.val && typeof item.val === "string" && item.val.length > item.max) {
+          if (!silently) toast.error(`${item.name} cannot exceed ${item.max} characters.`);
+          return false;
+        }
+      }
+    }
+
+    // Step 5 validations (Relationship Preferences / Location)
+    if (step === null || step === 5) {
+      if (formData.latitude !== undefined && formData.latitude !== null && formData.latitude !== "") {
+        const lat = Number(formData.latitude);
+        if (isNaN(lat) || lat < -90 || lat > 90) {
+          if (!silently) toast.error("Latitude must be a number between -90 and 90.");
+          return false;
+        }
+      }
+      if (formData.longitude !== undefined && formData.longitude !== null && formData.longitude !== "") {
+        const lon = Number(formData.longitude);
+        if (isNaN(lon) || lon < -180 || lon > 180) {
+          if (!silently) toast.error("Longitude must be a number between -180 and 180.");
+          return false;
+        }
       }
     }
 
@@ -978,8 +1032,8 @@ export default function EditProfilePage() {
   };
 
   // ================== Reusable Save Logic ==================
-  const saveProfileData = async (silently = true) => {
-    if (!validateProfileFields(silently)) {
+  const saveProfileData = async (silently = true, step = currentStep) => {
+    if (!validateProfileFields(silently, step)) {
       return false;
     }
 
@@ -1179,12 +1233,11 @@ export default function EditProfilePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ================== SUBMIT HANDLER ==================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!validateProfileFields(false)) {
+    if (!validateProfileFields(false, null)) {
       setLoading(false);
       return;
     }
@@ -1201,7 +1254,7 @@ export default function EditProfilePage() {
       return;
     }
 
-    const success = await saveProfileData(false);
+    const success = await saveProfileData(false, null);
     setLoading(false);
     if (success) {
       navigate("/dashboard");
@@ -1273,7 +1326,7 @@ export default function EditProfilePage() {
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current || !isCameraActive) return;
 
     const video = videoRef.current;
@@ -1287,15 +1340,29 @@ export default function EditProfilePage() {
     const imageDataUrl = canvas.toDataURL("image/png");
     setCapturedImage(imageDataUrl);
 
-    // 📞 Convert to File and call Face API
-    fetch(imageDataUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const file = new File([blob], "captured-face.png", {
-          type: "image/png",
-        });
-        handleFaceDetection(file); // Yahan API call ho rahi hai
+    try {
+      const blob = await fetch(imageDataUrl).then((res) => res.blob());
+      const file = new File([blob], "camera.png", {
+        type: "image/png",
       });
+
+      // NSFW Nudity check
+      const safety = await checkImageSafety(file);
+      if (!safety.isSafe) {
+        toast.error(safety.reason || "Image contains inappropriate content and cannot be uploaded.");
+        closeCamera();
+        return;
+      }
+
+      await handleFaceDetection(file);
+      const imageUrl = await handleImageUpload(file);
+      if (imageUrl) {
+        setFinalProfileImage(imageUrl);
+      }
+    } catch (err) {
+      console.error("❌ Error in capturing face:", err);
+      toast.error("Failed to capture and analyze photo.");
+    }
 
     closeCamera();
   };
@@ -1405,6 +1472,14 @@ export default function EditProfilePage() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // NSFW Nudity check
+    const safety = await checkImageSafety(file);
+    if (!safety.isSafe) {
+      toast.error(safety.reason || "Image contains inappropriate content and cannot be uploaded.");
+      e.target.value = ""; // Reset the input file selector
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = () => {
@@ -1453,7 +1528,7 @@ export default function EditProfilePage() {
   const CAMERA_URL =
     import.meta.env.VITE_FACE_CAMERA_URL ||
     import.meta.env.VITE_PYTHON_API_URL ||
-    "http://localhost:8000";
+    "https://python-backend-oo6l.onrender.com";
 
   //  interests_categories से total interests calculate करो
   const totalCheckboxInterests =
@@ -2895,15 +2970,120 @@ export default function EditProfilePage() {
         </form>
       </div>
       {showCamera && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg overflow-hidden">
-            <iframe
-              src="https://python-backend-oo6l.onrender.com"
-              width="400"
-              height="600"
-              allow="camera"
-              className="border-none"
-            />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 max-w-[480px] w-full flex flex-col animate-scale-up">
+            
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/55">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-[#FF2A6D]">
+                  <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 tracking-tight">AI Camera Verification</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Live Face Scan</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCamera(false)}
+                className="w-8 h-8 rounded-full border border-slate-100 hover:border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-600 flex items-center justify-center transition cursor-pointer"
+                title="Close Camera"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Instruction Banner */}
+            <div className="px-6 py-3 bg-rose-50/40 border-b border-rose-50 flex items-start gap-2.5 text-xs text-rose-800/90 font-medium">
+              <span className="text-base shrink-0 mt-0.5">ℹ</span>
+              <p className="leading-normal text-left">
+                Align your face within the central indicator and click the capture button. The system will auto-detect age and gender.
+              </p>
+            </div>
+
+            {/* Live Camera Viewport */}
+            <div className="relative bg-slate-950 aspect-[4/3] flex items-center justify-center overflow-hidden">
+              {/* Hidden Canvas for Frame Capture */}
+              <canvas ref={canvasRef} className="hidden" />
+
+              {/* State overlays */}
+              {cameraError ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-white z-20">
+                  <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-bold">{cameraError}</p>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="mt-4 px-4 py-2 bg-white text-slate-900 rounded-xl text-xs font-black hover:bg-slate-100 transition cursor-pointer"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : !isCameraActive ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-white z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-700 border-t-[#FF2A6D] mb-3"></div>
+                  <p className="text-xs text-slate-400 font-semibold">Starting camera stream...</p>
+                </div>
+              ) : null}
+
+              {/* Video Element */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover scale-x-[-1]"
+              />
+
+              {/* Target Face circle overlay */}
+              {isCameraActive && !cameraError && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-[180px] h-[240px] rounded-[100px] border-2 border-dashed border-[#FF2A6D]/80 shadow-[0_0_0_9999px_rgba(15,23,42,0.45)]"></div>
+                </div>
+              )}
+            </div>
+
+            {/* Camera Controls Panel */}
+            <div className="px-6 py-5 bg-slate-900 flex flex-col items-center justify-center gap-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={capturePhoto}
+                disabled={!isCameraActive || !!cameraError}
+                className="w-16 h-16 rounded-full bg-[#FF2A6D] disabled:bg-slate-700 hover:bg-[#E01B5D] border-4 border-white shadow-lg shadow-pink-500/20 flex items-center justify-center transition transform hover:scale-105 active:scale-95 group cursor-pointer disabled:cursor-not-allowed"
+                title="Capture Photo"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-white/60 bg-transparent group-hover:scale-110 transition duration-300"></div>
+              </button>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Click to capture</span>
+            </div>
+
+            {/* Footer info */}
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Biometric Verification Active
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowCamera(false)}
+                className="px-3.5 py-1.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 rounded-lg text-xs transition font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+
           </div>
         </div>
       )}

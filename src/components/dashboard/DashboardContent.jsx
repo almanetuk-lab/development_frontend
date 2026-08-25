@@ -1,11 +1,13 @@
 // src/components/dashboard/DashboardHome.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import StatCard from "../comman/StatCard";
 import ActivityItem from "../comman/ActivityItem";
 import SuggestedMatches from "../MatchSystem/SuggetionMatches";
 import { chatApi, getSuggestedMatches } from "../services/chatApi";
 import profileViewApi from "../services/profileViewApi";
+import api, { updateUserLocation } from "../services/api";
+import { useUserProfile } from "../context/UseProfileContext";
 import ImageModal from "../comman/ImageModal";
 import {
   FiEye,
@@ -18,11 +20,207 @@ import {
   FiCheckCircle,
   FiMapPin,
   FiX,
-  FiActivity
+  FiActivity,
+  FiShield
 } from "react-icons/fi";
 
 export default function DashboardHome({ profile }) {
+  const [displayProfile, setDisplayProfile] = useState(null);
   const navigate = useNavigate();
+  const { updateProfile } = useUserProfile();
+  const isLocationSavingRef = useRef(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  const [trustStatus, setTrustStatus] = useState(null);
+  const [showTrustTooltip, setShowTrustTooltip] = useState(false);
+
+  const fetchTrustData = async (id) => {
+    try {
+      const res = await api.get(`/api/users/${id}/trust`);
+      setTrustStatus(res.data);
+    } catch (err) {
+      console.warn("Failed to fetch user trust status on dashboard:", err);
+    }
+  };
+
+  const renderTrustBadge = () => {
+    const score = profile?.trust_score ?? 100;
+    
+    let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-250 hover:bg-emerald-100/50";
+    let textClass = "text-emerald-500";
+    
+    if (score < 50) {
+      colorClass = "bg-rose-50 text-rose-700 border-rose-250 hover:bg-rose-100/50";
+      textClass = "text-rose-500";
+    } else if (score < 75) {
+      colorClass = "bg-amber-50 text-amber-700 border-amber-250 hover:bg-amber-100/50";
+      textClass = "text-amber-500";
+    } else if (score < 90) {
+      colorClass = "bg-blue-50 text-blue-700 border-blue-250 hover:bg-blue-100/50";
+      textClass = "text-blue-500";
+    }
+
+    return (
+      <div 
+        className="relative inline-block align-middle"
+        onMouseEnter={() => setShowTrustTooltip(true)}
+        onMouseLeave={() => setShowTrustTooltip(false)}
+      >
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-black tracking-wide cursor-pointer transition ${colorClass} shadow-xs`}>
+          <span className="relative flex h-2 w-2">
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${textClass.replace('text', 'bg')}`}></span>
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${textClass.replace('text', 'bg')}`}></span>
+          </span>
+          <FiShield className="w-3.5 h-3.5" />
+          <span>Trust Score: {score}</span>
+        </div>
+
+        {showTrustTooltip && trustStatus && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-72 bg-white rounded-3xl p-5 border border-slate-100 shadow-2xl z-50 text-left space-y-4 animate-scale-up font-sans">
+            
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+              <div>
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Integrity Check</h4>
+                <p className="text-sm font-extrabold text-slate-800 mt-0.5">Anti-Ghosting Score</p>
+              </div>
+              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${colorClass}`}>
+                {trustStatus.trustLevel}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-50 border border-slate-100/50 rounded-2xl p-3 text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Trust Rating</p>
+                <p className="text-lg font-black text-slate-800 mt-1">{trustStatus.trustScore}%</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-100/50 rounded-2xl p-3 text-center">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Ghost Risk</p>
+                <p className={`text-xs font-black mt-2 ${trustStatus.ghostingRisk === "Low" ? "text-emerald-600" : trustStatus.ghostingRisk === "Moderate" ? "text-amber-600" : "text-rose-600"}`}>
+                  {trustStatus.ghostingRisk} Risk
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 pt-1 text-xs">
+              <div className="flex justify-between items-center text-slate-600 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Active Connections
+                </span>
+                <span className="font-extrabold text-slate-800">{trustStatus.successfulConversations}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                  Ghosted Chats
+                </span>
+                <span className="font-extrabold text-slate-800">{trustStatus.ghostedConversations}</span>
+              </div>
+              <div className="flex justify-between items-center text-slate-600 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                  Engagement Level
+                </span>
+                <span className="font-extrabold text-indigo-700 bg-indigo-50/50 border border-indigo-100 px-2 py-0.5 rounded-md text-[9px] uppercase">
+                  {trustStatus.engagementStatus}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[10px] leading-relaxed text-slate-400 font-semibold border-t border-slate-100 pt-3 flex items-start gap-1">
+              <FiShield className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
+              <span>Points are deducted automatically when messages are left unanswered for more than 48 hours.</span>
+            </p>
+
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const autoDetectAndSaveLocation = async () => {
+    if (isLocationSavingRef.current) return;
+    try {
+      isLocationSavingRef.current = true;
+      setLocationError("");
+      const { getUserLocation } = await import("../services/geolocationService");
+      const coords = await getUserLocation();
+      const lat = Number(coords.latitude.toFixed(6));
+      const lon = Number(coords.longitude.toFixed(6));
+
+      // Check if coordinates are different or not set yet to avoid redundant API calls
+      if (
+        profile.latitude === null ||
+        profile.longitude === null ||
+        profile.latitude === "" ||
+        profile.longitude === "" ||
+        Number(profile.latitude).toFixed(6) !== coords.latitude.toFixed(6) ||
+        Number(profile.longitude).toFixed(6) !== coords.longitude.toFixed(6)
+      ) {
+        console.log("📍 Dashboard auto-detect: Saving new coordinates:", { lat, lon });
+        await updateUserLocation(lat, lon);
+        
+        if (updateProfile) {
+          updateProfile({
+            latitude: lat,
+            longitude: lon
+          });
+        }
+      }
+      setShowLocationModal(false);
+      setLocationError("");
+      return true;
+    } catch (err) {
+      console.warn("Dashboard location auto-save failed:", err.message);
+      setLocationError(err.message);
+      setShowLocationModal(true);
+      return false;
+    } finally {
+      isLocationSavingRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (profile) {
+      const checkPermissionAndLocation = async () => {
+        try {
+          if (navigator.permissions && navigator.permissions.query) {
+            const permissionStatus = await navigator.permissions.query({ name: "geolocation" });
+            if (permissionStatus.state === "granted") {
+              // Silently update in background if already granted
+              await autoDetectAndSaveLocation();
+            } else {
+              // Show modal to prompt user
+              setShowLocationModal(true);
+              if (permissionStatus.state === "denied") {
+                setLocationError("Location permission is currently blocked in your browser. Please allow it in settings.");
+              }
+            }
+
+            // Listen for permission change
+            permissionStatus.onchange = () => {
+              if (permissionStatus.state === "granted") {
+                setShowLocationModal(false);
+                setLocationError("");
+                autoDetectAndSaveLocation();
+              } else if (permissionStatus.state === "denied") {
+                setShowLocationModal(true);
+                setLocationError("Location permission is currently blocked in your browser. Please allow it in settings.");
+              }
+            };
+          } else {
+            // Fallback for browsers that don't support permissions API
+            setShowLocationModal(true);
+          }
+        } catch (err) {
+          setShowLocationModal(true);
+        }
+      };
+
+      checkPermissionAndLocation();
+    }
+  }, [profile?.id, profile?.user_id]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -129,6 +327,7 @@ export default function DashboardHome({ profile }) {
   useEffect(() => {
     if (userId && userId !== "null") {
       fetchDashboardData();
+      fetchTrustData(userId);
 
       const interval = setInterval(() => {
         fetchUnreadMessages();
@@ -238,8 +437,9 @@ export default function DashboardHome({ profile }) {
                 <span className="w-2 h-2 rounded-full bg-[#FF2A6D]"></span>
                 <span>Dashboard Overview</span>
               </div>
-              <h1 className="text-xl sm:text-2xl lg:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
-                Welcome back, <span className="text-[#002060] font-black">{userFirstName}</span>
+              <h1 className="text-xl sm:text-2xl lg:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight flex flex-wrap items-center gap-3">
+                <span>Welcome back, <span className="text-[#002060] font-black">{userFirstName}</span></span>
+                {renderTrustBadge()}
               </h1>
               <p className="text-slate-500 text-xs sm:text-sm lg:text-base font-medium">
                 Here is a summary of your profile performance, activity, and member interactions.
@@ -545,6 +745,72 @@ export default function DashboardHome({ profile }) {
         title={modalImage.title}
         onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
       />
+
+      {/* Geolocation Lock Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 shadow-2xl border border-slate-100 max-w-[440px] w-full flex flex-col items-center text-center animate-scale-up">
+            
+            {/* Pulsing Pin Icon */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping duration-1000"></div>
+              <div className="relative w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Content */}
+            <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">Location Services Required</h3>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">
+              Intentional Connection requires location access to show matches near you, calculate distance profiles, and verify active proximity.
+            </p>
+
+            {/* Check points */}
+            <div className="w-full bg-slate-50 rounded-2xl p-4 mb-6 text-left space-y-3 border border-slate-100/50">
+              <div className="flex items-center gap-3 text-xs text-slate-600 font-bold">
+                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">✓</span>
+                Discover local members near you
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-600 font-bold">
+                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">✓</span>
+                Accurate matches by distance
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-600 font-bold">
+                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px]">✓</span>
+                Required for safety compliance
+              </div>
+            </div>
+
+            {/* Error alerts */}
+            {locationError && (
+              <div className="w-full bg-rose-50/70 border border-rose-100 rounded-2xl p-4 mb-6 flex gap-3 text-xs text-rose-800 text-left">
+                <span className="text-base leading-none">⚠️</span>
+                <div>
+                  <p className="font-extrabold mb-1">Permission Required</p>
+                  <p className="leading-normal font-medium text-rose-700">
+                    {locationError.includes("denied") 
+                      ? "Location permissions are blocked. Click the lock/settings icon in your browser URL bar, change Location to 'Allow', then click retry."
+                      : locationError}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Action button */}
+            <button
+              type="button"
+              onClick={autoDetectAndSaveLocation}
+              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-black tracking-wide shadow-lg shadow-indigo-600/10 transition transform active:scale-98 cursor-pointer"
+            >
+              {locationError ? "🔄 Retry Permission Check" : "📍 Enable Location Services"}
+            </button>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

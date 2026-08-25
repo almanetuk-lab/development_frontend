@@ -6,6 +6,7 @@ import { useUserProfile } from "../context/UseProfileContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { FaLinkedin, FaApple, FaGoogle } from "react-icons/fa";
 import Logo from "../comman/Logo";
+import { toast } from "react-toastify";
 
 
 export default function Register() {
@@ -137,76 +138,147 @@ export default function Register() {
     setError("");
 
     if (!agreeToTerms) {
-      setError("You must agree to the Terms of Service and Privacy Policy to register.");
+      const msg = "You must agree to the Terms of Service and Privacy Policy to register.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
+    // 1. First Name Validation
     const firstName = (form.first_name || "").trim();
     if (!firstName) {
-      setError("First name is required.");
+      const msg = "First name is required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (firstName.length < 2) {
-      setError("First name must be at least 2 characters long.");
+    if (firstName.length < 2 || firstName.length > 50) {
+      const msg = "First name must be between 2 and 50 characters.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (!/^[a-zA-Z\s]+$/.test(firstName)) {
-      setError("First name can only contain letters and spaces.");
+    if (!/^[a-zA-Z\s\-]+$/.test(firstName)) {
+      const msg = "First name can only contain letters, spaces, and hyphens.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
+    // 2. Last Name Validation
     const lastName = (form.last_name || "").trim();
     if (!lastName) {
-      setError("Last name is required.");
+      const msg = "Last name is required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (lastName.length < 2) {
-      setError("Last name must be at least 2 characters long.");
+    if (lastName.length < 2 || lastName.length > 50) {
+      const msg = "Last name must be between 2 and 50 characters.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (!/^[a-zA-Z\s]+$/.test(lastName)) {
-      setError("Last name can only contain letters and spaces.");
+    if (!/^[a-zA-Z\s\-]+$/.test(lastName)) {
+      const msg = "Last name can only contain letters, spaces, and hyphens.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
-    const username = (form.username || "").trim();
+    // 3. Username Validation
+    let username = (form.username || "").trim().toLowerCase();
     if (!username) {
-      setError("Username is required.");
+      const msg = "Username is required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (username.length < 3) {
-      setError("Username must be at least 3 characters long.");
-      return;
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      setError("Username can only contain letters, numbers, and underscores.");
+    const usernameRegex = /^(?!.*\.\.)(?!\.)(?!.*\.$)[a-z0-9._]{3,30}$/;
+    if (!usernameRegex.test(username)) {
+      const msg = "Username must be 3–30 characters, lowercase, and can contain letters, numbers, dots (.), or underscores (_). Dots cannot be consecutive or at the start/end.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
+    // 4. Profession Validation
     const profession = (form.profession || "").trim();
     if (!profession) {
-      setError("Profession is required.");
+      const msg = "Profession is required.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (profession.length < 2 || profession.length > 100) {
+      const msg = "Profession must be between 2 and 100 characters.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (!/^[a-zA-Z0-9\s\-\.\,]+$/.test(profession)) {
+      const msg = "Profession can only contain letters, numbers, spaces, hyphens, periods, and commas.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
+    // 5. Email Validation
     const email = (form.email || "").trim();
     if (!email) {
-      setError("Email address is required.");
+      const msg = "Email address is required.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (email.length > 100) {
+      const msg = "Email address cannot exceed 100 characters.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address.");
+      const msg = "Please enter a valid email address.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
-    const password = form.password;
-    if (!password) {
-      setError("Password is required.");
+    // 6. About Me Validation
+    const aboutMe = (form.about_me || "").trim();
+    if (!aboutMe) {
+      const msg = "About Me section is required to build your psychological matching profile.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    if (aboutMe.length < 10 || aboutMe.length > 1000) {
+      const msg = "About Me section must be between 10 and 1000 characters.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    // 7. Password Validation
+    const password = form.password;
+    if (!password) {
+      const msg = "Password is required.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (password.length < 8 || password.length > 100) {
+      const msg = "Password must be between 8 and 100 characters.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,100}$/;
+    if (!passwordRegex.test(password)) {
+      const msg = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -228,14 +300,14 @@ export default function Register() {
         password: password,
         profession: profession,
         username: username,
-        about_me: form.about_me ? form.about_me.trim() : null,
+        about_me: aboutMe,
         interests: form.interests,
         marital_status: form.marital_status,
         consent_given: true, // Send confirmation of consent to backend
       };
 
       await registerUser(payload);
-      alert("Registration successful! Please login with your new account.");
+      toast.success("Registration successful! Please login with your new account.");
 
       localStorage.removeItem("user");
       localStorage.removeItem("accessToken");
@@ -254,6 +326,7 @@ export default function Register() {
         err?.message ||
         "Registration failed";
       setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -425,9 +498,13 @@ export default function Register() {
               value={form.about_me}
               onChange={handleChange}
               rows={3}
+              required
               placeholder="Tell us about yourself..."
               className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#FF2A6D]/20 focus:border-[#FF2A6D] outline-none transition bg-white text-slate-800 placeholder-slate-400 text-sm shadow-inner resize-none"
             />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Minimum 10 characters. Enforced for contextual AI matching.
+            </p>
           </div>
 
           <div>
@@ -452,6 +529,9 @@ export default function Register() {
                 {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
               </button>
             </div>
+            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+              Must be 8–100 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character (@$!%*?&).
+            </p>
           </div>
 
           {/* Privacy & ToS Agreement Checkbox */}

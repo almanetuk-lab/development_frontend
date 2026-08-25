@@ -29,8 +29,8 @@ const MemberPage = () => {
   // State for Image Modal
   const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
 
-  const { activePlan, planLoading } = useUserProfile();
-  const planActive = activePlan?.active === true;
+  const { activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const planActive = isFeatureAllowed("browse_members");
 
   // Initial load of members with plan check
   useEffect(() => {

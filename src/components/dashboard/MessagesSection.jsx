@@ -70,11 +70,12 @@ export default function MessagesSection() {
   // for open img
   const [selectedImage, setSelectedImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [restrictionFeature, setRestrictionFeature] = useState(null);
 
-  const { socket, fetchNotifications, activePlan, planLoading } = useUserProfile();
+  const { socket, fetchNotifications, activePlan, planLoading, isFeatureAllowed } = useUserProfile();
   const planStatus = {
     loading: planLoading,
-    active: activePlan?.active === true,
+    active: isFeatureAllowed("message"),
     daysLeft: activePlan?.days_left || 0,
   };
   const fileInputRef = useRef();
@@ -808,13 +809,13 @@ export default function MessagesSection() {
   const handleSendMessage = async () => {
     // phale status check karega yha pr
     if (!planStatus.active) {
-      alert("Your plan has expired. Please upgrade to continue chatting.");
+      setRestrictionFeature("messaging");
       return;
     }
 
     // 🔒 MESSAGE LIMIT OVER — CLICK ALLOWED, BUT ALERT
     if (messageLimitReached) {
-      alert("Your message limit is over. Please upgrade your plan.");
+      setRestrictionFeature("messaging");
       return;
     }
 
@@ -884,9 +885,9 @@ export default function MessagesSection() {
         error.response?.data?.code === "MESSAGE_LIMIT_EXCEEDED"
       ) {
         setMessageLimitReached(true);
-        alert("Your message limit is over. Please upgrade your plan.");
+        setRestrictionFeature("messaging");
       } else if (error.response?.status === 403) {
-        alert("Your plan has expired. Please upgrade to send messages.");
+        setRestrictionFeature("messaging");
       } else {
         alert("Failed to send message");
       }
@@ -897,13 +898,13 @@ export default function MessagesSection() {
   const addReaction = async (messageId, emoji) => {
     // 🔒 PLAN EXPIRED
     if (!planStatus.active) {
-      alert("Your plan has expired. Please upgrade.");
+      setRestrictionFeature("messaging");
       return;
     }
 
     // 🔒 MESSAGE LIMIT OVER
     if (messageLimitReached) {
-      alert("Your message limit is over. Please upgrade your plan.");
+      setRestrictionFeature("messaging");
       return;
     }
 
@@ -965,13 +966,13 @@ export default function MessagesSection() {
   const handleFileUpload = async (file) => {
     // 🔒 PLAN EXPIRED
     if (!planStatus.active) {
-      alert("Your plan has expired. Please upgrade to upload files.");
+      setRestrictionFeature("messaging");
       return;
     }
 
     // 🔒 MESSAGE LIMIT OVER
     if (messageLimitReached) {
-      alert("Your message limit is over. Please upgrade your plan.");
+      setRestrictionFeature("messaging");
       return;
     }
 
@@ -1921,6 +1922,12 @@ export default function MessagesSection() {
             </div>
           </div>
         </div>
+      )}
+      {restrictionFeature && (
+        <PlanRestrictionModal 
+          feature={restrictionFeature} 
+          onClose={() => setRestrictionFeature(null)} 
+        />
       )}
     </div>
   );

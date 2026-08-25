@@ -1,6 +1,11 @@
 // src/components/pages/Contact.jsx (Refined, Premium UI Design with Popups)
 import React, { useState } from 'react';
+import axios from 'axios';
 import { FiPhone, FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
+import { toast } from 'react-toastify';
+
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -28,65 +33,96 @@ const ContactPage = () => {
     e.preventDefault();
     setError("");
     
+    // 1. Name Validation
     const name = (formData.name || "").trim();
     if (!name) {
-      setError("Name is required.");
+      const msg = "Name is required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (name.length < 2) {
-      setError("Name must be at least 2 characters long.");
+    if (name.length < 2 || name.length > 100) {
+      const msg = "Name must be between 2 and 100 characters.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (!/^[a-zA-Z\s]+$/.test(name)) {
-      setError("Name can only contain letters and spaces.");
+    if (!/^[a-zA-Z\s\-]+$/.test(name)) {
+      const msg = "Name can only contain letters, spaces, and hyphens.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
+    // 2. Email Validation
     const email = (formData.email || "").trim();
     if (!email) {
-      setError("Email address is required.");
+      const msg = "Email address is required.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+    if (email.length > 100) {
+      const msg = "Email address cannot exceed 100 characters.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address.");
+      const msg = "Please enter a valid email address.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
+    // 3. Subject Validation
     const subject = (formData.subject || "").trim();
     if (!subject) {
-      setError("Subject is required.");
+      const msg = "Subject is required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (subject.length < 4) {
-      setError("Subject must be at least 4 characters long.");
+    if (subject.length < 3 || subject.length > 200) {
+      const msg = "Subject must be between 3 and 200 characters.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
+    // 4. Message Validation
     const message = (formData.message || "").trim();
     if (!message) {
-      setError("Message is required.");
+      const msg = "Message is required.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
-    if (message.length < 10) {
-      setError("Message must be at least 10 characters long.");
+    if (message.length < 10 || message.length > 5000) {
+      const msg = "Message must be between 10 and 5000 characters.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await axios.post(`${API_BASE}/api/contact`, { name, email, subject, message });
       setIsSubmitted(true);
+      toast.success("Message sent successfully! ✅");
       
-      // Reset form after 3 seconds
+      // Reset form after 4 seconds
       setTimeout(() => {
         setIsSubmitted(false);
         setFormData({ name: '', email: '', subject: '', message: '' });
-      }, 3000);
+      }, 4000);
     } catch (err) {
-      setError("Failed to send message. Please try again.");
+      console.error("Contact form send error:", err);
+      const msg = err?.response?.data?.error || "Failed to send message. Please try again.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

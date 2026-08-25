@@ -54,8 +54,8 @@ const PRIORITY_CHIPS = [
 
 export default function AISuggestions() {
   const navigate = useNavigate();
-  const { activePlan, planLoading } = useUserProfile();
-  const planActive = activePlan?.active === true;
+  const { activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const planActive = isFeatureAllowed("ai_suggestion");
 
   // ── Suggestion state ────────────────────────────────────────
   const [suggestions, setSuggestions] = useState([]);

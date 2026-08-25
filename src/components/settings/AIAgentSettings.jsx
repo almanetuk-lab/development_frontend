@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { getAiAgentConfig, updateAiAgentConfig } from "../services/api";
+import { useUserProfile } from "../context/UseProfileContext";
+import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
 export default function AIAgentSettings() {
+  const { isFeatureAllowed } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(false);
@@ -66,6 +69,10 @@ export default function AIAgentSettings() {
         Loading AI agent settings...
       </div>
     );
+  }
+
+  if (!isFeatureAllowed("ai_agent")) {
+    return <PlanRestrictionModal feature="ai_agent" />;
   }
 
   return (

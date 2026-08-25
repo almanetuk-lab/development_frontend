@@ -1,5 +1,19 @@
 import React from "react";
 
+const AVAILABLE_FEATURES = [
+  { key: "dashboard", label: "Dashboard Access" },
+  { key: "profile", label: "View Profiles" },
+  { key: "message", label: "Direct Messaging" },
+  { key: "basic_search", label: "Basic Search" },
+  { key: "advance_search", label: "Advanced Search" },
+  { key: "edit_profile", label: "Edit Profile" },
+  { key: "my_matches", label: "My Matches" },
+  { key: "ai_suggestion", label: "AI Suggestions" },
+  { key: "near_me", label: "Near Me Search" },
+  { key: "browse_members", label: "Browse Members" },
+  { key: "ai_agent", label: "AI Agent Settings" },
+];
+
 export default function AddNewPlan({
   handleSubmit,
   handleChange,
@@ -104,6 +118,19 @@ export default function AddNewPlan({
                   audio_call_limit: 0,
                   type: "Free",
                   billing_info: "£0 billed monthly (free tier access)",
+                  allowed_features: {
+                    dashboard: true,
+                    profile: false,
+                    message: false,
+                    basic_search: true,
+                    advance_search: false,
+                    edit_profile: true,
+                    my_matches: false,
+                    ai_suggestion: false,
+                    near_me: false,
+                    browse_members: false,
+                    ai_agent: false,
+                  }
                 }
               },
               {
@@ -120,6 +147,19 @@ export default function AddNewPlan({
                   audio_call_limit: 30,
                   type: "Basic",
                   billing_info: "£9.99 billed monthly",
+                  allowed_features: {
+                    dashboard: true,
+                    profile: true,
+                    message: true,
+                    basic_search: true,
+                    advance_search: false,
+                    edit_profile: true,
+                    my_matches: true,
+                    ai_suggestion: false,
+                    near_me: false,
+                    browse_members: true,
+                    ai_agent: false,
+                  }
                 }
               },
               {
@@ -136,6 +176,19 @@ export default function AddNewPlan({
                   audio_call_limit: 180,
                   type: "Advance",
                   billing_info: "£24.99 billed quarterly",
+                  allowed_features: {
+                    dashboard: true,
+                    profile: true,
+                    message: true,
+                    basic_search: true,
+                    advance_search: true,
+                    edit_profile: true,
+                    my_matches: true,
+                    ai_suggestion: true,
+                    near_me: true,
+                    browse_members: true,
+                    ai_agent: false,
+                  }
                 }
               },
               {
@@ -152,6 +205,19 @@ export default function AddNewPlan({
                   audio_call_limit: 900,
                   type: "Pro",
                   billing_info: "£49.99 billed annually",
+                  allowed_features: {
+                    dashboard: true,
+                    profile: true,
+                    message: true,
+                    basic_search: true,
+                    advance_search: true,
+                    edit_profile: true,
+                    my_matches: true,
+                    ai_suggestion: true,
+                    near_me: true,
+                    browse_members: true,
+                    ai_agent: true,
+                  }
                 }
               }
             ].map((tmpl) => (
@@ -173,6 +239,7 @@ export default function AddNewPlan({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {formData &&
             Object.keys(formData)
+              .filter((key) => key !== "allowed_features")
               .map((key) => {
                 const isFullWidth = key === "description" || key === "billing_info" || key === "name";
                 const isLimitField = limitFields.includes(key);
@@ -275,6 +342,32 @@ export default function AddNewPlan({
                   </div>
                 );
               })}
+
+          {/* Dynamic Allowed Features Checkboxes */}
+          <div className="sm:col-span-2 border-t border-slate-100 pt-5 mt-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+              🛡️ Feature Access Guards
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/50">
+              {AVAILABLE_FEATURES.map((feat) => (
+                <label key={feat.key} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-100/50 rounded-lg transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={!!formData.allowed_features?.[feat.key]}
+                    onChange={(e) => {
+                      const updatedFeatures = {
+                        ...(formData.allowed_features || {}),
+                        [feat.key]: e.target.checked
+                      };
+                      setFormData({ ...formData, allowed_features: updatedFeatures });
+                    }}
+                    className="rounded text-[#002060] focus:ring-[#002060] h-4 w-4 border-slate-300"
+                  />
+                  <span className="text-xs font-semibold text-slate-700">{feat.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-4 pt-4 border-t border-slate-100">

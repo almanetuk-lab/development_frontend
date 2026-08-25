@@ -107,7 +107,23 @@ export default function AdminPlans({
   };
 
   const openEdit = (plan) => {
-    setFormData(plan);
+    const defaultFeatures = {
+      dashboard: true,
+      profile: true,
+      message: true,
+      basic_search: true,
+      advance_search: true,
+      edit_profile: true,
+      my_matches: true,
+      ai_suggestion: true,
+      near_me: true,
+      browse_members: true,
+      ai_agent: true,
+    };
+    setFormData({
+      ...plan,
+      allowed_features: plan.allowed_features || defaultFeatures
+    });
     setEditingId(plan.id);
     setIsOpen(true);
   };

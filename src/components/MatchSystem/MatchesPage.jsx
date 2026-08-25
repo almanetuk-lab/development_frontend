@@ -8,8 +8,8 @@ import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 export default function MatchesPage() {
   const navigate = useNavigate();
-  const { activePlan, planLoading } = useUserProfile();
-  const planActive = activePlan?.active === true;
+  const { activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const planActive = isFeatureAllowed("my_matches");
 
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
