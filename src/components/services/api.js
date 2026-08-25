@@ -129,6 +129,16 @@ export const loginUser = async ({ email, password }) => {
   }
 };
 
+// Newsletter Subscription API
+export const subscribeNewsletter = async (email) => {
+  try {
+    const res = await api.post("/api/newsletter/subscribe", { email });
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
 // Register API  
 export const registerUser = async (formData) => {
   try {

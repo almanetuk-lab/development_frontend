@@ -5,7 +5,7 @@ import { FiPhone, FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck
 import { toast } from 'react-toastify';
 
 
-const API_BASE = import.meta.env.VITE_API_URL || "";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({

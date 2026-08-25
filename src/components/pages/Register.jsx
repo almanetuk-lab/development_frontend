@@ -4,7 +4,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { registerUser, googleAuth } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { FaLinkedin, FaApple, FaGoogle } from "react-icons/fa";
+import { FaLinkedin, FaGoogle } from "react-icons/fa";
 import Logo from "../comman/Logo";
 import { toast } from "react-toastify";
 
@@ -374,13 +374,13 @@ export default function Register() {
             )}
           </button>
 
-          <Link
+          {/* <Link
             to="/Coming-soon"
             className="w-full py-2.5 sm:py-3 px-3 sm:px-4 bg-neutral-900 hover:bg-black text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2 sm:gap-3 font-semibold text-xs sm:text-sm"
           >
             <FaApple size={18} />
             <span>Register with Apple</span>
-          </Link>
+          </Link> */}
 
           <button
             type="button"

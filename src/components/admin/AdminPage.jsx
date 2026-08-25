@@ -13,6 +13,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader.jsx";
 import AdminModelDetails from "./AdminModelDetails.jsx";
+import { toast } from "react-toastify";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -41,11 +42,15 @@ const AdminDashboard = () => {
     if (path.includes("/admin/blogs/edit")) return "blogs_edit";
     if (path.includes("/admin/blogs")) return "blogs";
     if (path.includes("/admin/reports")) return "reports";
+    if (path.includes("/admin/contacts")) return "contacts";
+    if (path.includes("/admin/newsletter")) return "newsletter";
     return "dashboard";
   };
 
   const [activeSection, setActiveSection] = useState(getActiveSectionFromURL());
   const [userStatusFilter, setUserStatusFilter] = useState("all");
+  const [userPage, setUserPage] = useState(1);
+  const userItemsPerPage = 25;
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [usersData, setUsersData] = useState([]);
@@ -53,6 +58,46 @@ const AdminDashboard = () => {
   const [userDetailsLoading, setUserDetailsLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [plans, setPlans] = useState([]);
+  const [contactMessages, setContactMessages] = useState([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [newsletterSubscribers, setNewsletterSubscribers] = useState([]);
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+
+  // Delete Confirmation States
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTargetType, setDeleteTargetType] = useState(null); // 'contact' or 'newsletter'
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const triggerDeleteConfirm = (type, id) => {
+    setDeleteTargetType(type);
+    setDeleteTargetId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteExecute = async () => {
+    if (!deleteTargetId || !deleteTargetType) return;
+    try {
+      setDeleting(true);
+      if (deleteTargetType === "contact") {
+        await adminAPI.deleteContactMessage(deleteTargetId);
+        toast.success("Contact message deleted successfully.");
+        fetchContactMessages();
+      } else if (deleteTargetType === "newsletter") {
+        await adminAPI.deleteNewsletterSubscription(deleteTargetId);
+        toast.success("Newsletter subscriber deleted successfully.");
+        fetchNewsletterSubscribers();
+      }
+    } catch (err) {
+      console.error("Failed to delete entry:", err);
+      toast.error("Failed to delete entry.");
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
+      setDeleteTargetType(null);
+      setDeleteTargetId(null);
+    }
+  };
 
   // for admin usestate//
   const [settingsLoading, setSettingsLoading] = useState(false);
@@ -156,6 +201,48 @@ const AdminDashboard = () => {
       fetchAuditLogs(1);
     }
   }, [activeSection, logFilterAction, logStartDate, logEndDate]);
+
+  useEffect(() => {
+    if (activeSection === "contacts") {
+      fetchContactMessages();
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection === "newsletter") {
+      fetchNewsletterSubscribers();
+    }
+  }, [activeSection]);
+
+  const fetchContactMessages = async () => {
+    try {
+      setContactsLoading(true);
+      const res = await adminAPI.getContactMessages();
+      if (res.data && res.data.messages) {
+        setContactMessages(res.data.messages);
+      }
+    } catch (err) {
+      console.error("Failed to fetch contact messages:", err);
+      toast.error("Failed to load contact messages.");
+    } finally {
+      setContactsLoading(false);
+    }
+  };
+
+  const fetchNewsletterSubscribers = async () => {
+    try {
+      setNewsletterLoading(true);
+      const res = await adminAPI.getNewsletterSubscriptions();
+      if (res.data && res.data.subscriptions) {
+        setNewsletterSubscribers(res.data.subscriptions);
+      }
+    } catch (err) {
+      console.error("Failed to fetch newsletter subscriptions:", err);
+      toast.error("Failed to load newsletter subscriptions.");
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
 
   // Member_approval function end here ----
 
@@ -273,6 +360,12 @@ const AdminDashboard = () => {
     if (userStatusFilter === "all") return true;
     return user.status === userStatusFilter;
   });
+
+  const totalUserItems = filteredUsers.length;
+  const totalUserPages = Math.ceil(totalUserItems / userItemsPerPage);
+  const userStartIndex = (userPage - 1) * userItemsPerPage;
+  const userEndIndex = userStartIndex + userItemsPerPage;
+  const paginatedUsersList = filteredUsers.slice(userStartIndex, userEndIndex);
 
   const handleViewDetails = (user) => {
     const userId = user.user_id || user.id;
@@ -436,7 +529,10 @@ const AdminDashboard = () => {
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">Status Filter:</label>
                 <select
                   value={userStatusFilter}
-                  onChange={(e) => setUserStatusFilter(e.target.value)}
+                  onChange={(e) => {
+                    setUserStatusFilter(e.target.value);
+                    setUserPage(1);
+                  }}
                   className="px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#FF2A6D] focus:border-transparent text-xs font-bold text-slate-700 w-full sm:w-auto shadow-sm outline-none transition-all cursor-pointer"
                 >
                   <option value="all">All Statuses</option>
@@ -448,6 +544,124 @@ const AdminDashboard = () => {
               </div>
             </div>
 
+            {/* KPI Cards Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              {/* Total Users Card */}
+              <div
+                onClick={() => {
+                  setUserStatusFilter("all");
+                  setUserPage(1);
+                }}
+                className={`bg-white rounded-xl border p-4 cursor-pointer select-none transition-all duration-200 group flex flex-col justify-between h-20 ${
+                  userStatusFilter === "all"
+                    ? "border-t-4 border-t-indigo-500 bg-indigo-50/5 border-indigo-200 shadow-xs"
+                    : "border-slate-200/70 hover:border-slate-300 hover:shadow-2xs"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                    userStatusFilter === "all" ? "text-indigo-700" : "text-slate-400"
+                  }`}>
+                    Total Users
+                  </span>
+                  <i className="fa-solid fa-users text-slate-400 group-hover:text-indigo-650 transition text-xs"></i>
+                </div>
+                <h4 className="text-lg font-bold text-slate-800 tracking-tight">{totalUsers}</h4>
+              </div>
+
+              {/* Approved Card */}
+              <div
+                onClick={() => {
+                  setUserStatusFilter("approve");
+                  setUserPage(1);
+                }}
+                className={`bg-white rounded-xl border p-4 cursor-pointer select-none transition-all duration-200 group flex flex-col justify-between h-20 ${
+                  userStatusFilter === "approve"
+                    ? "border-t-4 border-t-emerald-500 bg-emerald-50/5 border-emerald-200 shadow-xs"
+                    : "border-slate-200/70 hover:border-slate-300 hover:shadow-2xs"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                    userStatusFilter === "approve" ? "text-emerald-700" : "text-slate-400"
+                  }`}>
+                    Approved
+                  </span>
+                  <i className="fa-solid fa-circle-check text-slate-400 group-hover:text-emerald-650 transition text-xs"></i>
+                </div>
+                <h4 className="text-lg font-bold text-slate-800 tracking-tight">{approvedUsers}</h4>
+              </div>
+
+              {/* On Hold Card */}
+              <div
+                onClick={() => {
+                  setUserStatusFilter("on hold");
+                  setUserPage(1);
+                }}
+                className={`bg-white rounded-xl border p-4 cursor-pointer select-none transition-all duration-200 group flex flex-col justify-between h-20 ${
+                  userStatusFilter === "on hold"
+                    ? "border-t-4 border-t-amber-500 bg-amber-50/5 border-amber-200 shadow-xs"
+                    : "border-slate-200/70 hover:border-slate-300 hover:shadow-2xs"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                    userStatusFilter === "on hold" ? "text-amber-700" : "text-slate-400"
+                  }`}>
+                    On Hold
+                  </span>
+                  <i className="fa-solid fa-circle-pause text-slate-400 group-hover:text-amber-650 transition text-xs"></i>
+                </div>
+                <h4 className="text-lg font-bold text-slate-800 tracking-tight">{onHoldUsers}</h4>
+              </div>
+
+              {/* In Process Card */}
+              <div
+                onClick={() => {
+                  setUserStatusFilter("in process");
+                  setUserPage(1);
+                }}
+                className={`bg-white rounded-xl border p-4 cursor-pointer select-none transition-all duration-200 group flex flex-col justify-between h-20 ${
+                  userStatusFilter === "in process"
+                    ? "border-t-4 border-t-blue-500 bg-blue-50/5 border-blue-200 shadow-xs"
+                    : "border-slate-200/70 hover:border-slate-300 hover:shadow-2xs"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                    userStatusFilter === "in process" ? "text-blue-700" : "text-slate-400"
+                  }`}>
+                    In Process
+                  </span>
+                  <i className="fa-solid fa-arrows-spin text-slate-400 group-hover:text-blue-650 transition text-xs"></i>
+                </div>
+                <h4 className="text-lg font-bold text-slate-800 tracking-tight">{inProcessUsers}</h4>
+              </div>
+
+              {/* Deactivated Card */}
+              <div
+                onClick={() => {
+                  setUserStatusFilter("deactivate");
+                  setUserPage(1);
+                }}
+                className={`bg-white rounded-xl border p-4 cursor-pointer select-none transition-all duration-200 group flex flex-col justify-between h-20 ${
+                  userStatusFilter === "deactivate"
+                    ? "border-t-4 border-t-rose-500 bg-rose-50/5 border-rose-200 shadow-xs"
+                    : "border-slate-200/70 hover:border-slate-300 hover:shadow-2xs"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${
+                    userStatusFilter === "deactivate" ? "text-rose-700" : "text-slate-400"
+                  }`}>
+                    Deactivated
+                  </span>
+                  <i className="fa-solid fa-user-slash text-slate-400 group-hover:text-rose-650 transition text-xs"></i>
+                </div>
+                <h4 className="text-lg font-bold text-slate-800 tracking-tight">{deactivatedUsers}</h4>
+              </div>
+            </div>
+
             {loading ? (
               <div className="flex justify-center items-center py-16">
                 <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-[#FF2A6D]"></div>
@@ -456,7 +670,7 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
                 {/* Mobile Cards View */}
                 <div className="block sm:hidden divide-y divide-slate-100">
-                  {filteredUsers.map((user) => (
+                  {paginatedUsersList.map((user) => (
                     <div
                       key={user.user_id || user.id}
                       className="p-5 hover:bg-slate-50/50 transition duration-150"
@@ -506,7 +720,7 @@ const AdminDashboard = () => {
                     </div>
                   ))}
 
-                  {filteredUsers.length === 0 && (
+                  {paginatedUsersList.length === 0 && (
                     <div className="text-center py-8">
                       <p className="text-slate-400 text-xs font-semibold">No users found</p>
                     </div>
@@ -535,7 +749,7 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-100">
-                    {filteredUsers.map((user) => (
+                    {paginatedUsersList.map((user) => (
                       <tr
                         key={user.user_id || user.id}
                         className="hover:bg-slate-50/55 transition duration-100"
@@ -593,9 +807,41 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
 
-                {filteredUsers.length === 0 && (
+                {paginatedUsersList.length === 0 && (
                   <div className="hidden sm:block text-center py-8">
                     <p className="text-slate-400 text-xs font-semibold">No users found</p>
+                  </div>
+                )}
+
+                {/* Pagination Footer */}
+                {totalUserPages > 1 && (
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 border-t border-slate-100 bg-slate-50/30">
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      Showing <span className="font-bold text-slate-700">{userStartIndex + 1}</span> to{" "}
+                      <span className="font-bold text-slate-700">{Math.min(userEndIndex, totalUserItems)}</span> of{" "}
+                      <span className="font-bold text-slate-700">{totalUserItems}</span> users
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setUserPage((p) => Math.max(p - 1, 1))}
+                        disabled={userPage === 1}
+                        className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition text-xs font-bold select-none cursor-pointer"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-[11px] font-bold text-slate-600 px-2 select-none">
+                        Page {userPage} of {totalUserPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setUserPage((p) => Math.min(p + 1, totalUserPages))}
+                        disabled={userPage === totalUserPages}
+                        className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white transition text-xs font-bold select-none cursor-pointer"
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1006,6 +1252,163 @@ const AdminDashboard = () => {
             <AdminReport />
           </div>
         )}
+
+        {activeSection === "contacts" && (
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
+            <div className="bg-white border border-slate-100 shadow-xl rounded-2xl p-5 sm:p-8">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Contact Inquiries</h1>
+                  <p className="text-xs text-slate-500 mt-1">Review contact form submissions from your users.</p>
+                </div>
+                <button
+                  onClick={fetchContactMessages}
+                  className="px-4 py-2 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  disabled={contactsLoading}
+                >
+                  {contactsLoading ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                  ) : (
+                    <i className="fa-solid fa-rotate-right"></i>
+                  )}
+                  Refresh
+                </button>
+              </div>
+
+              {contactsLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF2A6D] mb-4"></div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Loading messages...</p>
+                </div>
+              ) : contactMessages.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 border border-slate-100 rounded-xl">
+                  <i className="fa-solid fa-envelope-open text-slate-300 text-4xl mb-3"></i>
+                  <p className="text-sm font-semibold text-slate-600">No contact inquiries found</p>
+                  <p className="text-xs text-slate-400 mt-1">When users submit a message on the contact page, it will appear here.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-950 text-white text-[10px] font-black uppercase tracking-wider">
+                        <th className="px-5 py-4">Sender</th>
+                        <th className="px-5 py-4">Subject</th>
+                        <th className="px-5 py-4">Message</th>
+                        <th className="px-5 py-4">Date</th>
+                        <th className="px-5 py-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {contactMessages.map((msg) => (
+                        <tr key={msg.id} className="hover:bg-slate-50/50 transition">
+                          <td className="px-5 py-4">
+                            <div className="font-bold text-slate-800 text-sm">{msg.name}</div>
+                            <div className="text-xs text-slate-500 font-medium">{msg.email}</div>
+                          </td>
+                          <td className="px-5 py-4 font-semibold text-slate-700 text-sm">
+                            {msg.subject}
+                          </td>
+                          <td className="px-5 py-4 text-xs text-slate-600 max-w-md break-words whitespace-pre-wrap font-medium">
+                            {msg.message}
+                          </td>
+                          <td className="px-5 py-4 text-xs text-slate-500 font-bold whitespace-nowrap">
+                            {new Date(msg.created_at).toLocaleDateString()} at{" "}
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => triggerDeleteConfirm("contact", msg.id)}
+                              className="text-rose-600 hover:text-rose-800 p-2 rounded-lg hover:bg-rose-50 transition cursor-pointer select-none"
+                              title="Delete inquiry"
+                            >
+                              <i className="fa-solid fa-trash-can"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeSection === "newsletter" && (
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
+            <div className="bg-white border border-slate-100 shadow-xl rounded-2xl p-5 sm:p-8">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Newsletter Subscribers</h1>
+                  <p className="text-xs text-slate-500 mt-1">Manage and view subscribed emails for your updates.</p>
+                </div>
+                <button
+                  onClick={fetchNewsletterSubscribers}
+                  className="px-4 py-2 bg-slate-950 hover:bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  disabled={newsletterLoading}
+                >
+                  {newsletterLoading ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                  ) : (
+                    <i className="fa-solid fa-rotate-right"></i>
+                  )}
+                  Refresh
+                </button>
+              </div>
+
+              {newsletterLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF2A6D] mb-4"></div>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Loading subscribers...</p>
+                </div>
+              ) : newsletterSubscribers.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 border border-slate-100 rounded-xl">
+                  <i className="fa-solid fa-paper-plane text-slate-300 text-4xl mb-3"></i>
+                  <p className="text-sm font-semibold text-slate-600">No subscribers found</p>
+                  <p className="text-xs text-slate-400 mt-1">When users sign up for newsletter, they will appear here.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-100 max-w-3xl mx-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-950 text-white text-[10px] font-black uppercase tracking-wider">
+                        <th className="px-5 py-4">#</th>
+                        <th className="px-5 py-4">Email Address</th>
+                        <th className="px-5 py-4">Subscription Date</th>
+                        <th className="px-5 py-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {newsletterSubscribers.map((sub, index) => (
+                        <tr key={sub.id} className="hover:bg-slate-50/50 transition">
+                          <td className="px-5 py-4 text-xs font-bold text-slate-400">{index + 1}</td>
+                          <td className="px-5 py-4 font-semibold text-slate-800 text-sm">
+                            {sub.email}
+                          </td>
+                          <td className="px-5 py-4 text-xs text-slate-500 font-bold whitespace-nowrap">
+                            {new Date(sub.created_at).toLocaleDateString()} at{" "}
+                            {new Date(sub.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => triggerDeleteConfirm("newsletter", sub.id)}
+                              className="text-rose-600 hover:text-rose-800 p-2 rounded-lg hover:bg-rose-50 transition cursor-pointer select-none"
+                              title="Delete subscription"
+                            >
+                              <i className="fa-solid fa-trash-can"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
           </div>
           <AdminFooter />
         </div>
@@ -1028,6 +1431,46 @@ const AdminDashboard = () => {
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-[9999] p-5 animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-100/80 text-center animate-scale-up">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center text-lg mx-auto mb-4">
+              <i className="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 className="text-base font-black text-slate-800 tracking-tight">Confirm Deletion</h3>
+            <p className="text-xs text-slate-500 mt-2">
+              Are you sure you want to delete this {deleteTargetType === 'contact' ? 'contact message' : 'newsletter subscription'}?
+              This action is permanent and cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-center mt-6 w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setDeleteTargetType(null);
+                  setDeleteTargetId(null);
+                }}
+                disabled={deleting}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer disabled:opacity-50 select-none"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteExecute}
+                disabled={deleting}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 select-none"
+              >
+                {deleting ? (
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                ) : (
+                  "Confirm Delete"
+                )}
               </button>
             </div>
           </div>
