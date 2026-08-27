@@ -36,9 +36,12 @@ export default function ComingSoonModal({ isOpen, onClose }) {
               Coming Soon
             </span>
             <h3 className="text-xl sm:text-2xl font-extrabold text-[#002060] tracking-tight">
-              Preparing for Launch
+              Coming soon
             </h3>
-            <p className="text-slate-500 text-sm leading-relaxed">
+            <p className="text-[#FF2A6D] text-sm font-bold tracking-wide">
+              The future of meaningful connection
+            </p>
+            <p className="text-slate-500 text-xs leading-relaxed">
               We are currently preparing the platform for launch. Registration is temporarily closed. Please check back soon.
             </p>
           </div>
