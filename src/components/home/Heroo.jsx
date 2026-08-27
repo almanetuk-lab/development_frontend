@@ -7,6 +7,8 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { googleAuth, subscribeNewsletter } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
 import { toast } from "react-toastify";
+import { FiCompass, FiLock, FiMessageSquare } from "react-icons/fi";
+import ComingSoonModal from "../comman/ComingSoonModal";
 
 export default function Heroo() {
   const bannerImage = "/images/4.jpg.jpg";
@@ -14,6 +16,7 @@ export default function Heroo() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [subscribeEmail, setSubscribeEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
   const { updateProfile, refreshProfile } = useUserProfile();
   const navigate = useNavigate();
 
@@ -171,6 +174,7 @@ export default function Heroo() {
               className="space-y-6"
             >
               {/* Social Login Buttons */}
+              {/* Temporarily commented out login and register buttons
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleLinkedInLogin}
@@ -218,11 +222,56 @@ export default function Heroo() {
                 </button>
               </div>
 
-              {/* OR Divider */}
               <div className="flex items-center">
                 <div className="flex-grow border-t border-slate-200/60"></div>
                 <span className="mx-4 text-xs font-semibold text-slate-400 uppercase tracking-widest">or</span>
                 <div className="flex-grow border-t border-slate-200/60"></div>
+              </div>
+              */}
+
+              {/* Informative / Temporarily Disabled Cards (In a Row) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-6">
+                {/* Compatibility */}
+                <div 
+                  onClick={() => setIsComingSoonOpen(true)}
+                  className="flex flex-col items-center text-center p-3 bg-white hover:bg-slate-50 border border-slate-200/60 rounded-xl cursor-pointer transition-all duration-200 group shadow-sm hover:shadow-md"
+                >
+                  <div className="w-9 h-9 bg-pink-50 text-[#FF2A6D] border border-pink-100 rounded-lg flex items-center justify-center shrink-0 shadow-sm mb-2.5 transition-colors group-hover:bg-[#FF2A6D] group-hover:text-white">
+                    <FiCompass size={18} />
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-xs tracking-tight">Compatibility</h4>
+                  <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                    Matches built on traits & values.
+                  </p>
+                </div>
+
+                {/* Privacy */}
+                <div 
+                  onClick={() => setIsComingSoonOpen(true)}
+                  className="flex flex-col items-center text-center p-3 bg-white hover:bg-slate-50 border border-slate-200/60 rounded-xl cursor-pointer transition-all duration-200 group shadow-sm hover:shadow-md"
+                >
+                  <div className="w-9 h-9 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg flex items-center justify-center shrink-0 shadow-sm mb-2.5 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                    <FiLock size={18} />
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-xs tracking-tight">Privacy</h4>
+                  <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                    Control who sees your profile.
+                  </p>
+                </div>
+
+                {/* Connections */}
+                <div 
+                  onClick={() => setIsComingSoonOpen(true)}
+                  className="flex flex-col items-center text-center p-3 bg-white hover:bg-slate-50 border border-slate-200/60 rounded-xl cursor-pointer transition-all duration-200 group shadow-sm hover:shadow-md"
+                >
+                  <div className="w-9 h-9 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg flex items-center justify-center shrink-0 shadow-sm mb-2.5 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                    <FiMessageSquare size={18} />
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-xs tracking-tight">Connections</h4>
+                  <p className="text-[10px] text-slate-400 mt-1 leading-normal">
+                    Conversations that fit your life.
+                  </p>
+                </div>
               </div>
 
               {/* Newsletter Subscription */}
@@ -270,6 +319,7 @@ export default function Heroo() {
           />
         </div>
       </div>
+      <ComingSoonModal isOpen={isComingSoonOpen} onClose={() => setIsComingSoonOpen(false)} />
     </section>
   );
 }

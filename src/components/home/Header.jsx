@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useUserProfile } from "../context/UseProfileContext";
 import NotificationBell from "../notifybell/NotificationBell";
 import Logo from "../comman/Logo";
+import ComingSoonModal from "../comman/ComingSoonModal";
 
 export default function Header({ sidebarOpen, setSidebarOpen }) {
   const [cartCount, setCartCount] = useState(0);
@@ -11,6 +12,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
   const { profile, clearProfile } = useUserProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
   const mobileMenuRef = useRef(null);
   const mobileMenuButtonRef = useRef(null);
   const desktopProfileDropdownRef = useRef(null);
@@ -65,6 +67,13 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (location.state?.showComingSoon) {
+      setIsComingSoonOpen(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   useEffect(() => {
     const getCartCount = () => {
@@ -405,6 +414,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
               </>
             ) : (
               <div className="flex items-center gap-3">
+                {/* Temporarily commented out login and register buttons
                 <Link
                   to="/login"
                   className="text-slate-600 hover:text-slate-800 hover:bg-slate-50 px-4 py-2 rounded-xl font-semibold transition-all duration-200"
@@ -418,6 +428,13 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                 >
                   Register
                 </Link>
+                */}
+                <button
+                  onClick={() => setIsComingSoonOpen(true)}
+                  className="bg-[#FF2A6D] hover:bg-[#e0105a] text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  Coming soon
+                </button>
               </div>
             )}
           </div>
@@ -804,7 +821,8 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
 
             <div className="border-t border-slate-100 pt-4 pb-2 mt-2">
               {!isLoggedIn ? (
-                <div className="flex gap-3 px-2">
+                <div className="flex gap-3 px-2 flex-col w-full">
+                  {/* Temporarily commented out mobile login and register buttons
                   <Link
                     to="/login"
                     className="flex-1 py-2.5 text-center text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs transition"
@@ -819,6 +837,16 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                   >
                     Register
                   </Link>
+                  */}
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsComingSoonOpen(true);
+                    }}
+                    className="w-full py-2.5 text-center bg-[#FF2A6D] hover:bg-[#e0105a] text-white rounded-xl font-bold text-xs transition shadow-sm hover:shadow-md"
+                  >
+                    Coming soon
+                  </button>
                 </div>
               ) : (
                 <button
@@ -836,6 +864,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
           </div>
         </div>
       </div>
+      <ComingSoonModal isOpen={isComingSoonOpen} onClose={() => setIsComingSoonOpen(false)} />
     </header>
   );
 }

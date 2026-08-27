@@ -16,7 +16,11 @@ api.interceptors.request.use(
   (config) => {
     // Check which token to use based on URL/context
     const isAdminRoute = config.url?.includes('/admin') || 
-                         config.url?.includes('/admin/');
+                         config.url?.includes('/admin/') ||
+                         config.url?.includes('/blogs/create') ||
+                         config.url?.includes('/blogs/update') ||
+                         config.url?.includes('/blogs/delete') ||
+                         config.url?.includes('/settings/');
     
     if (isAdminRoute) {
       // Admin routes ke liye adminToken
