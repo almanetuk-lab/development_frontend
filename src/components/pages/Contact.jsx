@@ -1,7 +1,7 @@
 // src/components/pages/Contact.jsx (Refined, Premium UI Design with Popups)
 import React, { useState } from 'react';
 import axios from 'axios';
-import { FiPhone, FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
+import { FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 
@@ -17,7 +17,7 @@ const ContactPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
-  
+
   // State for active FAQ popup
   const [activeFaq, setActiveFaq] = useState(null);
 
@@ -32,7 +32,7 @@ const ContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    
+
     // 1. Name Validation
     const name = (formData.name || "").trim();
     if (!name) {
@@ -107,12 +107,12 @@ const ContactPage = () => {
     }
 
     setIsSubmitting(true);
-    
+
     try {
       await axios.post(`${API_BASE}/api/contact`, { name, email, subject, message });
       setIsSubmitted(true);
       toast.success("Message sent successfully! ✅");
-      
+
       // Reset form after 4 seconds
       setTimeout(() => {
         setIsSubmitted(false);
@@ -165,7 +165,7 @@ const ContactPage = () => {
   return (
     <div className="min-h-screen bg-slate-50/50 py-10 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Header Section */}
         <div className="text-center mb-12 animate-fade-in">
           <span className="text-xs font-semibold uppercase tracking-widest text-[#FF2A6D] bg-pink-50 px-3.5 py-1.5 rounded-full mb-4 inline-block">
@@ -184,10 +184,10 @@ const ContactPage = () => {
           {/* Contact Form Card */}
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-10 animate-slide-up relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-pink-50/20 rounded-full blur-3xl z-0"></div>
-            
+
             <div className="relative z-10">
               <h2 className="text-2xl font-bold text-slate-800 mb-6 tracking-tight">Send us a Message</h2>
-              
+
               {isSubmitted ? (
                 <div className="text-center py-12 animate-bounce-in">
                   <div className="w-16 h-16 bg-emerald-50 text-emerald-500 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
@@ -221,7 +221,7 @@ const ContactPage = () => {
                           placeholder="Enter your full name"
                         />
                       </div>
-                      
+
                       <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
                         <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
                           Email Address *
@@ -271,9 +271,8 @@ const ContactPage = () => {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className={`w-full py-3.5 px-6 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm flex items-center justify-center ${
-                        isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
-                      }`}
+                      className={`w-full py-3.5 px-6 bg-[#FF2A6D] hover:bg-[#e0105a] text-white font-bold rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-sm transition-all duration-200 text-sm flex items-center justify-center ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+                        }`}
                     >
                       {isSubmitting ? (
                         <div className="flex items-center justify-center">
@@ -295,15 +294,6 @@ const ContactPage = () => {
             {/* Contact Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="w-12 h-12 bg-pink-50 text-[#FF2A6D] border border-pink-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
-                  <FiPhone size={20} />
-                </div>
-                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Call Us</h3>
-                <p className="text-slate-600 text-sm">07424 844073</p>
-                <p className="text-xs text-slate-400 mt-2 font-medium">Mon-Fri from 9am to 6pm</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="w-12 h-12 bg-blue-50 text-[#4D6D9E] border border-blue-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
                   <FiMail size={20} />
                 </div>
@@ -311,31 +301,24 @@ const ContactPage = () => {
                 <p className="text-slate-600 text-sm">info@neratech.com</p>
                 <p className="text-xs text-slate-400 mt-2 font-medium">We'll reply within 24 hours</p>
               </div>
-            </div>
 
-            {/* Visit Office Card */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm transition-all duration-300">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-purple-50 text-purple-600 border border-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner">
+              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 bg-purple-50 text-purple-600 border border-purple-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
                   <FiMapPin size={20} />
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Visit Our Office</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">
-                    123 Dating Street, Suite 100<br />
-                    London, UK
-                  </p>
-                </div>
+                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Visit Our Office</h3>
+                <p className="text-slate-600 text-sm">123 Dating Street, Suite 100</p>
+                <p className="text-xs text-slate-400 mt-2 font-medium">London, UK</p>
               </div>
             </div>
 
             {/* Quick Help Accordion-like Card */}
             <div className="bg-gradient-to-br from-[#002060] to-[#1e3a8a] rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
               <div className="absolute -right-16 -top-16 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
-              
+
               <h3 className="font-bold text-lg mb-5 tracking-tight font-sans">Quick Help & FAQs</h3>
               <div className="space-y-3">
-                <button 
+                <button
                   onClick={() => setActiveFaq('profile')}
                   className="w-full flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer text-left"
                 >
@@ -344,7 +327,7 @@ const ContactPage = () => {
                   </div>
                   <span className="text-sm font-medium">How to create a perfect profile?</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setActiveFaq('safety')}
                   className="w-full flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer text-left"
                 >
@@ -353,7 +336,7 @@ const ContactPage = () => {
                   </div>
                   <span className="text-sm font-medium">Privacy and safety guidelines</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setActiveFaq('billing')}
                   className="w-full flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-all duration-200 cursor-pointer text-left"
                 >
@@ -370,16 +353,16 @@ const ContactPage = () => {
 
       {/* Interactive FAQ Popup Modal */}
       {activeFaq && faqContent[activeFaq] && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setActiveFaq(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100 animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
-            <button 
+            <button
               onClick={() => setActiveFaq(null)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100"
               aria-label="Close modal"
