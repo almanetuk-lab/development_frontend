@@ -433,7 +433,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                   onClick={() => setIsComingSoonOpen(true)}
                   className="bg-[#FF2A6D] hover:bg-[#e0105a] text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                 >
-                  Coming soon
+                  Coming soon - The future of meaningful connection
                 </button>
               </div>
             )}
@@ -845,7 +845,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
                     }}
                     className="w-full py-2.5 text-center bg-[#FF2A6D] hover:bg-[#e0105a] text-white rounded-xl font-bold text-xs transition shadow-sm hover:shadow-md"
                   >
-                    Coming soon
+                    Coming soon - The future of meaningful connection
                   </button>
                 </div>
               ) : (
