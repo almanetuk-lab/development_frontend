@@ -1,7 +1,7 @@
 // src/components/pages/Contact.jsx (Refined, Premium UI Design with Popups)
 import React, { useState } from 'react';
 import axios from 'axios';
-import { FiPhone, FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
+import { FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 
@@ -294,14 +294,6 @@ const ContactPage = () => {
             {/* Contact Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="w-12 h-12 bg-pink-50 text-[#FF2A6D] border border-pink-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
-                  <FiPhone size={20} />
-                </div>
-                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Call Us</h3>
-                <p className="text-xs text-slate-400 mt-2 font-medium">Mon-Fri from 9am to 6pm</p>
-              </div>
-
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
                 <div className="w-12 h-12 bg-blue-50 text-[#4D6D9E] border border-blue-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
                   <FiMail size={20} />
                 </div>
@@ -309,21 +301,14 @@ const ContactPage = () => {
                 <p className="text-slate-600 text-sm">info@neratech.com</p>
                 <p className="text-xs text-slate-400 mt-2 font-medium">We'll reply within 24 hours</p>
               </div>
-            </div>
 
-            {/* Visit Office Card */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm transition-all duration-300">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-purple-50 text-purple-600 border border-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner">
+              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 bg-purple-50 text-purple-600 border border-purple-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
                   <FiMapPin size={20} />
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Visit Our Office</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">
-                    123 Dating Street, Suite 100<br />
-                    London, UK
-                  </p>
-                </div>
+                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Visit Our Office</h3>
+                <p className="text-slate-600 text-sm">123 Dating Street, Suite 100</p>
+                <p className="text-xs text-slate-400 mt-2 font-medium">London, UK</p>
               </div>
             </div>
 
