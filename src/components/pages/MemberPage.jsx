@@ -11,6 +11,7 @@ const MemberPage = () => {
 
   // State for members
   const [members, setMembers] = useState([]);
+  const [allMembers, setAllMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGender, setSelectedGender] = useState("All");
@@ -117,6 +118,7 @@ const MemberPage = () => {
     setSelectedCity("");
     setMinAge("");
     setMaxAge("");
+    setMembers(allMembers);
   };
 
   // Fetch initial members
@@ -134,12 +136,15 @@ const MemberPage = () => {
           : response.data.results || response.data.data || response.data.users || [];
 
         setMembers(membersData);
+        setAllMembers(membersData);
         setFilteredMembers(membersData);
       }
     } catch (error) {
       console.error("Error fetching members:", error);
-      setMembers(getDummyMembers());
-      setFilteredMembers(getDummyMembers());
+      const fallback = getDummyMembers();
+      setMembers(fallback);
+      setAllMembers(fallback);
+      setFilteredMembers(fallback);
     } finally {
       setLoading(false);
     }
