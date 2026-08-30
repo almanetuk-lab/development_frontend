@@ -176,7 +176,7 @@ export default function AIAgentSettings() {
         </div>
         <div className="flex items-start gap-2 text-sm text-gray-600">
           <span>📊</span>
-          <span>AI replies do not count towards your message usage limit</span>
+          <span>AI replies uses your message quota</span>
         </div>
       </div>
     </div>
