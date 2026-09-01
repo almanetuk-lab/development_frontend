@@ -72,7 +72,7 @@ export default function MessagesSection() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [restrictionFeature, setRestrictionFeature] = useState(null);
 
-  const { socket, fetchNotifications, activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const { socket, fetchNotifications, activePlan, planLoading, isFeatureAllowed, isUserOnline } = useUserProfile();
   const planStatus = {
     loading: planLoading,
     active: isFeatureAllowed("message"),
@@ -472,14 +472,30 @@ export default function MessagesSection() {
   }
 };
 
+    const handleMessagesRead = (data) => {
+      console.log("👁️ Socket messages_read received:", data);
+      if (selectedUser && String(selectedUser.id) === String(data.readBy)) {
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.sender_id === currentUserId) {
+              return { ...msg, is_read: true };
+            }
+            return msg;
+          })
+        );
+      }
+    };
+
     socket.on("new_reaction", handleNewReaction);
     socket.on("new_message", handleIncomingMessage);
     socket.on("ai_typing", handleAiTyping);
+    socket.on("messages_read", handleMessagesRead);
 
     return () => {
       socket.off("new_message", handleIncomingMessage);
       socket.off("new_reaction", handleNewReaction);
       socket.off("ai_typing", handleAiTyping);
+      socket.off("messages_read", handleMessagesRead);
     };
   }, [currentUserId, selectedUser, socket]);
 
@@ -1192,7 +1208,14 @@ export default function MessagesSection() {
                 <p className="font-semibold text-slate-800 text-sm truncate">
                   {selectedUser.name}
                 </p>
-                <p className="text-[10px] font-bold text-slate-400">Online</p>
+                {isUserOnline(selectedUser.id) ? (
+                  <div className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <p className="text-[10px] font-bold text-emerald-500">Online</p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] font-bold text-slate-400">Offline</p>
+                )}
               </div>
 
               {/* ⚠️ Incompatibility warning icon — mobile header */}
@@ -1284,7 +1307,8 @@ export default function MessagesSection() {
                       }`}
                   >
                     <div className="flex items-center gap-3">
-                      {/* ✅ PROFILE PICTURE WITH FALLBACK */}
+                      {/* AVATAR WITH ONLINE INDICATOR */}
+                      <div className="relative shrink-0">
                       {chat.profile_picture_url ? (
                         <img
                           src={chat.profile_picture_url}
@@ -1320,6 +1344,12 @@ export default function MessagesSection() {
                       >
                         {cleanUserName(chat.name)?.charAt(0)?.toUpperCase() ||
                           "U"}
+                      </div>
+
+                      {/* Online indicator dot */}
+                      {isUserOnline(chat.user_id) && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                      )}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -1478,8 +1508,17 @@ export default function MessagesSection() {
                     {selectedUser.name}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Now</span>
+                    {isUserOnline(selectedUser.id) ? (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Active Now</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Offline</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -1637,15 +1676,32 @@ export default function MessagesSection() {
                           {/* Message Footer - Timestamp + Reaction Button */}
                           <div className="flex justify-between items-center mt-2.5 gap-4">
                             <p
-                              className={`text-[10px] font-medium ${message.sender_id === currentUserId
+                              className={`text-[10px] font-medium flex items-center gap-1 ${message.sender_id === currentUserId
                                 ? "text-slate-300"
                                 : "text-slate-400"
                                 }`}
                             >
-                              {formatTime(message.created_at)}
-                              {message.isTemporary && " • Sending..."}
-                              {deletingMessageId === message.id &&
-                                " • Deleting..."}
+                              <span>{formatTime(message.created_at)}</span>
+                              {message.isTemporary && <span>• Sending...</span>}
+                              {deletingMessageId === message.id && (
+                                <span>• Deleting...</span>
+                              )}
+                              {message.sender_id === currentUserId && !message.isTemporary && (
+                                message.is_read ? (
+                                  <span className="inline-flex items-center text-cyan-300 ml-0.5" title="Read">
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M17 6L7 16l-4-4"></path>
+                                      <path d="M22 6L12 16l-2.5-2.5"></path>
+                                    </svg>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center text-slate-300/80 ml-0.5" title="Sent">
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                  </span>
+                                )
+                              )}
                             </p>
 
                             
