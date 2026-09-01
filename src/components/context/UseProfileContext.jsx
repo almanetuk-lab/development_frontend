@@ -248,6 +248,7 @@ export const UserProfileProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [socket, setSocket] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
 
   // Fetch all notifications from API
   const fetchNotifications = async () => {
@@ -328,6 +329,23 @@ export const UserProfileProvider = ({ children }) => {
       setUnreadCount((prev) => prev + 1);
     });
 
+    // Online presence tracking
+    newSocket.on("online_users_list", (userIds) => {
+      setOnlineUsers(new Set(userIds.map(String)));
+    });
+
+    newSocket.on("user_status_change", ({ userId, isOnline }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        if (isOnline) {
+          next.add(String(userId));
+        } else {
+          next.delete(String(userId));
+        }
+        return next;
+      });
+    });
+
     setSocket(newSocket);
 
     // Fetch initial notifications once when the user opens the app or logs in
@@ -398,6 +416,8 @@ export const UserProfileProvider = ({ children }) => {
     return true;
   };
 
+  const isUserOnline = (userId) => onlineUsers.has(String(userId));
+
   const value = {
     profile,
     updateProfile,
@@ -416,6 +436,8 @@ export const UserProfileProvider = ({ children }) => {
     markNotificationAsRead,
     markAllNotificationsAsRead,
     socket,
+    onlineUsers,
+    isUserOnline,
   };
 
   return (
