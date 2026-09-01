@@ -93,10 +93,18 @@ const mapToDBEnum = (field, value) => {
 
     children_preference: {
       WANT: "Want",
-      DONT_WANT: "Don’t want",
+      DONT_WANT: "Don't want",
       HAVE_AND_WANT_MORE: "Have and want more",
-      HAVE_AND_DONT_WANT_MORE: "Have and don’t want more",
-      OPEN_OR_NOT_SURE_YET: "Open / Not Sure yet",
+      HAVE_AND_DONT_WANT_MORE: "Have and don't want more",
+      OPEN_OR_NOT_SURE_YET: "Open / Not sure yet",
+      Want: "Want",
+      "Don't want": "Don't want",
+      "Don’t want": "Don't want",
+      "Have and want more": "Have and want more",
+      "Have and don't want more": "Have and don't want more",
+      "Have and don’t want more": "Have and don't want more",
+      "Open / Not sure yet": "Open / Not sure yet",
+      "Open / Not Sure yet": "Open / Not sure yet",
     },
 
     // Self Expression
@@ -118,10 +126,18 @@ const mapToDBEnum = (field, value) => {
     // Pets Preference
     pets_preference: {
       Want: "Want",
-      DONT_WANT: "Don’t want",
+      WANT: "Want",
+      DONT_WANT: "Don't want",
+      "Don't want": "Don't want",
+      "Don’t want": "Don't want",
       "Have and want more": "Have and want more",
-      "Have and don't want more": "Have and don’t want more",
+      HAVE_AND_WANT_MORE: "Have and want more",
+      "Have and don't want more": "Have and don't want more",
+      "Have and don’t want more": "Have and don't want more",
+      HAVE_AND_DONT_WANT_MORE: "Have and don't want more",
       OPEN_OR_NOT_SURE_YET: "Open / Not sure yet",
+      "Open / Not sure yet": "Open / Not sure yet",
+      "Open / Not Sure yet": "Open / Not sure yet",
     },
 
     // Free Time Style
@@ -336,10 +352,18 @@ const mapToUIEnum = (field, value) => {
     },
     children_preference: {
       Want: "WANT",
-      "Don't want": "Don’t want",
+      WANT: "WANT",
+      "Don't want": "DONT_WANT",
+      "Don’t want": "DONT_WANT",
+      DONT_WANT: "DONT_WANT",
       "Have and want more": "HAVE_AND_WANT_MORE",
+      HAVE_AND_WANT_MORE: "HAVE_AND_WANT_MORE",
       "Have and don't want more": "HAVE_AND_DONT_WANT_MORE",
+      "Have and don’t want more": "HAVE_AND_DONT_WANT_MORE",
+      HAVE_AND_DONT_WANT_MORE: "HAVE_AND_DONT_WANT_MORE",
       "Open / Not sure yet": "OPEN_OR_NOT_SURE_YET",
+      "Open / Not Sure yet": "OPEN_OR_NOT_SURE_YET",
+      OPEN_OR_NOT_SURE_YET: "OPEN_OR_NOT_SURE_YET",
     },
     professional_identity: {
       "Corporate Professional": "PROFESSIONAL",
@@ -395,6 +419,21 @@ const mapToUIEnum = (field, value) => {
       NO: "No",
       YES: "Yes",
       SOCIAL: "Socially",
+    },
+    pets_preference: {
+      Want: "Want",
+      WANT: "Want",
+      "Don't want": "Don’t want",
+      "Don’t want": "Don’t want",
+      DONT_WANT: "Don’t want",
+      "Have and want more": "Have and want more",
+      HAVE_AND_WANT_MORE: "Have and want more",
+      "Have and don't want more": "Have and don’t want more",
+      "Have and don’t want more": "Have and don’t want more",
+      HAVE_AND_DONT_WANT_MORE: "Have and don’t want more",
+      "Open / Not sure yet": "OPEN_OR_NOT_SURE_YET",
+      "Open / Not Sure yet": "OPEN_OR_NOT_SURE_YET",
+      OPEN_OR_NOT_SURE_YET: "OPEN_OR_NOT_SURE_YET",
     },
   };
 
@@ -2624,7 +2663,7 @@ export default function EditProfilePage() {
                         <option value="">Select Children Preference</option>
 
                         <option value="WANT">Want</option>
-                        <option value="Don’t want">Don't want</option>
+                        <option value="DONT_WANT">Don't want</option>
                         <option value="HAVE_AND_WANT_MORE">
                           Have and want more
                         </option>

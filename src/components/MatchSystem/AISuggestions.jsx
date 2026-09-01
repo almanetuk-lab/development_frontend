@@ -252,7 +252,7 @@ export default function AISuggestions() {
       setHandshakeModal({ match, session });
     } catch (err) {
       console.error("❌ Handshake failed:", err);
-      setHandshakeError(err?.response?.data?.message || "Handshake failed. Please try again.");
+      setHandshakeError(err?.response?.data?.message || "Unable to generate compatibility report. Please try again.");
     } finally {
       setHandshakeLoadingId(null);
     }
@@ -901,7 +901,7 @@ export default function AISuggestions() {
         <div className="fixed bottom-6 right-6 z-[99999] max-w-sm bg-rose-600 text-white px-5 py-4 rounded-2xl shadow-xl flex items-start gap-3 animate-slide-up">
           <HiExclamationCircle className="w-6 h-6 flex-shrink-0 text-white" />
           <div className="flex-1 space-y-1">
-            <p className="font-bold text-sm">Handshake Error</p>
+            <p className="font-bold text-sm">Compatibility Report</p>
             <p className="text-xs opacity-90">{handshakeError}</p>
           </div>
           <button onClick={() => setHandshakeError(null)} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
