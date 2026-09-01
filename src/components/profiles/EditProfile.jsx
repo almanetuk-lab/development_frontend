@@ -351,19 +351,19 @@ const mapToUIEnum = (field, value) => {
       Other: "Other",
     },
     children_preference: {
-      Want: "WANT",
-      WANT: "WANT",
-      "Don't want": "DONT_WANT",
-      "Don’t want": "DONT_WANT",
-      DONT_WANT: "DONT_WANT",
-      "Have and want more": "HAVE_AND_WANT_MORE",
-      HAVE_AND_WANT_MORE: "HAVE_AND_WANT_MORE",
-      "Have and don't want more": "HAVE_AND_DONT_WANT_MORE",
-      "Have and don’t want more": "HAVE_AND_DONT_WANT_MORE",
-      HAVE_AND_DONT_WANT_MORE: "HAVE_AND_DONT_WANT_MORE",
-      "Open / Not sure yet": "OPEN_OR_NOT_SURE_YET",
-      "Open / Not Sure yet": "OPEN_OR_NOT_SURE_YET",
-      OPEN_OR_NOT_SURE_YET: "OPEN_OR_NOT_SURE_YET",
+      Want: "Want",
+      WANT: "Want",
+      "Don't want": "Don’t want",
+      "Don’t want": "Don’t want",
+      DONT_WANT: "Don’t want",
+      "Have and want more": "Have and want more",
+      HAVE_AND_WANT_MORE: "Have and want more",
+      "Have and don't want more": "Have and don’t want more",
+      "Have and don’t want more": "Have and don’t want more",
+      HAVE_AND_DONT_WANT_MORE: "Have and don’t want more",
+      "Open / Not sure yet": "Open / Not Sure yet",
+      "Open / Not Sure yet": "Open / Not Sure yet",
+      OPEN_OR_NOT_SURE_YET: "Open / Not Sure yet",
     },
     professional_identity: {
       "Corporate Professional": "PROFESSIONAL",
@@ -2351,14 +2351,14 @@ export default function EditProfilePage() {
                       >
                         <option value="">Select Pets Preference</option>
                         <option value="Want">Want</option>
-                        <option value="Don’t want">Don't want</option>
+                        <option value="Don't want">Don't want</option>
                         <option value="Have and want more">
                           Have and want more
                         </option>
-                        <option value="Have and don’t want more">
+                        <option value="Have and don't want more">
                           Have and don't want more
                         </option>
-                        <option value="OPEN_OR_NOT_SURE_YET">
+                        <option value="Open / Not sure yet">
                           Open / Not sure yet
                         </option>
                       </select>
@@ -2662,15 +2662,15 @@ export default function EditProfilePage() {
                       >
                         <option value="">Select Children Preference</option>
 
-                        <option value="WANT">Want</option>
-                        <option value="DONT_WANT">Don't want</option>
-                        <option value="HAVE_AND_WANT_MORE">
+                        <option value="Want">Want</option>
+                        <option value="Don't want">Don't want</option>
+                        <option value="Have and want more">
                           Have and want more
                         </option>
-                        <option value="HAVE_AND_DONT_WANT_MORE">
+                        <option value="Have and don't want more">
                           Have and don't want more
                         </option>
-                        <option value="OPEN_OR_NOT_SURE_YET">
+                        <option value="Open / Not sure yet">
                           Open / Not sure yet
                         </option>
                       </select>
