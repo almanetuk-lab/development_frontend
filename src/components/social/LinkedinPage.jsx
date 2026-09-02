@@ -9,7 +9,7 @@ export default function LinkedInPage() {
   const [password, setPassword] = useState("");
 
   const handleLinkedInRedirect = () => {
-    window.open("https://linkedin.com", "_blank");
+    window.open("https://www.linkedin.com/company/intentional-connections/", "_blank");
   };
 
   const handleLogin = (e) => {
