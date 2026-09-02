@@ -249,6 +249,7 @@ export const UserProfileProvider = ({ children }) => {
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [lastSeenMap, setLastSeenMap] = useState({});
 
   // Fetch all notifications from API
   const fetchNotifications = async () => {
@@ -334,16 +335,24 @@ export const UserProfileProvider = ({ children }) => {
       setOnlineUsers(new Set(userIds.map(String)));
     });
 
-    newSocket.on("user_status_change", ({ userId, isOnline }) => {
+    newSocket.on("user_status_change", ({ userId, isOnline, lastSeen }) => {
+      const uId = String(userId);
       setOnlineUsers((prev) => {
         const next = new Set(prev);
         if (isOnline) {
-          next.add(String(userId));
+          next.add(uId);
         } else {
-          next.delete(String(userId));
+          next.delete(uId);
         }
         return next;
       });
+
+      if (!isOnline && lastSeen) {
+        setLastSeenMap((prev) => ({
+          ...prev,
+          [uId]: lastSeen,
+        }));
+      }
     });
 
     setSocket(newSocket);
@@ -417,6 +426,7 @@ export const UserProfileProvider = ({ children }) => {
   };
 
   const isUserOnline = (userId) => onlineUsers.has(String(userId));
+  const getLastSeen = (userId) => lastSeenMap[String(userId)] || null;
 
   const value = {
     profile,
@@ -438,6 +448,8 @@ export const UserProfileProvider = ({ children }) => {
     socket,
     onlineUsers,
     isUserOnline,
+    lastSeenMap,
+    getLastSeen,
   };
 
   return (
