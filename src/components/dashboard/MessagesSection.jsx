@@ -72,7 +72,7 @@ export default function MessagesSection() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [restrictionFeature, setRestrictionFeature] = useState(null);
 
-  const { socket, fetchNotifications, activePlan, planLoading, isFeatureAllowed, isUserOnline } = useUserProfile();
+  const { socket, fetchNotifications, activePlan, planLoading, isFeatureAllowed, isUserOnline, getLastSeen } = useUserProfile();
   const planStatus = {
     loading: planLoading,
     active: isFeatureAllowed("message"),
@@ -232,6 +232,20 @@ export default function MessagesSection() {
     }
   }, [location.state, currentUserId]);
 
+  // Sync selectedUser.last_seen from recentChats when recentChats loads
+  useEffect(() => {
+    if (selectedUser && recentChats.length > 0) {
+      const match = recentChats.find(
+        (c) => String(c.user_id) === String(selectedUser.id),
+      );
+      if (match && match.last_seen && match.last_seen !== selectedUser.last_seen) {
+        setSelectedUser((prev) =>
+          prev ? { ...prev, last_seen: match.last_seen } : prev,
+        );
+      }
+    }
+  }, [recentChats, selectedUser]);
+
   // Jab naya user select ho to scroll top se start karo - YEH NAYA EFFECT
   useEffect(() => {
     if (selectedUser) {
@@ -274,6 +288,7 @@ export default function MessagesSection() {
           id: firstChat.user_id,
           name: firstChat.name,
           email: firstChat.email,
+          last_seen: firstChat.last_seen,
           profile_picture_url: firstChat.profile_picture_url,
         };
         // Small delay to ensure state is set
@@ -294,6 +309,7 @@ export default function MessagesSection() {
       id: chat.user_id,
       name: chat.name,
       email: chat.email,
+      last_seen: chat.last_seen,
       profile_picture_url: chat.profile_picture_url,
     };
     handleUserSelect(user);
@@ -711,6 +727,7 @@ export default function MessagesSection() {
       id: user.id,
       name: cleanUserName(user.name || user.email?.split("@")[0] || "User"),
       email: user.email,
+      last_seen: user.last_seen,
       profile_picture_url: user.profile_picture_url,
     };
 
@@ -1067,6 +1084,54 @@ export default function MessagesSection() {
     });
   };
 
+  // FORMAT LAST SEEN
+  const formatLastSeen = (rawTimestamp) => {
+    if (!rawTimestamp) return "Offline";
+    const date = new Date(rawTimestamp);
+    if (isNaN(date.getTime())) return "Offline";
+
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+
+    if (diffSec < 60) {
+      return "Last seen just now";
+    }
+
+    const timeStr = date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    if (isToday) {
+      return `Last seen today at ${timeStr}`;
+    }
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear();
+
+    if (isYesterday) {
+      return `Last seen yesterday at ${timeStr}`;
+    }
+
+    const dayMonthStr = date.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+    });
+
+    return `Last seen ${dayMonthStr} at ${timeStr}`;
+  };
+
   // RENDER ATTACHMENT
   const renderAttachment = (message) => {
     if (!message.attachment_url) return null;
@@ -1214,7 +1279,9 @@ export default function MessagesSection() {
                     <p className="text-[10px] font-bold text-emerald-500">Online</p>
                   </div>
                 ) : (
-                  <p className="text-[10px] font-bold text-slate-400">Offline</p>
+                  <p className="text-[10px] font-bold text-slate-400 truncate">
+                    {formatLastSeen(selectedUser.last_seen || getLastSeen(selectedUser.id))}
+                  </p>
                 )}
               </div>
 
@@ -1516,7 +1583,9 @@ export default function MessagesSection() {
                     ) : (
                       <>
                         <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Offline</span>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          {formatLastSeen(selectedUser.last_seen || getLastSeen(selectedUser.id))}
+                        </span>
                       </>
                     )}
                   </div>
