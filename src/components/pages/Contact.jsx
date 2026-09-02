@@ -157,7 +157,7 @@ const ContactPage = () => {
       tips: [
         { label: "Flexible Plan Upgrades", desc: "Modify, upgrade, or pause your membership details in Profile Settings > Account & Billing." },
         { label: "Highly Secure Gateway", desc: "Transactions are processed using end-to-end industry standard bank-level encryption protocols." },
-        { label: "Direct Billing Support", desc: "Need assistance with invoices, payouts, or subscription refunds? Email us directly at billing@neratech.com." }
+        { label: "Direct Billing Support", desc: "Need assistance with invoices, payouts, or subscription refunds? Email us directly at support@intentionalconnections.app or almanetuk@gmail.com." }
       ]
     }
   };
@@ -298,7 +298,12 @@ const ContactPage = () => {
                   <FiMail size={20} />
                 </div>
                 <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Email Us</h3>
-                <p className="text-slate-600 text-sm">info@neratech.com</p>
+                <a href="mailto:almanetuk@gmail.com" className="text-blue-600 hover:text-[#FF2A6D] text-sm font-medium block">
+                  almanetuk@gmail.com
+                </a>
+                <a href="mailto:support@intentionalconnections.app" className="text-slate-600 hover:text-[#FF2A6D] text-xs block mt-0.5">
+                  support@intentionalconnections.app
+                </a>
                 <p className="text-xs text-slate-400 mt-2 font-medium">We'll reply within 24 hours</p>
               </div>
 
@@ -306,9 +311,10 @@ const ContactPage = () => {
                 <div className="w-12 h-12 bg-purple-50 text-purple-600 border border-purple-100 rounded-xl flex items-center justify-center mb-4 shadow-inner">
                   <FiMapPin size={20} />
                 </div>
-                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Visit Our Office</h3>
-                <p className="text-slate-600 text-sm">123 Dating Street, Suite 100</p>
-                <p className="text-xs text-slate-400 mt-2 font-medium">London, UK</p>
+                <h3 className="font-bold text-slate-800 mb-1 tracking-tight">Registered Office</h3>
+                <p className="text-slate-600 text-xs leading-relaxed">225 B, Woodgrange Drive</p>
+                <p className="text-slate-600 text-xs leading-relaxed">Southend-On-Sea, Essex, SS1 2SG</p>
+                <p className="text-xs text-slate-400 mt-1 font-medium">United Kingdom</p>
               </div>
             </div>
 
