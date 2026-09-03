@@ -1,0 +1,29 @@
+# Intentional Connections — robots.txt
+# App uses HashRouter: all routes are /#/route
+
+User-agent: *
+Allow: /
+
+# Block private/auth pages from indexing
+Disallow: /#/admin
+Disallow: /#/admin-login
+Disallow: /#/admin-dashboard
+Disallow: /#/dashboard
+Disallow: /#/edit-profile
+Disallow: /#/create-profile
+Disallow: /#/cart
+Disallow: /#/plans
+Disallow: /#/matches
+Disallow: /#/ai-suggestions
+Disallow: /#/members
+Disallow: /#/profile-views
+Disallow: /#/settings
+Disallow: /#/life-rhythms
+Disallow: /#/payment-success
+Disallow: /#/payment-failed
+Disallow: /#/reset-password
+Disallow: /#/coming-soon
+Disallow: /#/auth
+
+# Sitemap location
+Sitemap: https://intentionalconnections.app/sitemap.xml
