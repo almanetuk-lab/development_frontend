@@ -2,7 +2,7 @@ const AdminHeader = ({ activeSection = "Admin Portal", sidebarOpen, setSidebarOp
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminData");
-    window.location.href = "/#/";
+    window.location.href = "/";
   };
 
   return (
