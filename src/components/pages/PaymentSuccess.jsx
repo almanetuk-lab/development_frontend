@@ -88,7 +88,7 @@ export default function PaymentSuccess() {
           disabled={verifying}
           onClick={() => {
             setOpen(false);
-            window.location.href = "/#/dashboard";
+            window.location.href = "/dashboard";
           }}
           className="mt-4 px-8 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition duration-200 shadow-md disabled:opacity-50"
         >

@@ -61,7 +61,7 @@ const AdminLogin = () => {
     });
     
     // Force redirect to home page
-    window.location.href = '/#/';
+    window.location.href = '/';
   };
 
   return (

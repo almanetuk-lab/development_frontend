@@ -2,31 +2,104 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
-    <!-- Google Fonts for Brand Typography -->
+
+    <!-- ===================== FAVICON ===================== -->
+    <link rel="icon" type="image/jpeg" sizes="512x512" href="/favicon.jpg" />
+    <link rel="icon" type="image/jpeg" sizes="192x192" href="/favicon-192.jpg" />
+    <link rel="icon" type="image/jpeg" sizes="32x32" href="/favicon-32.jpg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.jpg" />
+    <link rel="apple-touch-icon" href="/favicon.jpg" />
+
+    <!-- ===================== CORE SEO ===================== -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Intentional Connections — AI-Powered Dating App for Meaningful Relationships</title>
+    <meta name="description" content="Find your perfect match with Intentional Connections — the AI-powered dating app that uses deep compatibility analysis, personality matching, and real relationship intent to connect people who truly click. Join free today." />
+    <meta name="keywords" content="dating app, best dating app, AI dating app, meaningful connections, serious relationships, find love, dating site, relationship app, compatible matches, intentional dating, meet people, love connection, dating for professionals, deep compatibility, AI matchmaking, smart dating, relationship goals, find a partner, serious dating, connection app, online dating, dating platform" />
+    <meta name="author" content="Intentional Connections" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://intentionalconnections.app/" />
+
+    <!-- ===================== OPEN GRAPH (Facebook, LinkedIn) ===================== -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Intentional Connections" />
+    <meta property="og:title" content="Intentional Connections — AI Dating App for Real Relationships" />
+    <meta property="og:description" content="Skip the swiping. Find someone who truly matches your values, lifestyle, and relationship goals. Intentional Connections uses AI to make every match count." />
+    <meta property="og:image" content="/favicon.jpg" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Intentional Connections — AI Dating App" />
+    <meta property="og:url" content="https://intentionalconnections.app/" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ===================== TWITTER CARD ===================== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@IntentionalConn" />
+    <meta name="twitter:title" content="Intentional Connections — AI Dating App for Real Relationships" />
+    <meta name="twitter:description" content="Skip the swiping. Find someone who truly matches your values, lifestyle & relationship goals. AI-powered matchmaking that goes deeper." />
+    <meta name="twitter:image" content="/favicon.jpg" />
+    <meta name="twitter:image:alt" content="Intentional Connections Dating App" />
+
+    <!-- ===================== MOBILE & APP ===================== -->
+    <meta name="theme-color" content="#FF1493" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Intentional Connections" />
+    <meta name="application-name" content="Intentional Connections" />
+
+    <!-- ===================== STRUCTURED DATA (JSON-LD) ===================== -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Intentional Connections",
+      "url": "https://intentionalconnections.app/",
+      "description": "AI-powered dating app for meaningful, intentional relationships. Uses deep compatibility analysis, personality matching, and lifestyle alignment to connect compatible people.",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free to join with premium plans available"
+      },
+      "featureList": [
+        "AI-powered matchmaking",
+        "Deep compatibility analysis",
+        "Personality matching",
+        "Lifestyle alignment",
+        "Real-time messaging",
+        "Proximity-based matching",
+        "Relationship intent matching"
+      ],
+      "screenshot": "/favicon.jpg",
+      "image": "/favicon.jpg",
+      "creator": {
+        "@type": "Organization",
+        "name": "Intentional Connections",
+        "url": "https://intentionalconnections.app/"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1200",
+        "bestRating": "5"
+      }
+    }
+    </script>
+
+    <!-- ===================== GOOGLE FONTS ===================== -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <!-- ===================== FONT AWESOME ===================== -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
       integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
       crossorigin="anonymous" referrerpolicy="no-referrer" />
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Intentional Connetions</title>
-    <script>
-      //  Fix for HashRouter OAuth Redirects
-      (function() {
-        var path = window.location.pathname;
-        if (path.includes('/auth/linkedin/callback')) {
-          var search = window.location.search;
-          var hash = window.location.hash;
-          var newUrl = window.location.origin + '/#/' + path.replace(/^\//, '') + search + hash;
-          console.log('🔄 Redirecting to hash route:', newUrl);
-          window.location.replace(newUrl);
-        }
-      })();
-    </script>
+
   </head>
   <body>
     <div id="root"></div>

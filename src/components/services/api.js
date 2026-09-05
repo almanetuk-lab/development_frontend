@@ -41,7 +41,7 @@ api.interceptors.response.use(
         console.error("❌ Token refresh failed:", refreshError.response?.data || refreshError.message);
         
         // Redirect to login
-        window.location.href = '/#/login';
+        window.location.href = '/login';
         
         return Promise.reject(refreshError);
       }

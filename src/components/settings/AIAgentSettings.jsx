@@ -87,7 +87,7 @@ export default function AIAgentSettings() {
           <span>⚠️</span>
           <span>
             <strong>No active plan detected.</strong> AI will not reply until you have an active subscription.{" "}
-            <a href="/#/dashboard/plans" className="underline font-medium">
+            <a href="/dashboard/plans" className="underline font-medium">
               Upgrade now →
             </a>
           </span>

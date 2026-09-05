@@ -588,7 +588,7 @@ const PrivacyPolicy = () => {
                 <p><strong>Supervisory Authority:</strong> UK Information Commissioner's Office (ICO) — <a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">https://ico.org.uk</a></p>
               </div>
               <p className="text-slate-500 text-xs mt-4">
-                We reserve the right to update this Privacy Policy periodically to reflect legal amendments, technological improvements, or operational changes. The latest version will always be maintained at <code>https://intentionalconnections.app/#/privacy-policy</code>.
+                We reserve the right to update this Privacy Policy periodically to reflect legal amendments, technological improvements, or operational changes. The latest version will always be maintained at <code>https://intentionalconnections.app/privacy-policy</code>.
               </p>
             </div>
           </section>

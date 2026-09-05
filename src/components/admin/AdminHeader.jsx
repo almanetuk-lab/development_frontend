@@ -9,7 +9,7 @@ const AdminHeader = ({ activeSection = "Admin Portal", sidebarOpen, setSidebarOp
       console.error('Admin logout API error:', err);
     }
     localStorage.removeItem("adminData");
-    window.location.href = "/#/";
+    window.location.href = "/";
   };
 
   return (
