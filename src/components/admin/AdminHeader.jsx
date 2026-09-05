@@ -1,6 +1,13 @@
+import axios from "axios";
+
 const AdminHeader = ({ activeSection = "Admin Portal", sidebarOpen, setSidebarOpen }) => {
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
+  const handleLogout = async () => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
+      await axios.post(`${API_BASE_URL}/api/admin/logout`, {}, { withCredentials: true });
+    } catch (err) {
+      console.error('Admin logout API error:', err);
+    }
     localStorage.removeItem("adminData");
     window.location.href = "/";
   };

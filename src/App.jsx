@@ -61,20 +61,21 @@ import CookieConsentBanner from "./components/comman/CookieConsentBanner";
 
 // Protected Route Component (For regular users)
 const UserProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("accessToken");
-  return token ? children : <Navigate to="/login" />;
+  const { isAuthenticated, loading } = useUserProfile();
+  if (loading) return <div className="flex items-center justify-center h-screen text-slate-500">Loading...</div>;
+  return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 // Public Route Component (Redirect to dashboard if logged in)
 const PublicRoute = ({ children }) => {
-  const token = localStorage.getItem("accessToken");
-  return !token ? children : <Navigate to="/dashboard" />;
+  const { isAuthenticated, loading } = useUserProfile();
+  if (loading) return <div className="flex items-center justify-center h-screen text-slate-500">Loading...</div>;
+  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
 };
 
 // Main Layout Component
 const MainLayout = ({ children }) => {
-  const token = localStorage.getItem("accessToken");
-  const { profile } = useUserProfile();
+  const { isAuthenticated, profile } = useUserProfile();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -96,7 +97,7 @@ const MainLayout = ({ children }) => {
 
   const activeSection = getActiveSection();
 
-  if (token) {
+  if (isAuthenticated) {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />

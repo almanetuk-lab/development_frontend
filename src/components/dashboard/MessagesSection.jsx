@@ -124,14 +124,7 @@ export default function MessagesSection() {
   };
 
   useEffect(() => {
-    console.log("🔑 Token check:");
-    console.log("Access Token:", localStorage.getItem("accessToken"));
-    console.log("Token length:", localStorage.getItem("accessToken")?.length);
-
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      console.log("Token starts with:", token.substring(0, 20) + "...");
-    }
+    console.log("🔑 Cookie-based auth active (no token in localStorage)");
   }, []);
 
   useEffect(() => {
@@ -573,10 +566,9 @@ export default function MessagesSection() {
   const checkCompatibility = async (partnerUserId) => {
     if (!partnerUserId || !currentUserId) return;
     try {
-      const token = localStorage.getItem("accessToken");
       const res = await fetch(
         `${API_BASE_URL}/api/ai-agent/compatibility/check/${partnerUserId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { credentials: "include" }
       );
       if (!res.ok) return;
       const data = await res.json();

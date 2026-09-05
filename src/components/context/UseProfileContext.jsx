@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getUserProfile } from "../services/api";
+import api from "../services/api";
 import io from "socket.io-client";
 import { chatApi } from "../services/chatApi";
 import { userAPI } from "../services/userApi";
@@ -18,21 +19,22 @@ export const useUserProfile = () => {
 export const UserProfileProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activePlan, setActivePlan] = useState({ active: false, days_left: 0, plan_name: "Free Plan" });
   const [planLoading, setPlanLoading] = useState(true);
 
   const fetchPlanStatus = async () => {
-    let token = localStorage.getItem("accessToken");
-    if (!token) {
-      setActivePlan({ active: false, days_left: 0, plan_name: "Free Plan" });
-      setPlanLoading(false);
-      return;
-    }
     try {
       setPlanLoading(true);
       const res = await userAPI.getPlanStatus();
       if (res.data) {
-        setActivePlan(res.data);
+        let planData = res.data;
+        if (typeof planData.allowed_features === "string") {
+          try {
+            planData.allowed_features = JSON.parse(planData.allowed_features);
+          } catch (e) {}
+        }
+        setActivePlan(planData);
       }
     } catch (error) {
       console.error("❌ Error fetching plan status in context:", error);
@@ -43,15 +45,6 @@ export const UserProfileProvider = ({ children }) => {
   };
 
   const loadProfile = async () => {
-    let token = localStorage.getItem("accessToken");
-
-    if (!token) {
-      console.log("🚫 No token found - clearing profile");
-      clearProfile();
-      setLoading(false);
-      return;
-    }
-
     try {
       console.log("🔄 Loading FRESH profile data from API...");
       const data = await getUserProfile();
@@ -157,10 +150,6 @@ export const UserProfileProvider = ({ children }) => {
 
           love_language_affection: userProfile.love_language_affection || "",
 
-          // love_language_affection: Array.isArray(userProfile.love_language_affection)
-          //   ? userProfile.love_language_affection
-          //   : userProfile.love_language_affection || [],
-
           preference_of_closeness: userProfile.preference_of_closeness || "",
           approach_to_physical_closeness: userProfile.approach_to_physical_closeness || "",
           relationship_values: userProfile.relationship_values || "",
@@ -182,6 +171,7 @@ export const UserProfileProvider = ({ children }) => {
 
         console.log("✅ Setting clean profile:", completeProfile);
         setProfile(completeProfile);
+        // Keep non-sensitive UI cache in localStorage
         localStorage.setItem("user_id", completeProfile.user_id);
         localStorage.setItem("userProfile", JSON.stringify(completeProfile));
       } else {
@@ -215,16 +205,33 @@ export const UserProfileProvider = ({ children }) => {
     }
   };
 
+  // On mount: check if user is authenticated via cookie-based auth check
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      loadProfile();
-      fetchPlanStatus();
-    } else {
-      console.log("⏸️ No token - clearing profile data");
-      clearProfile();
-      setLoading(false);
-    }
+    const checkAuth = async () => {
+      try {
+        console.log("🔐 Checking authentication via /api/auth/check...");
+        const res = await api.get("/api/auth/check");
+        if (res.data?.authenticated) {
+          console.log("✅ User is authenticated");
+          setIsAuthenticated(true);
+          // Load full profile and plan
+          await loadProfile();
+          await fetchPlanStatus();
+        } else {
+          console.log("⚠️ User is not authenticated");
+          setIsAuthenticated(false);
+          setProfile(null);
+          setLoading(false);
+        }
+      } catch (error) {
+        // 401 means not authenticated — this is expected for logged-out users
+        console.log("⏸️ Not authenticated (no valid cookie)");
+        setIsAuthenticated(false);
+        setProfile(null);
+        setLoading(false);
+      }
+    };
+    checkAuth();
   }, []);
 
   const updateProfile = (newProfileData) => {
@@ -233,9 +240,6 @@ export const UserProfileProvider = ({ children }) => {
     const updatedProfile = {
       ...profile,
       ...newProfileData,
-      //       life_rhythms: newProfileData.life_rhythms || profile?.life_rhythms || {},
-      // ways_i_spend_time: newProfileData.ways_i_spend_time || profile?.ways_i_spend_time || {},
-      // last_updated: new Date().toISOString(),
       last_updated: new Date().toISOString(),
     };
 
@@ -366,6 +370,17 @@ export const UserProfileProvider = ({ children }) => {
     };
   }, [profile?.user_id]);
 
+  // Logout — calls API to clear cookies then clears local state
+  const logout = async () => {
+    console.log("🚪 Logging out...");
+    try {
+      await api.post("/api/logout");
+    } catch (err) {
+      console.error("Logout API call failed (continuing anyway):", err);
+    }
+    clearProfile();
+  };
+
   const clearProfile = () => {
     console.log("🚪 Clearing ALL user data");
     if (socket) {
@@ -375,19 +390,20 @@ export const UserProfileProvider = ({ children }) => {
     setNotifications([]);
     setUnreadCount(0);
     setProfile(null);
+    setIsAuthenticated(false);
     setActivePlan({ active: false, days_left: 0, plan_name: "Free Plan" });
     setPlanLoading(false);
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    // Clear non-sensitive UI cache
     localStorage.removeItem("userProfile");
     localStorage.removeItem("user_id");
   };
 
-  const refreshProfile = () => {
+  const refreshProfile = async () => {
     console.log("🔄 Manually refreshing profile");
     setLoading(true);
-    loadProfile();
-    fetchPlanStatus();
+    setIsAuthenticated(true);
+    await loadProfile();
+    await fetchPlanStatus();
   };
 
   const hasCompleteProfile = () => {
@@ -411,13 +427,38 @@ export const UserProfileProvider = ({ children }) => {
       return !!defaultFreeFeatures[featureKey];
     }
     
-    // If they have an active plan, check allowed_features
-    if (activePlan.allowed_features) {
-      if (Array.isArray(activePlan.allowed_features)) {
-        return activePlan.allowed_features.includes(featureKey);
+    // Check allowed_features
+    let features = activePlan.allowed_features;
+    if (typeof features === "string") {
+      try {
+        features = JSON.parse(features);
+      } catch (e) {}
+    }
+
+    if (features) {
+      if (Array.isArray(features)) {
+        return features.includes(featureKey);
       }
-      if (typeof activePlan.allowed_features === 'object') {
-        return !!activePlan.allowed_features[featureKey];
+      if (typeof features === "object") {
+        if (features[featureKey] !== undefined) {
+          return !!features[featureKey];
+        }
+        // Aliases mapping for common feature names / modal keys
+        const aliases = {
+          messaging: "message",
+          messages: "message",
+          search: "advance_search",
+          basic: "basic_search",
+          advance: "advance_search",
+          suggestions: "ai_suggestion",
+          matches: "my_matches",
+          members: "browse_members",
+          profiles: "profile",
+        };
+        const mappedKey = aliases[featureKey];
+        if (mappedKey && features[mappedKey] !== undefined) {
+          return !!features[mappedKey];
+        }
       }
     }
     
@@ -429,22 +470,29 @@ export const UserProfileProvider = ({ children }) => {
   const getLastSeen = (userId) => lastSeenMap[String(userId)] || null;
 
   const value = {
+    // Auth state (replaces AuthProvider)
+    isAuthenticated,
+    loading,
+    logout,
+    // Profile state
     profile,
     updateProfile,
     clearProfile,
     refreshProfile,
-    loading,
     hasCompleteProfile: hasCompleteProfile(),
+    // Plan state
     activePlan,
     planLoading,
     refreshPlanStatus: fetchPlanStatus,
     isFeatureAllowed,
+    // Notifications
     notifications,
     unreadCount,
     notificationsLoading,
     fetchNotifications,
     markNotificationAsRead,
     markAllNotificationsAsRead,
+    // Socket & presence
     socket,
     onlineUsers,
     isUserOnline,
@@ -458,17 +506,3 @@ export const UserProfileProvider = ({ children }) => {
     </UserProfileContext.Provider>
   );
 };
-// export default UserProfileContext;
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,7 +9,7 @@ import Logo from "../comman/Logo";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { updateProfile, refreshProfile } = useUserProfile();
+  const { updateProfile, refreshProfile, isAuthenticated } = useUserProfile();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,11 +25,7 @@ export default function Login() {
       const code = codeResponse?.code;
       if (!code) throw new Error("No authorization code received from Google");
 
-      const { token, refresh, user } = await googleAuth(code);
-      if (!token) throw new Error("No token received from server");
-
-      localStorage.setItem("accessToken", token);
-      if (refresh) localStorage.setItem("refreshToken", refresh);
+      const { user } = await googleAuth(code);
 
       if (user) {
         updateProfile(user);
@@ -110,14 +106,9 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { token, refresh, user } = await loginUser({ email: trimmedEmail, password });
+      const { user } = await loginUser({ email: trimmedEmail, password });
 
-      if (!token) throw new Error("No token received from server");
-
-      // Save tokens & user info
-      localStorage.setItem("accessToken", token);
-      if (refresh) localStorage.setItem("refreshToken", refresh);
-
+      // Cookies are set automatically by the server
       if (user) {
         console.log("Login successful, updating profile context");
         updateProfile(user);
@@ -174,12 +165,11 @@ export default function Login() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
+    if (isAuthenticated) {
       console.log("🔄 User already logged in, redirecting to dashboard");
       navigate("/dashboard");
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8 sm:py-12 md:py-16 relative overflow-hidden">
@@ -342,12 +332,12 @@ export default function Login() {
 }
 
 export function LogoutButton() {
-  const { clearProfile } = useUserProfile();
+  const { logout } = useUserProfile();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log("🚪 Logging out...");
-    clearProfile();
+    await logout();
     localStorage.removeItem("currentUser");
     localStorage.removeItem("cart");
     alert("Logged out successfully!");

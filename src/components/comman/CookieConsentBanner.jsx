@@ -27,20 +27,17 @@ export default function CookieConsentBanner() {
     setIsVisible(false);
 
     // If user is logged in, log to backend security audit logs
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      try {
-        await fetch(`${API_BASE_URL}/api/privacy/consent`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ consentDetails: prefs }),
-        });
-      } catch (err) {
-        console.warn("Could not sync consent status with server:", err);
-      }
+    try {
+      await fetch(`${API_BASE_URL}/api/privacy/consent`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ consentDetails: prefs }),
+      });
+    } catch (err) {
+      console.warn("Could not sync consent status with server:", err);
     }
   };
 
