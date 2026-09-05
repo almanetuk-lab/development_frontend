@@ -16,7 +16,6 @@ export default function PrivacySettings() {
   const [exportLoading, setExportLoading] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
-  const token = localStorage.getItem("accessToken");
 
   // Load cookies from local storage
   useEffect(() => {
@@ -42,9 +41,9 @@ export default function PrivacySettings() {
     try {
       await fetch(`${API_BASE_URL}/api/privacy/consent`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ consentDetails: updated }),
       });
@@ -60,9 +59,7 @@ export default function PrivacySettings() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/privacy/export`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -99,9 +96,9 @@ export default function PrivacySettings() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/privacy/delete-account`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ password }),
       });

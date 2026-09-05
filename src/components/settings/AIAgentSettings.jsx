@@ -36,9 +36,8 @@ export default function AIAgentSettings() {
   useEffect(() => {
     const fetchPlanStatus = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
         const res = await fetch(`${API_BASE_URL}/api/me/plan-status`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
         });
         const data = await res.json();
         setPlanActive(!!data?.active);

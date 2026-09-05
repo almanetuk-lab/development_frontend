@@ -7,21 +7,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true, // Send httpOnly cookies with every request
 });
 
-// Request interceptor - automatically add token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// No request interceptor needed — cookies are sent automatically
 
 // Response interceptor - handle errors
 api.interceptors.response.use(
@@ -31,9 +20,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     if (error.response?.status === 401) {
-      // Auto logout if token expired
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminData');
+      // Auto redirect if token expired
       window.location.href = '/#/admin-login';
     }
     return Promise.reject(error);

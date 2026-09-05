@@ -15,11 +15,10 @@ export default function SubscriptionSettings() {
   useEffect(() => {
     const fetchPlanStatus = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
         
         const res = await fetch(`${API_BASE_URL}/api/me/plan-status`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
         });
         const data = await res.json();
 
@@ -52,12 +51,9 @@ export default function SubscriptionSettings() {
           return;
         }
 
-        const token = localStorage.getItem("accessToken");
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
         const res = await fetch(`${API_BASE_URL}/payments/${user_id}`, {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
+          credentials: "include",
         });
         const data = await res.json();
         setPayments(Array.isArray(data) ? data : []);

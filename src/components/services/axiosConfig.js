@@ -9,37 +9,10 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Send httpOnly cookies with every request
 });
 
-// FIXED INTERCEPTOR
-api.interceptors.request.use(
-  (config) => {
-    // Check which token to use based on URL/context
-    const isAdminRoute = config.url?.includes('/admin') || 
-                         config.url?.includes('/admin/') ||
-                         config.url?.includes('/blogs/create') ||
-                         config.url?.includes('/blogs/update') ||
-                         config.url?.includes('/blogs/delete') ||
-                         config.url?.includes('/settings/');
-    
-    if (isAdminRoute) {
-      // Admin routes ke liye adminToken
-      const adminToken = localStorage.getItem("adminToken");
-      if (adminToken) {
-        config.headers.Authorization = `Bearer ${adminToken}`;
-      }
-    } else {
-      // Normal user routes ke liye accessToken
-      const accessToken = localStorage.getItem("accessToken");
-      if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
-      }
-    }
-    
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// No request interceptor needed — cookies are sent automatically
 
 // Response interceptor for token expiry
 api.interceptors.response.use(
@@ -49,8 +22,6 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     if (error.response?.status === 401) {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('adminToken');
       window.location.href = '/#/login';
     }
     return Promise.reject(error);
@@ -58,16 +29,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-
-
-
-
-
-
-
-
-
-
-
-

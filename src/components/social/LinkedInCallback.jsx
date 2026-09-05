@@ -33,7 +33,7 @@ useEffect(() => {
             
             console.log('🔗 Sending code to backend:', apiUrl);
             
-            const response = await fetch(apiUrl);
+            const response = await fetch(apiUrl, { credentials: 'include' });
             console.log('Response status:', response.status);
             
             if (!response.ok) {
@@ -43,15 +43,8 @@ useEffect(() => {
             const data = await response.json();
             console.log('✅ Backend response:', data);
             
-            //  Check response structure
-            if (data.success && data.token) {
-                // Save tokens
-                localStorage.setItem('accessToken', data.token);
-                
-                if (data.refreshToken) {
-                    localStorage.setItem('refreshToken', data.refreshToken);
-                }
-                
+            //  Check response structure — cookies are set by the server
+            if (data.success) {
                 if (data.user) {
                     localStorage.setItem('currentUser', JSON.stringify(data.user));
                     updateProfile(data.user);
