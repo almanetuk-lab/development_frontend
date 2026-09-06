@@ -21,11 +21,12 @@ const AdminLogin = () => {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
       const response = await axios.post(
         `${API_BASE_URL}/api/admin/login`, 
-        formData
+        formData,
+        { withCredentials: true }
       );
       
       if (response.data.status === "success") {
-        localStorage.setItem('adminToken', response.data.token);
+        // Cookie is set by the server — just store non-sensitive admin data
         localStorage.setItem('adminData', JSON.stringify(response.data.admin));
         navigate('/admin');
       } else {
@@ -40,28 +41,27 @@ const AdminLogin = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      // Clear all admin related data
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminData');
-      sessionStorage.removeItem('adminSession');
-      
-      // Clear any other related storage
-      const keys = Object.keys(localStorage);
-      keys.forEach(key => {
-        if (key.startsWith('admin')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
-      // Force redirect to home page
-      window.location.href = '/';
-      
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3435';
+      await axios.post(`${API_BASE_URL}/api/admin/logout`, {}, { withCredentials: true });
     } catch (error) {
-      console.error('Logout error:', error);
-      window.location.href = '/';
+      console.error('Admin logout API error (continuing anyway):', error);
     }
+    // Clear non-sensitive admin data
+    localStorage.removeItem('adminData');
+    sessionStorage.removeItem('adminSession');
+    
+    // Clear any other related storage
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('admin')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Force redirect to home page
+    window.location.href = '/';
   };
 
   return (

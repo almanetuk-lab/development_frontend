@@ -72,11 +72,7 @@ export default function Register() {
       const code = codeResponse?.code;
       if (!code) throw new Error("No authorization code received from Google");
 
-      const { token, refresh, user } = await googleAuth(code);
-      if (!token) throw new Error("No token received from server");
-
-      localStorage.setItem("accessToken", token);
-      if (refresh) localStorage.setItem("refreshToken", refresh);
+      const { user } = await googleAuth(code);
 
       if (user) {
         updateProfile(user);
@@ -286,8 +282,6 @@ export default function Register() {
 
     try {
       localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
 
       if (updateProfile) {
         updateProfile(null);
@@ -310,8 +304,6 @@ export default function Register() {
       toast.success("Registration successful! Please login with your new account.");
 
       localStorage.removeItem("user");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
 
       if (updateProfile) {
         updateProfile(null);
@@ -573,8 +565,6 @@ export default function Register() {
               to="/login"
               onClick={() => {
                 localStorage.removeItem("user");
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
               }}
               className="font-bold text-[#FF2A6D] hover:text-[#e0105a] transition"
             >

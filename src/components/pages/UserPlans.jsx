@@ -80,12 +80,11 @@ export default function UserPlans() {
       }
 
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
-      const token = localStorage.getItem("accessToken");
       const response = await fetch(`${API_BASE_URL}/payments/create-checkout-session`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ plan, user_id }),
       });

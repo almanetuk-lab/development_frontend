@@ -11,19 +11,10 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Send httpOnly cookies with every request
 });
 
-// ===== api intersptr NEW CODE start =====
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// No request interceptor needed — cookies are sent automatically
 
 api.interceptors.response.use(
   (response) => response,
@@ -34,6 +25,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 // ==================== CHAT APIS ====================
 
