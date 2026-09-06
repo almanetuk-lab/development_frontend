@@ -13,41 +13,82 @@ const api = axios.create({
 // Response interceptor for automatic token refresh (no request interceptor needed — cookies are automatic)
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     if (axios.isCancel(error)) {
       return Promise.reject(error);
     }
+
     const originalRequest = error.config;
 
-    // If 401 and haven't retried yet, attempt to refresh the cookie-based token
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      console.log("🔄 Token expired, trying to refresh...");
-      
-      try {
-        // Call refresh endpoint — cookies are sent automatically
-        await axios.post(
-          `${API_BASE_URL}/api/refreshtoken`,
-          {},
-          { withCredentials: true }
-        );
-
-        console.log("✅ Token refreshed via cookie");
-        
-        // Retry original request (new cookie is already set by the server)
-        return api(originalRequest);
-      } catch (refreshError) {
-        console.error("❌ Token refresh failed:", refreshError.response?.data || refreshError.message);
-        
-        // Redirect to login
-        window.location.href = '/login';
-        
-        return Promise.reject(refreshError);
-      }
+    // No response / network error
+    if (!error.response) {
+      return Promise.reject(error);
     }
-    
-    return Promise.reject(error);
+
+    // Only handle 401
+    if (error.response.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    const requestUrl = originalRequest?.url || "";
+
+    // NEVER try to refresh for these endpoints
+    const excludedEndpoints = [
+      "/api/refreshtoken",
+      "/api/login",
+      "/api/register",
+      "/api/auth/google",
+      "/api/auth/check",
+      "/api/admin/login",
+    ];
+
+    const shouldSkipRefresh = excludedEndpoints.some((endpoint) =>
+      requestUrl.includes(endpoint)
+    );
+
+    if (shouldSkipRefresh) {
+      return Promise.reject(error);
+    }
+
+    // Prevent retrying the same request multiple times
+    if (originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    console.log("🔄 Access token expired, trying to refresh...");
+
+    try {
+      // Use plain axios intentionally so this request
+      // doesn't go through the api interceptor again.
+      await axios.post(
+        `${API_BASE_URL}/api/refreshtoken`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+
+      console.log("✅ Token refreshed via cookie");
+
+      // Retry original request with new cookie
+      return api(originalRequest);
+
+    } catch (refreshError) {
+      console.error(
+        "❌ Refresh token expired or invalid:",
+        refreshError.response?.data || refreshError.message
+      );
+
+      // Don't reload /login repeatedly
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+
+      return Promise.reject(refreshError);
+    }
   }
 );
 
