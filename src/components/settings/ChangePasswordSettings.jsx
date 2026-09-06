@@ -44,14 +44,13 @@ export default function ChangePasswordSettings() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("accessToken");
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
       const res = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           currentPassword: passwords.currentPassword,

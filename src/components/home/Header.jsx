@@ -9,7 +9,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, clearProfile } = useUserProfile();
+  const { profile, logout, isAuthenticated } = useUserProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
@@ -23,21 +23,12 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
     return location.pathname === path || location.pathname.startsWith(path);
   };
 
-  const checkLoginStatus = () => {
-    const userToken = localStorage.getItem("accessToken");
-    const adminToken = localStorage.getItem("adminToken");
-    return !!(userToken || adminToken);
-  };
+  const isLoggedIn = isAuthenticated;
 
-  const isLoggedIn = checkLoginStatus();
-
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminData");
-    localStorage.removeItem("user");
-    clearProfile();
+  const handleLogout = async () => {
+    await logout();
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("cart");
     setIsMobileMenuOpen(false);
     setIsProfileDropdownOpen(false);
     navigate("/");
@@ -271,7 +262,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
               <>
 
                 {/* Notification Bell */}
-                {localStorage.getItem("accessToken") && <NotificationBell />}
+                {isAuthenticated && <NotificationBell />}
 
                 {/* Profile Icon / Avatar Dropdown */}
                 <div ref={desktopProfileDropdownRef} className="relative">
@@ -442,7 +433,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
           {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center gap-3">
 
-            {isLoggedIn && localStorage.getItem("accessToken") && (
+            {isLoggedIn && isAuthenticated && (
               <div className="mr-1">
                 <NotificationBell />
               </div>

@@ -18,16 +18,15 @@ import UserPlans from "../pages/UserPlans";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 export default function UserDashboard() {
-  const { profile, loading, isFeatureAllowed } = useUserProfile();
+  const { profile, loading, isFeatureAllowed, isAuthenticated } = useUserProfile();
   const navigate = useNavigate();
 
-  // Redirect if no token
+  // Redirect if not authenticated
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    if (!loading && !isAuthenticated) {
       navigate("/login");
     }
-  }, [navigate]);
+  }, [loading, isAuthenticated, navigate]);
 
   // Loading state
   if (loading) {

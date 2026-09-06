@@ -7,104 +7,95 @@ console.log("api_url:", API_BASE_URL);
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true, // Send httpOnly cookies with every request
 });
 
-// ONLY REQUEST INTERCEPTOR Token attach karne ke liye hai 
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ADDED: RESPONSE INTERCEPTOR for automatic token refresh
+// Response interceptor for automatic token refresh (no request interceptor needed — cookies are automatic)
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     if (axios.isCancel(error)) {
       return Promise.reject(error);
     }
+
     const originalRequest = error.config;
 
-    // Agar 401 error hai aur pehle try nahi kiya
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      console.log("🔄 Token expired, trying to refresh...");
-      
-      try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        
-        if (!refreshToken) {
-          console.log("⚠️ No refresh token available");
-          // Logout user
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
-          localStorage.removeItem("user");
-          window.location.href = '/login';
-          return Promise.reject(error);
-        }
-
-        //  ACTUAL REFRESH TOKEN API CALL
-        const refreshResponse = await axios.post(
-          `${API_BASE_URL}/api/refreshtoken`,
-          {},
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${refreshToken}`
-            }
-          }
-        );
-
-        const newAccessToken = refreshResponse.data.accessToken;
-        
-        if (newAccessToken) {
-          // Save new access token
-          localStorage.setItem("accessToken", newAccessToken);
-          console.log("✅ New access token saved");
-          
-          // Update original request header
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          
-          // Retry original request
-          return api(originalRequest);
-        } else {
-          throw new Error("No access token received from refresh");
-        }
-      } catch (refreshError) {
-        console.error("❌ Token refresh failed:", refreshError.response?.data || refreshError.message);
-        
-        // Logout user
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-        window.location.href = '/login';
-        
-        return Promise.reject(refreshError);
-      }
+    // No response / network error
+    if (!error.response) {
+      return Promise.reject(error);
     }
-    
-    return Promise.reject(error);
+
+    // Only handle 401
+    if (error.response.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    const requestUrl = originalRequest?.url || "";
+
+    // NEVER try to refresh for these endpoints
+    const excludedEndpoints = [
+      "/api/refreshtoken",
+      "/api/login",
+      "/api/register",
+      "/api/auth/google",
+      "/api/auth/check",
+      "/api/admin/login",
+    ];
+
+    const shouldSkipRefresh = excludedEndpoints.some((endpoint) =>
+      requestUrl.includes(endpoint)
+    );
+
+    if (shouldSkipRefresh) {
+      return Promise.reject(error);
+    }
+
+    // Prevent retrying the same request multiple times
+    if (originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    console.log("🔄 Access token expired, trying to refresh...");
+
+    try {
+      // Use plain axios intentionally so this request
+      // doesn't go through the api interceptor again.
+      await axios.post(
+        `${API_BASE_URL}/api/refreshtoken`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+
+      console.log("✅ Token refreshed via cookie");
+
+      // Retry original request with new cookie
+      return api(originalRequest);
+
+    } catch (refreshError) {
+      console.error(
+        "❌ Refresh token expired or invalid:",
+        refreshError.response?.data || refreshError.message
+      );
+
+      // Don't reload /login repeatedly
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+
+      return Promise.reject(refreshError);
+    }
   }
 );
 
-// Normalize response
+// Normalize response — no longer extracts tokens
 export const normalizeAuthResponse = (data = {}) => {
-  const token = data?.accessToken || data?.token || data?.access_token || null;
-  const refresh = data?.refreshToken || data?.refresh_token || null;
   const user = data?.user_profile || data?.user || data?.profile_info || null;
-  
-  //  Save refresh token if available
-  if (refresh) {
-    localStorage.setItem("refreshToken", refresh);
-  }
-  
-  return { token, refresh, user };
+  return { user };
 };
 
 // Login API
@@ -112,17 +103,7 @@ export const loginUser = async ({ email, password }) => {
   try {
     const res = await api.post("/api/login", { email, password });
     const data = res.data;
-    
-    // Manual token save (Interceptor ki jagah)
-    if (data.accessToken || data.token) {
-      localStorage.setItem("accessToken", data.accessToken || data.token);
-    }
-    
-    //  Save refresh token
-    if (data.refreshToken || data.refresh_token) {
-      localStorage.setItem("refreshToken", data.refreshToken || data.refresh_token);
-    }
-    
+    // Cookies are set automatically by the server response
     return normalizeAuthResponse(data);
   } catch (err) {
     throw err;
@@ -144,17 +125,7 @@ export const registerUser = async (formData) => {
   try {
     const res = await api.post("/api/register", formData);
     const data = res.data;
-    
-    // Manual token save
-    if (data.accessToken || data.token) {
-      localStorage.setItem("accessToken", data.accessToken || data.token);
-    }
-    
-    // Save refresh token
-    if (data.refreshToken || data.refresh_token) {
-      localStorage.setItem("refreshToken", data.refreshToken || data.refresh_token);
-    }
-    
+    // Cookies are set automatically by the server response
     return normalizeAuthResponse(data);
   } catch (err) {
     throw err;
@@ -167,32 +138,12 @@ export const googleAuth = async (code) => {
   try {
     const res = await api.post("/api/auth/google", { code });
     const data = res.data;
-
-    if (data.accessToken || data.token) {
-      localStorage.setItem("accessToken", data.accessToken || data.token);
-    }
-
-    if (data.refreshToken || data.refresh_token) {
-      localStorage.setItem("refreshToken", data.refreshToken || data.refresh_token);
-    }
-
+    // Cookies are set automatically by the server response
     return normalizeAuthResponse(data);
   } catch (err) {
     throw err;
   }
 };
-
-// Update Profile API -  YEHA SE YAHA TAK KA CODE SAME HAI
-// export const updateUserProfile = async (profileData) => {
-//   try {
-//     const res = await api.put("/api/editProfile", profileData);
-//     return res.data;
-//   } catch (err) {
-//     console.error("Update Profile Error:", err.response?.data || err.message);
-//     throw err;
-//   }
-// };
-
 
 // Update Profile API - SAME (Already correct)
 export const updateUserProfile = async (profileData) => {
@@ -250,16 +201,6 @@ export const getUserProfile = async () => {
   }
 };
 
-// // Get User Profile API
-// export const getUserProfile = async () => {
-//   try {
-//     const res = await api.get("/api/me");
-//     return res.data;
-//   } catch (err) {
-//     throw err;
-//   }
-// };
-
 //  Image Upload API HAI
 export const uploadImage = (formData) => {
   return api.post('/api/upload', formData, {
@@ -284,40 +225,18 @@ export const removeProfileImage = (user_id) => {
   });
 };
 
-//  UPDATED: Refresh Token API (Now actual API call)
+// Refresh Token API — simplified for cookie-based auth
 export const refreshAuthToken = async () => {
   try {
     console.log("🔄 Attempting token refresh...");
     
-    const refreshToken = localStorage.getItem("refreshToken");
-    
-    if (!refreshToken) {
-      throw new Error("No refresh token available");
-    }
-
-    const response = await axios.post(
+    await axios.post(
       `${API_BASE_URL}/api/refreshtoken`,
       {},
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${refreshToken}`
-        }
-      }
+      { withCredentials: true }
     );
 
-    const newAccessToken = response.data.accessToken;
-    
-    if (newAccessToken) {
-      localStorage.setItem("accessToken", newAccessToken);
-      return { 
-        token: newAccessToken, 
-        refresh: refreshToken,
-        success: true 
-      };
-    }
-    
-    throw new Error("No access token received from refresh");
+    return { success: true };
   } catch (error) {
     console.error("❌ Token refresh failed:", error.response?.data || error.message);
     throw error;
@@ -341,111 +260,3 @@ export const updateAiAgentConfig = async ({ enabled, instructions }) => {
 };
 
 export default api;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

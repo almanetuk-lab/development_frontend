@@ -3,18 +3,12 @@ import axios from "axios";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 const BASE_URL = `${API_BASE}/api`;
 
-/**
- * 🛠️ AUTHENTICATION HELPER
- * Ensures the security token (JWT) is attached to every private request.
- */
-const getAuthHeaders = () => {
-    const token = localStorage.getItem("accessToken");
-    return {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    };
-};
+// Axios instance with cookie-based auth — no manual headers needed
+const plansApi = axios.create({
+    baseURL: API_BASE,
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true, // Send httpOnly cookies with every request
+});
 
 /**
  * 📋 FETCH ALL PLANS
@@ -31,10 +25,9 @@ export const fetchPlans = async () => {
  * Securely adds a plan to the logged-in user's database record.
  */
 export const addToCart = async (planId) => {
-    // We send only plan_id; the server identifies the user by the token in the headers.
-    const res = await axios.post(`${BASE_URL}/cart`, {
+    const res = await plansApi.post(`/api/cart`, {
         plan_id: planId
-    }, getAuthHeaders());
+    });
     return res.data;
 };
 
@@ -43,6 +36,6 @@ export const addToCart = async (planId) => {
  * Marks a plan as purchased for the current user.
  */
 export const buyPlan = async (planId) => {
-    const res = await axios.put(`${BASE_URL}/cart/buy/${planId}`, {}, getAuthHeaders());
+    const res = await plansApi.put(`/api/cart/buy/${planId}`, {});
     return res.data;
 };

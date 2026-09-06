@@ -66,9 +66,8 @@ export default function AdminPlans({
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
       const res = await axios.get(`${API_BASE_URL}/api/settings/get-member-approval`, {
-        headers: { Authorization: `Bearer ${token}` }
+        withCredentials: true
       });
       if (res.data) {
         setSettings(res.data);
@@ -83,9 +82,8 @@ export default function AdminPlans({
       setSettingsLoading(true);
       const updated = { ...settings, [key]: value ? 1 : 0 };
       setSettings(updated);
-      const token = localStorage.getItem("adminToken");
       await axios.put(`${API_BASE_URL}/api/settings/update-member-approval`, updated, {
-        headers: { Authorization: `Bearer ${token}` }
+        withCredentials: true
       });
     } catch (e) {
       console.error("Failed to update setting:", e);
