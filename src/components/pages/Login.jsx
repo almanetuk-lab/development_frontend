@@ -32,10 +32,7 @@ export default function Login() {
         localStorage.setItem("currentUser", JSON.stringify(user));
       }
 
-      setTimeout(() => {
-        refreshProfile();
-      }, 500);
-
+      await refreshProfile();
       navigate("/dashboard");
     } catch (err) {
       console.error("Google login error:", err);
@@ -116,10 +113,7 @@ export default function Login() {
         console.log("💾 User data saved to localStorage for chat:", user);
       }
 
-      setTimeout(() => {
-        refreshProfile();
-      }, 500);
-
+      await refreshProfile();
       navigate("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
