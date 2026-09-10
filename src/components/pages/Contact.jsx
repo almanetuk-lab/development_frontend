@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { FiMail, FiMapPin, FiInfo, FiShield, FiCreditCard, FiX, FiCheck } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { contactSchema, validateForm } from '../../validations/authSchemas';
 
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
@@ -33,78 +34,15 @@ const ContactPage = () => {
     e.preventDefault();
     setError("");
 
-    // 1. Name Validation
-    const name = (formData.name || "").trim();
-    if (!name) {
-      const msg = "Name is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (name.length < 2 || name.length > 100) {
-      const msg = "Name must be between 2 and 100 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (!/^[a-zA-Z\s\-]+$/.test(name)) {
-      const msg = "Name can only contain letters, spaces, and hyphens.";
-      setError(msg);
-      toast.error(msg);
+    // ── Zod Validation ──────────────────────────────────────────────────────
+    const result = validateForm(contactSchema, formData);
+    if (!result.success) {
+      setError(result.firstError);
+      toast.error(result.firstError);
       return;
     }
 
-    // 2. Email Validation
-    const email = (formData.email || "").trim();
-    if (!email) {
-      const msg = "Email address is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (email.length > 100) {
-      const msg = "Email address cannot exceed 100 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      const msg = "Please enter a valid email address.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // 3. Subject Validation
-    const subject = (formData.subject || "").trim();
-    if (!subject) {
-      const msg = "Subject is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (subject.length < 3 || subject.length > 200) {
-      const msg = "Subject must be between 3 and 200 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // 4. Message Validation
-    const message = (formData.message || "").trim();
-    if (!message) {
-      const msg = "Message is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (message.length < 10 || message.length > 5000) {
-      const msg = "Message must be between 10 and 5000 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
+    const { name, email, subject, message } = result.data;
 
     setIsSubmitting(true);
 
