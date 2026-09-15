@@ -6,6 +6,7 @@ import { useUserProfile } from "../context/UseProfileContext";
 import { FaLinkedin, FaGoogle } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import Logo from "../comman/Logo";
+import { loginSchema, validateForm } from "../../validations/authSchemas";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -81,32 +82,17 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setError("Email address is required.");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    if (!password) {
-      setError("Password is required.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    // ── Zod Validation ──────────────────────────────────────────────────────
+    const result = validateForm(loginSchema, { email, password });
+    if (!result.success) {
+      setError(result.firstError);
       return;
     }
 
     setLoading(true);
 
     try {
-      const { user } = await loginUser({ email: trimmedEmail, password });
+      const { user } = await loginUser(result.data);
 
       // Cookies are set automatically by the server
       if (user) {

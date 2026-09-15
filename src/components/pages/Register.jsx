@@ -7,6 +7,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { FaLinkedin, FaGoogle } from "react-icons/fa";
 import Logo from "../comman/Logo";
 import { toast } from "react-toastify";
+import { registerSchema, validateForm } from "../../validations/authSchemas";
 
 
 export default function Register() {
@@ -140,143 +141,15 @@ export default function Register() {
       return;
     }
 
-    // 1. First Name Validation
-    const firstName = (form.first_name || "").trim();
-    if (!firstName) {
-      const msg = "First name is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (firstName.length < 2 || firstName.length > 50) {
-      const msg = "First name must be between 2 and 50 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (!/^[a-zA-Z\s\-]+$/.test(firstName)) {
-      const msg = "First name can only contain letters, spaces, and hyphens.";
-      setError(msg);
-      toast.error(msg);
+    // ── Zod Validation ──────────────────────────────────────────────────────
+    const result = validateForm(registerSchema, form);
+    if (!result.success) {
+      setError(result.firstError);
+      toast.error(result.firstError);
       return;
     }
 
-    // 2. Last Name Validation
-    const lastName = (form.last_name || "").trim();
-    if (!lastName) {
-      const msg = "Last name is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (lastName.length < 2 || lastName.length > 50) {
-      const msg = "Last name must be between 2 and 50 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (!/^[a-zA-Z\s\-]+$/.test(lastName)) {
-      const msg = "Last name can only contain letters, spaces, and hyphens.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // 3. Username Validation
-    let username = (form.username || "").trim().toLowerCase();
-    if (!username) {
-      const msg = "Username is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    const usernameRegex = /^(?!.*\.\.)(?!\.)(?!.*\.$)[a-z0-9._]{3,30}$/;
-    if (!usernameRegex.test(username)) {
-      const msg = "Username must be 3–30 characters, lowercase, and can contain letters, numbers, dots (.), or underscores (_). Dots cannot be consecutive or at the start/end.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // 4. Profession Validation
-    const profession = (form.profession || "").trim();
-    if (!profession) {
-      const msg = "Profession is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (profession.length < 2 || profession.length > 100) {
-      const msg = "Profession must be between 2 and 100 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (!/^[a-zA-Z0-9\s\-\.\,]+$/.test(profession)) {
-      const msg = "Profession can only contain letters, numbers, spaces, hyphens, periods, and commas.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // 5. Email Validation
-    const email = (form.email || "").trim();
-    if (!email) {
-      const msg = "Email address is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (email.length > 100) {
-      const msg = "Email address cannot exceed 100 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      const msg = "Please enter a valid email address.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // 6. About Me Validation
-    const aboutMe = (form.about_me || "").trim();
-    if (!aboutMe) {
-      const msg = "About Me section is required to build your psychological matching profile.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (aboutMe.length < 10 || aboutMe.length > 1000) {
-      const msg = "About Me section must be between 10 and 1000 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // 7. Password Validation
-    const password = form.password;
-    if (!password) {
-      const msg = "Password is required.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    if (password.length < 8 || password.length > 100) {
-      const msg = "Password must be between 8 and 100 characters.";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,100}$/;
-    if (!passwordRegex.test(password)) {
-      const msg = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).";
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
+    const { first_name: firstName, last_name: lastName, email, password, profession, username, about_me: aboutMe } = result.data;
 
     setLoading(true);
 
