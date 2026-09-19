@@ -128,6 +128,19 @@ const MainLayout = ({ children }) => {
   );
 };
 
+// Home Route Component (Landing page is for logged-out visitors only)
+// Renders Home immediately so anonymous visitors never see a loader, and
+// redirects once the auth check has resolved.
+const HomeRoute = () => {
+  const { isAuthenticated, loading } = useUserProfile();
+  if (!loading && isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return (
+    <MainLayout>
+      <Home />
+    </MainLayout>
+  );
+};
+
 // ✅ PlanForm component alag banayein
 const PlanFormWrapper = () => {
   return <AdminAddNewPlan />;
@@ -267,14 +280,7 @@ export default function App() {
         />
 
         {/* Public Routes WITH Header & Footer */}
-        <Route
-          path="/"
-          element={
-            <MainLayout>
-              <Home />
-            </MainLayout>
-          }
-        />
+        <Route path="/" element={<HomeRoute />} />
         <Route
           path="/login"
           element={
