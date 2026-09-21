@@ -283,6 +283,13 @@ export default function AdvancedSearch() {
     performSearch();
   };
 
+  // Near Me can't search until coordinates are resolved, so it has no results to skeleton.
+  const nearMeNeedsLocation =
+    activeTab === "nearme" && (locationDenied || !filters.lat || !filters.lon);
+  const showSkeletons =
+    (loading || planLoading || (activeTab === "nearme" && locationLoading)) &&
+    !nearMeNeedsLocation;
+
   return (
     <div className="w-full">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -760,7 +767,20 @@ export default function AdvancedSearch() {
           </div>
 
           {/* Search Results Block */}
-          {searchResults.length > 0 && (
+          {showSkeletons ? (
+            <div className="mt-8 border-t border-slate-200 pt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="h-6 w-44 bg-slate-100 rounded animate-pulse"></div>
+              </div>
+
+              {/* Skeleton grid mirrors the real result card layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <SearchResultSkeleton key={i} showDistance={activeTab === "nearme"} />
+                ))}
+              </div>
+            </div>
+          ) : searchResults.length > 0 ? (
             <div className="mt-8 border-t border-slate-200 pt-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-slate-800 tracking-tight text-lg">
@@ -899,10 +919,8 @@ export default function AdvancedSearch() {
                 </div>
               )}
             </div>
-          )}
-
-          {/* No results block */}
-          {!loading && searchResults.length === 0 && (
+          ) : nearMeNeedsLocation ? null : (
+            /* No results block */
             <div className="text-center py-12 text-slate-400 font-semibold text-sm">
               <i className="fa-solid fa-circle-info text-slate-350 text-2xl block mb-2"></i>
               No profiles found matching your filters.
@@ -918,6 +936,36 @@ export default function AdvancedSearch() {
           onClose={() => setRestrictionFeature(null)} 
         />
       )}
+    </div>
+  );
+}
+
+function SearchResultSkeleton({ showDistance = false }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between animate-pulse">
+      <div className="flex items-start gap-4">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex-shrink-0"></div>
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="h-4 bg-slate-100 rounded w-2/3"></div>
+          <div className="h-3 bg-slate-100 rounded w-1/2"></div>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <div className="h-4 bg-slate-100 rounded-md w-16"></div>
+            <div className="h-4 bg-slate-100 rounded-md w-12"></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <div className="h-3 bg-slate-100 rounded w-full"></div>
+        <div className="h-3 bg-slate-100 rounded w-4/5"></div>
+      </div>
+
+      {showDistance && <div className="mt-3 h-7 bg-slate-50 rounded-lg"></div>}
+
+      <div className="border-t border-slate-150 pt-4 mt-4 flex gap-2">
+        <div className="h-8 bg-slate-100 rounded-xl flex-1"></div>
+        <div className="h-8 bg-slate-100 rounded-xl flex-1"></div>
+      </div>
     </div>
   );
 }
