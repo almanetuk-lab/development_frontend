@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { useUserProfile } from "../context/UseProfileContext";
 import DashboardHome from "./DashboardContent";
-import MessagesSection from "./MessagesSection";
+import MessagesGate from "./MessagesGate";
 import ProfilePage from "../profiles/ProfilePage";
 import EditProfilePage from "../profiles/EditProfile";
 import MatchesPage from "../MatchSystem/MatchesPage";
@@ -66,7 +66,7 @@ export default function UserDashboard() {
       <Route index element={isFeatureAllowed("dashboard") ? <DashboardHome profile={profile} /> : <PlanRestrictionModal feature="dashboard" />} />
       <Route path="profile/:userId?" element={<ProfilePage />} />
       <Route path="edit-profile" element={isFeatureAllowed("edit_profile") ? <EditProfilePage /> : <PlanRestrictionModal feature="edit_profile" />} />
-      <Route path="messages" element={<MessagesSection />} />
+      <Route path="messages" element={<MessagesGate />} />
       <Route path="search" element={<AdvancedSearch />} />
       <Route path="matches" element={<MatchesPage />} />
       <Route path="ai-suggestions" element={<AISuggestions />} />
