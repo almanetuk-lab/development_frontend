@@ -37,10 +37,6 @@ export const chatApi = {
 
   getPlanStatus: () => api.get("/api/me/plan-status"),
 
-  // SEARCH PROFILES
-  searchProfiles: (searchParams) =>
-    api.get("/search", { params: searchParams }),
-
   // Get messages between users
   getMessages: (userId, currentUserId) => {
     return api.get(`/api/messages/${userId}?myUserId=${currentUserId}`);
