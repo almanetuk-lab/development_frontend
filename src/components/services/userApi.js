@@ -32,10 +32,6 @@ export const userAPI = {
   // 🔐 PLAN STATUS
   getPlanStatus: () => userApi.get("/api/me/plan-status"),
 
-  // 🔍 SEARCH MEMBERS (USED IN MemberPage)
-  searchProfiles: (params) =>
-    userApi.get("/search", { params }),
-
   // 💬 CHAT (if needed later)
   getMessages: (userId) =>
     userApi.get(`/api/messages/${userId}`),

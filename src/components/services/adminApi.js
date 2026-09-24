@@ -60,7 +60,6 @@ export const adminAPI = {
     }),
 
       // SEARCH PROFILES - Add this line only
-  searchProfiles: (searchParams) => api.get('/search', { params: searchParams }),
 
    // NOTIFICATION APIS ADDED
   getUserNotifications: (userId) => 
