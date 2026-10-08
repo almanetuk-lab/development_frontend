@@ -13,6 +13,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader.jsx";
 import AdminModelDetails from "./AdminModelDetails.jsx";
+import AdminAbuseAlerts from "./AdminAbuseAlerts.jsx";
+import useAdminSocket from "./useAdminSocket.js";
 import { toast } from "react-toastify";
 
 const AdminDashboard = () => {
@@ -44,10 +46,13 @@ const AdminDashboard = () => {
     if (path.includes("/admin/reports")) return "reports";
     if (path.includes("/admin/contacts")) return "contacts";
     if (path.includes("/admin/newsletter")) return "newsletter";
+    if (path.includes("/admin/abuse-alerts")) return "abuse-alerts";
     return "dashboard";
   };
 
   const [activeSection, setActiveSection] = useState(getActiveSectionFromURL());
+  const { pendingCount: abuseAlertCount, refreshCount: refreshAbuseAlertCount, subscribe: subscribeAbuseAlerts } =
+    useAdminSocket(navigate);
   const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [userPage, setUserPage] = useState(1);
   const userItemsPerPage = 25;
@@ -391,7 +396,7 @@ const AdminDashboard = () => {
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
       {/* Use your new AdminSidebar */}
-      <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} abuseAlertCount={abuseAlertCount} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 relative">
@@ -1251,6 +1256,10 @@ const AdminDashboard = () => {
           <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
             <AdminReport />
           </div>
+        )}
+
+        {activeSection === "abuse-alerts" && (
+          <AdminAbuseAlerts subscribe={subscribeAbuseAlerts} refreshCount={refreshAbuseAlertCount} />
         )}
 
         {activeSection === "contacts" && (

@@ -495,16 +495,30 @@ export default function MessagesSection() {
       }
     };
 
+    // A moderator removed a message — replace its content in place
+    const handleMessageModerated = (data) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === data.id
+            ? { ...msg, content: data.content, attachment_url: data.attachment_url ?? null }
+            : msg
+        )
+      );
+      fetchRecentChats();
+    };
+
     socket.on("new_reaction", handleNewReaction);
     socket.on("new_message", handleIncomingMessage);
     socket.on("ai_typing", handleAiTyping);
     socket.on("messages_read", handleMessagesRead);
+    socket.on("message_moderated", handleMessageModerated);
 
     return () => {
       socket.off("new_message", handleIncomingMessage);
       socket.off("new_reaction", handleNewReaction);
       socket.off("ai_typing", handleAiTyping);
       socket.off("messages_read", handleMessagesRead);
+      socket.off("message_moderated", handleMessageModerated);
     };
   }, [currentUserId, selectedUser, socket]);
 

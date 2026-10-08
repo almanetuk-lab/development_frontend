@@ -90,6 +90,13 @@ updateMemberApproval: (data) =>
 
   // Delete Newsletter subscription entry
   deleteNewsletterSubscription: (id) => api.delete(`/api/admin/newsletter-subscriptions/${id}`),
+
+  // Abuse alerts (chat moderation)
+  getFlaggedMessages: (params) => api.get('/api/admin/flagged-messages', { params }),
+  getFlaggedCount: () => api.get('/api/admin/flagged-messages/count'),
+  dismissFlag: (id, note) => api.post(`/api/admin/flagged-messages/${id}/dismiss`, { note }),
+  warnFlag: (id, note) => api.post(`/api/admin/flagged-messages/${id}/warn`, { note }),
+  deleteFlaggedMessage: (id, note) => api.delete(`/api/admin/flagged-messages/${id}`, { data: { note } }),
 };
 
 export default api;
