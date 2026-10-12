@@ -1,5 +1,6 @@
 // src/services/userApi.js
 import axios from "axios";
+import { installSuspensionHandler } from "./suspension";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
@@ -10,6 +11,9 @@ const userApi = axios.create({
   timeout: 10000,
   withCredentials: true, // Send httpOnly cookies with every request
 });
+
+// Ends the session and shows the suspension popup on 403 ACCOUNT_SUSPENDED
+installSuspensionHandler(userApi);
 
 // No request interceptor needed — cookies are sent automatically
 

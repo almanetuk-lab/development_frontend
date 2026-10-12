@@ -5,6 +5,7 @@ import api from "../services/api";
 import io from "socket.io-client";
 import { chatApi } from "../services/chatApi";
 import { userAPI } from "../services/userApi";
+import { handleSuspendedSession } from "../services/suspension";
 
 const UserProfileContext = createContext();
 
@@ -359,6 +360,13 @@ export const UserProfileProvider = ({ children }) => {
       }
     });
 
+    // Admin suspended this account: every open tab is sent to /login with the popup
+    newSocket.on("account_suspended", (payload) => {
+      console.warn("🚫 Account suspended — ending session");
+      newSocket.disconnect();
+      handleSuspendedSession(payload);
+    });
+
     setSocket(newSocket);
 
     // Fetch initial notifications once when the user opens the app or logs in
@@ -396,6 +404,7 @@ export const UserProfileProvider = ({ children }) => {
     // Clear non-sensitive UI cache
     localStorage.removeItem("userProfile");
     localStorage.removeItem("user_id");
+    localStorage.removeItem("currentUser");
   };
 
   const refreshProfile = async () => {

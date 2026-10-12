@@ -52,12 +52,19 @@ export const adminAPI = {
       reason: reason 
     }),
   
-  // Deactivate User - POST /api/admin/deactivate
-  deactivateUser: (userId, reason) => 
-    api.post('/api/admin/deactivate', { 
-      user_id: userId, 
-      reason: reason 
+  // Deactivate (suspend) User - POST /api/admin/deactivate
+  // Pass either durationDays or permanent: true. flagId links the ban to an abuse alert.
+  deactivateUser: (userId, { reason, durationDays, permanent, flagId } = {}) =>
+    api.post('/api/admin/deactivate', {
+      user_id: userId,
+      reason,
+      ...(permanent ? { permanent: true } : { duration_days: durationDays }),
+      ...(flagId ? { flag_id: flagId } : {}),
     }),
+
+  // Reactivate (unsuspend) User - POST /api/admin/reactivate
+  reactivateUser: (userId, note) =>
+    api.post('/api/admin/reactivate', { user_id: userId, note }),
 
       // SEARCH PROFILES - Add this line only
 
@@ -90,6 +97,13 @@ updateMemberApproval: (data) =>
 
   // Delete Newsletter subscription entry
   deleteNewsletterSubscription: (id) => api.delete(`/api/admin/newsletter-subscriptions/${id}`),
+
+  // Abuse alerts (chat moderation)
+  getFlaggedMessages: (params) => api.get('/api/admin/flagged-messages', { params }),
+  getFlaggedCount: () => api.get('/api/admin/flagged-messages/count'),
+  dismissFlag: (id, note) => api.post(`/api/admin/flagged-messages/${id}/dismiss`, { note }),
+  warnFlag: (id, note) => api.post(`/api/admin/flagged-messages/${id}/warn`, { note }),
+  deleteFlaggedMessage: (id, note) => api.delete(`/api/admin/flagged-messages/${id}`, { data: { note } }),
 };
 
 export default api;
