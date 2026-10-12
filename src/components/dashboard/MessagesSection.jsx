@@ -6,6 +6,7 @@ import EmojiPicker from "emoji-picker-react";
 import { useUserProfile } from "../context/UseProfileContext";
 import { toast } from "react-toastify";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
+import { RECIPIENT_UNAVAILABLE_CODE } from "../services/suspension";
 import {
   FiArrowLeft,
   FiPaperclip,
@@ -236,6 +237,11 @@ export default function MessagesSection() {
           prev ? { ...prev, last_seen: match.last_seen } : prev,
         );
       }
+      // Keep read-only state in step with the server (suspended / reactivated)
+      const available = match ? match.is_available !== false : undefined;
+      if (available !== undefined && available !== (selectedUser.is_available !== false)) {
+        setSelectedUser((prev) => (prev ? { ...prev, is_available: available } : prev));
+      }
     }
   }, [recentChats, selectedUser]);
 
@@ -304,6 +310,7 @@ export default function MessagesSection() {
       email: chat.email,
       last_seen: chat.last_seen,
       profile_picture_url: chat.profile_picture_url,
+      is_available: chat.is_available !== false,
     };
     handleUserSelect(user);
     setShowSidebar(false);
@@ -495,16 +502,30 @@ export default function MessagesSection() {
       }
     };
 
+    // A moderator removed a message — replace its content in place
+    const handleMessageModerated = (data) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === data.id
+            ? { ...msg, content: data.content, attachment_url: data.attachment_url ?? null }
+            : msg
+        )
+      );
+      fetchRecentChats();
+    };
+
     socket.on("new_reaction", handleNewReaction);
     socket.on("new_message", handleIncomingMessage);
     socket.on("ai_typing", handleAiTyping);
     socket.on("messages_read", handleMessagesRead);
+    socket.on("message_moderated", handleMessageModerated);
 
     return () => {
       socket.off("new_message", handleIncomingMessage);
       socket.off("new_reaction", handleNewReaction);
       socket.off("ai_typing", handleAiTyping);
       socket.off("messages_read", handleMessagesRead);
+      socket.off("message_moderated", handleMessageModerated);
     };
   }, [currentUserId, selectedUser, socket]);
 
@@ -831,7 +852,24 @@ export default function MessagesSection() {
   };
 
   // SEND MESSAGE
+  // Conversations with suspended members are read-only
+  const isChatReadOnly = selectedUser?.is_available === false;
+
+  const markChatUnavailable = (userId) => {
+    setSelectedUser((prev) =>
+      prev && String(prev.id) === String(userId) ? { ...prev, is_available: false } : prev,
+    );
+    setRecentChats((prev) =>
+      prev.map((c) => (String(c.user_id) === String(userId) ? { ...c, is_available: false } : c)),
+    );
+  };
+
+  const isRecipientUnavailableError = (error) =>
+    error.response?.status === 403 && error.response?.data?.code === RECIPIENT_UNAVAILABLE_CODE;
+
   const handleSendMessage = async () => {
+    if (isChatReadOnly) return;
+
     // phale status check karega yha pr
     if (!planStatus.active) {
       setRestrictionFeature("messaging");
@@ -903,8 +941,10 @@ export default function MessagesSection() {
       console.error("❌ Send failed:", error);
       setMessages((prev) => prev.filter((msg) => msg.id !== tempMsg.id));
 
-      //  ADDED: message limit handling
-      if (
+      if (isRecipientUnavailableError(error)) {
+        markChatUnavailable(selectedUser.id);
+        toast.info("This member is no longer available.");
+      } else if (
         error.response?.status === 403 &&
         error.response?.data?.code === "MESSAGE_LIMIT_EXCEEDED"
       ) {
@@ -920,6 +960,8 @@ export default function MessagesSection() {
 
   // ADD REACTION - PROPER REAL-TIME HANDLING
   const addReaction = async (messageId, emoji) => {
+    if (isChatReadOnly) return;
+
     // 🔒 PLAN EXPIRED
     if (!planStatus.active) {
       setRestrictionFeature("messaging");
@@ -962,6 +1004,11 @@ export default function MessagesSection() {
       setShowReactionPicker(null);
     } catch (err) {
       console.error("❌ Reaction failed:", err);
+      if (isRecipientUnavailableError(err)) {
+        markChatUnavailable(selectedUser?.id);
+        toast.info("This member is no longer available.");
+        return;
+      }
       alert("Failed to add reaction");
     }
   };
@@ -988,6 +1035,8 @@ export default function MessagesSection() {
 
   // FILE UPLOAD
   const handleFileUpload = async (file) => {
+    if (isChatReadOnly) return;
+
     // 🔒 PLAN EXPIRED
     if (!planStatus.active) {
       setRestrictionFeature("messaging");
@@ -1363,7 +1412,7 @@ export default function MessagesSection() {
                     className={`p-3 cursor-pointer transition-all duration-200 border-b border-slate-50 ${selectedUser?.id === chat.user_id
                       ? "bg-[#002060]/5 border-slate-100"
                       : "hover:bg-slate-50/70"
-                      }`}
+                      } ${chat.is_available === false ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-3">
                       {/* AVATAR WITH ONLINE INDICATOR */}
@@ -1415,6 +1464,11 @@ export default function MessagesSection() {
                         <div className="flex justify-between items-center">
                           <p className="font-semibold text-slate-800 truncate text-sm">
                             {cleanUserName(chat.name)}
+                            {chat.is_available === false && (
+                              <span className="ml-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                Unavailable
+                              </span>
+                            )}
                           </p>
                           <span className="text-[10px] font-bold text-slate-400">
                             {new Date(
@@ -1882,7 +1936,13 @@ export default function MessagesSection() {
                     </button>
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 sm:gap-2">
+                {isChatReadOnly && (
+                  <div className="flex items-center justify-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-500">
+                    <span aria-hidden="true">🚫</span>
+                    This member is no longer available. You can read your conversation, but not send new messages.
+                  </div>
+                )}
+                <div className={`flex items-center gap-1.5 sm:gap-2 ${isChatReadOnly ? "hidden" : ""}`}>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={fileUploading || !planStatus.active}

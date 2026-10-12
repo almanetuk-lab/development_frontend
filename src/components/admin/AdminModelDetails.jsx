@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { adminAPI } from "../services/adminApi";
 import ImageModal from "../comman/ImageModal";
+import BanUserModal, { ReactivateUserModal } from "./BanUserModal";
 import { toast } from "react-toastify";
 
 // LifeRhythmsDisplay Component
@@ -386,6 +387,13 @@ function Section({ title, children }) {
 }
 
 // MAIN COMPONENT
+const LIFT_LABELS = { expired: "Expired", reactivated: "Reactivated", replaced: "Replaced" };
+
+const formatDateTime = (value) =>
+  value
+    ? new Date(value).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "";
+
 export default function AdminModelDetails() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -394,6 +402,9 @@ export default function AdminModelDetails() {
   const [error, setError] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [modalImage, setModalImage] = useState({ isOpen: false, url: "", title: "" });
+  const [showBanModal, setShowBanModal] = useState(false);
+  const [showReactivateModal, setShowReactivateModal] = useState(false);
+  const [statusBusy, setStatusBusy] = useState(false);
 
   useEffect(() => {
     fetchModelDetails();
@@ -471,22 +482,36 @@ export default function AdminModelDetails() {
     }
   };
 
-  const handleDeactivate = async () => {
-    const reason = prompt("Please enter reason for deactivation:");
-    if (!reason) return;
+  const handleDeactivate = () => setShowBanModal(true);
 
+  const confirmBan = async ({ reason, durationDays, permanent }) => {
+    setStatusBusy(true);
     try {
-      await adminAPI.deactivateUser(userId, reason);
-      
-      setModel(prev => ({
-        ...prev,
-        status: "deactivate",
-        current_status: "deactivate"
-      }));
-      toast.success("User profile deactivated");
+      await adminAPI.deactivateUser(userId, { reason, durationDays, permanent });
+      setShowBanModal(false);
+      toast.success(permanent ? "Member suspended permanently" : `Member suspended for ${durationDays} day(s)`);
+      await fetchModelDetails();
     } catch (error) {
       console.error("Deactivate error:", error);
-      toast.error("Failed to deactivate user");
+      toast.error(error.response?.data?.message || "Failed to suspend member");
+    } finally {
+      setStatusBusy(false);
+    }
+  };
+
+  const confirmReactivate = async (note) => {
+    setStatusBusy(true);
+    try {
+      await adminAPI.reactivateUser(userId, note);
+      setShowReactivateModal(false);
+      toast.success("Member reactivated");
+      await fetchModelDetails();
+    } catch (error) {
+      console.error("Reactivate error:", error);
+      toast.error(error.response?.data?.message || "Failed to reactivate member");
+      if (error.response?.status === 409) await fetchModelDetails();
+    } finally {
+      setStatusBusy(false);
     }
   };
 
@@ -526,6 +551,12 @@ export default function AdminModelDetails() {
     );
   }
 
+  // Suspended accounts can only be restored through Reactivate (keeps ban history consistent)
+  const isSuspended = model.status === "deactivate";
+  const displayName = model.first_name || model.last_name
+    ? `${model.first_name || ""} ${model.last_name || ""}`.trim()
+    : model.email;
+
   return (
     <div className="max-w-6xl mx-auto animate-fade-in space-y-6">
       {/* Action Header Card */}
@@ -539,7 +570,7 @@ export default function AdminModelDetails() {
                   model.status === "in process" ? "bg-amber-50 text-amber-700 border-amber-100" :
                   model.status === "on hold" ? "bg-orange-50 text-orange-700 border-orange-100" :
                   "bg-rose-50 text-rose-700 border-rose-100"}`}>
-                {model.status || "IN PROCESS"}
+                {isSuspended ? "suspended" : model.status || "IN PROCESS"}
               </span>
               <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 rounded-full bg-slate-50 border border-slate-150">
                 ID: {model.user_id || model.id}
@@ -565,24 +596,37 @@ export default function AdminModelDetails() {
             Back to List
           </button>
           
-          <button
-            onClick={handleOnHold}
-            className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-          >
-            On Hold
-          </button>
-          <button
-            onClick={handleDeactivate}
-            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-          >
-            Deactivate
-          </button>
-          <button
-            onClick={handleApprove}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-xs cursor-pointer"
-          >
-            Approve Profile
-          </button>
+          {isSuspended ? (
+            <>
+              <button
+                onClick={() => setShowReactivateModal(true)}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-xs cursor-pointer"
+              >
+                Reactivate
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleOnHold}
+                className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+              >
+                On Hold
+              </button>
+              <button
+                onClick={handleDeactivate}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+              >
+                Deactivate
+              </button>
+              <button
+                onClick={handleApprove}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-xs cursor-pointer"
+              >
+                Approve Profile
+              </button>
+            </>
+          )}
         </div>
 
         {/* Action Buttons - Mobile */}
@@ -594,27 +638,81 @@ export default function AdminModelDetails() {
             >
               Back
             </button>
-            <button
-              onClick={handleOnHold}
-              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-            >
-              On Hold
-            </button>
-            <button
-              onClick={handleDeactivate}
-              className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-            >
-              Deactivate
-            </button>
-            <button
-              onClick={handleApprove}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-            >
-              Approve
-            </button>
+            {isSuspended ? (
+              <>
+                <button
+                  onClick={() => setShowReactivateModal(true)}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-xs cursor-pointer"
+                >
+                  Reactivate
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleOnHold}
+                  className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                >
+                  On Hold
+                </button>
+                <button
+                  onClick={handleDeactivate}
+                  className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                >
+                  Deactivate
+                </button>
+                <button
+                  onClick={handleApprove}
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+                >
+                  Approve
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
+
+      {/* Suspension details + history */}
+      {(isSuspended || model.ban_history?.length > 0) && (
+        <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xs p-6 space-y-4">
+          {isSuspended && (
+            <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4">
+              <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2">Currently suspended</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
+                <div><span className="font-bold text-slate-500">Reason:</span> {model.ban?.reason || model.status_reason || "—"}</div>
+                <div><span className="font-bold text-slate-500">Until:</span> {model.ban ? (model.ban.is_permanent ? "Permanent" : formatDateTime(model.ban.banned_until)) : "Ended — awaiting automatic lift"}</div>
+                <div><span className="font-bold text-slate-500">Since:</span> {formatDateTime(model.ban?.banned_at) || "—"}</div>
+                <div><span className="font-bold text-slate-500">By:</span> {model.ban?.banned_by_name || (model.ban?.banned_by ? `Admin #${model.ban.banned_by}` : "—")}</div>
+              </div>
+            </div>
+          )}
+          {model.ban_history?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                Suspension history ({model.ban_history.length})
+              </p>
+              <div className="divide-y divide-slate-100 border border-slate-100 rounded-2xl">
+                {model.ban_history.map((b) => (
+                  <div key={b.id} className="p-3 text-xs text-slate-600 flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <div className="min-w-0">
+                      <span className="font-bold text-slate-800">{b.banned_until ? `Until ${formatDateTime(b.banned_until)}` : "Permanent"}</span>
+                      <span className="text-slate-400"> · {formatDateTime(b.banned_at)} by {b.banned_by_name || (b.banned_by ? `Admin #${b.banned_by}` : "system")}</span>
+                      <div className="break-words">{b.reason}</div>
+                    </div>
+                    <div className="shrink-0 font-semibold">
+                      {b.lifted_at
+                        ? `${LIFT_LABELS[b.lift_reason] || "Lifted"} ${formatDateTime(b.lifted_at)}${b.lifted_by_name ? ` by ${b.lifted_by_name}` : ""}`
+                        : <span className="text-rose-600">Active</span>}
+                      {b.lift_note && <div className="italic text-slate-400">“{b.lift_note}”</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Profile Header Info Card */}
       <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xs p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -851,6 +949,21 @@ export default function AdminModelDetails() {
         imageUrl={modalImage.url}
         title={modalImage.title}
         onClose={() => setModalImage({ isOpen: false, url: "", title: "" })}
+      />
+
+      <BanUserModal
+        isOpen={showBanModal}
+        userName={displayName}
+        submitting={statusBusy}
+        onClose={() => setShowBanModal(false)}
+        onConfirm={confirmBan}
+      />
+      <ReactivateUserModal
+        isOpen={showReactivateModal}
+        userName={displayName}
+        submitting={statusBusy}
+        onClose={() => setShowReactivateModal(false)}
+        onConfirm={confirmReactivate}
       />
     </div>
   );

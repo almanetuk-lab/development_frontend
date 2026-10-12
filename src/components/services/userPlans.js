@@ -1,4 +1,5 @@
 import axios from "axios";
+import { installSuspensionHandler } from "./suspension";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 const BASE_URL = `${API_BASE}/api`;
@@ -9,6 +10,9 @@ const plansApi = axios.create({
     headers: { "Content-Type": "application/json" },
     withCredentials: true, // Send httpOnly cookies with every request
 });
+
+// Ends the session and shows the suspension popup on 403 ACCOUNT_SUSPENDED
+installSuspensionHandler(plansApi);
 
 /**
  * 📋 FETCH ALL PLANS

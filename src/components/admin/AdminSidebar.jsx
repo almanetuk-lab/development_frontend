@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 
-const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOpen }) => {
+const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOpen, abuseAlertCount = 0 }) => {
   const [localOpen, setLocalOpen] = useState(false);
   const sidebarOpen = externalOpen !== undefined ? externalOpen : localOpen;
   const setSidebarOpen = setExternalOpen !== undefined ? setExternalOpen : setLocalOpen;
@@ -14,6 +14,7 @@ const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOp
     { path: '/admin/plans', label: 'Plans', icon: 'fa-solid fa-credit-card' },
     { path: '/admin/blogs', label: 'Blogs', icon: 'fa-solid fa-blog' },
     { path: '/admin/reports', label: 'Reports', icon: 'fa-solid fa-flag' },
+    { path: '/admin/abuse-alerts', label: 'Abuse Alerts', icon: 'fa-solid fa-triangle-exclamation', badge: abuseAlertCount },
     { path: '/admin/contacts', label: 'Contacts', icon: 'fa-solid fa-envelope' },
     { path: '/admin/newsletter', label: 'Newsletter', icon: 'fa-solid fa-paper-plane' },
   ];
@@ -80,6 +81,13 @@ const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOp
                     isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'
                   }`}></i>
                   <span>{item.label}</span>
+                  {item.badge > 0 && (
+                    <span className={`ml-auto min-w-5 h-5 px-1.5 rounded-full text-[10px] font-black flex items-center justify-center ${
+                      isActive ? 'bg-white text-[#FF2A6D]' : 'bg-[#FF2A6D] text-white'
+                    }`}>
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>
