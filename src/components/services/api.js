@@ -1,4 +1,5 @@
 import axios from "axios";
+import { installSuspensionHandler, isSuspendedError, handleSuspendedSession } from "./suspension";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
@@ -9,6 +10,9 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
   withCredentials: true, // Send httpOnly cookies with every request
 });
+
+// Ends the session and shows the suspension popup on 403 ACCOUNT_SUSPENDED
+installSuspensionHandler(api);
 
 // Response interceptor for automatic token refresh (no request interceptor needed — cookies are automatic)
 api.interceptors.response.use(
@@ -81,6 +85,12 @@ api.interceptors.response.use(
         "❌ Refresh token expired or invalid:",
         refreshError.response?.data || refreshError.message
       );
+
+      // Refresh refused because the account is suspended → show the popup on /login
+      if (isSuspendedError(refreshError)) {
+        handleSuspendedSession(refreshError.response.data);
+        return Promise.reject(refreshError);
+      }
 
       // Don't reload /login repeatedly
       if (window.location.pathname !== "/login") {

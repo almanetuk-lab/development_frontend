@@ -7,6 +7,8 @@ import { FaLinkedin, FaGoogle } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import Logo from "../comman/Logo";
 import { loginSchema, validateForm } from "../../validations/authSchemas";
+import AccountSuspendedModal from "../comman/AccountSuspendedModal";
+import { isSuspendedError, takeSuspension, SUSPENDED_EVENT } from "../services/suspension";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,6 +20,19 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [linkedinLoading, setLinkedinLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  // Suspension payload from a login attempt, a redirect, or a live event
+  const [suspension, setSuspension] = useState(null);
+
+  useEffect(() => {
+    // Read in an effect (not the state initializer) so StrictMode's double
+    // initializer call can't consume the payload and lose it.
+    const stored = takeSuspension();
+    if (stored) setSuspension(stored);
+
+    const onSuspended = (e) => setSuspension(e.detail);
+    window.addEventListener(SUSPENDED_EVENT, onSuspended);
+    return () => window.removeEventListener(SUSPENDED_EVENT, onSuspended);
+  }, []);
 
   const handleGoogleSuccess = async (codeResponse) => {
     setError("");
@@ -40,6 +55,10 @@ export default function Login() {
       navigate("/dashboard");
     } catch (err) {
       console.error("Google login error:", err);
+      if (isSuspendedError(err)) {
+        setSuspension(err.response.data);
+        return;
+      }
       const msg =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
@@ -109,6 +128,10 @@ export default function Login() {
       navigate("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
+      if (isSuspendedError(err)) {
+        setSuspension(err.response.data);
+        return;
+      }
       const msg =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
@@ -313,6 +336,14 @@ export default function Login() {
           </p>
         </div>
       </div>
+
+      <AccountSuspendedModal
+        isOpen={!!suspension}
+        onClose={() => setSuspension(null)}
+        reason={suspension?.reason}
+        bannedUntil={suspension?.banned_until}
+        isPermanent={suspension?.is_permanent}
+      />
     </div>
   );
 }

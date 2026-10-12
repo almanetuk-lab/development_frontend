@@ -206,7 +206,7 @@ const UsersList = () => {
                               : "bg-rose-50 text-rose-700 border-rose-100"
                           }`}
                         >
-                          {user.status}
+                          {suspensionLabel(user)}
                         </span>
                       </td>
                     </tr>
@@ -251,6 +251,14 @@ const UsersList = () => {
       )}
     </div>
   );
+};
+
+// Show suspensions as "Suspended until <date>" / "Suspended (permanent)" instead of the raw status
+const suspensionLabel = (user) => {
+  if (user.status !== "Deactivate") return user.status;
+  if (!user.banned_until) return "Suspended (permanent)";
+  const until = new Date(user.banned_until);
+  return until > new Date() ? `Suspended until ${until.toLocaleDateString()}` : "Suspension ended";
 };
 
 export default UsersList;

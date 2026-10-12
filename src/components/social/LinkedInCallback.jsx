@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useUserProfile } from '../context/UseProfileContext';
+import { isSuspendedPayload, storeSuspension } from '../services/suspension';
 const LinkedInCallback = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -37,6 +38,13 @@ useEffect(() => {
             console.log('Response status:', response.status);
             
             if (!response.ok) {
+                // A suspended account goes to /login, which shows the suspension popup
+                const body = await response.json().catch(() => null);
+                if (isSuspendedPayload(body)) {
+                    storeSuspension(body);
+                    navigate('/login');
+                    return;
+                }
                 throw new Error(`Backend error: ${response.status}`);
             }
             

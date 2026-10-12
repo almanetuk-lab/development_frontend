@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { adminAPI } from "../services/adminApi";
+import BanUserModal from "./BanUserModal";
 
 const STATUS_TABS = [
   { key: "pending", label: "Pending" },
@@ -35,14 +36,6 @@ const CONFIRM_COPY = {
     confirm: "Remove Message",
     required: false,
     tone: "bg-rose-600 hover:bg-rose-700",
-  },
-  deactivate: {
-    title: "Deactivate sender",
-    body: "The sender's account is deactivated and they are notified with the reason below.",
-    inputLabel: "Reason (required)",
-    confirm: "Deactivate User",
-    required: true,
-    tone: "bg-slate-950 hover:bg-slate-900",
   },
 };
 
@@ -90,6 +83,7 @@ export default function AdminAbuseAlerts({ subscribe, refreshCount }) {
   const [busyId, setBusyId] = useState(null);
   const [confirm, setConfirm] = useState(null); // { action, flag }
   const [confirmText, setConfirmText] = useState("");
+  const [banTarget, setBanTarget] = useState(null); // flag whose sender is being suspended
 
   const fetchFlags = useCallback(async () => {
     setLoading(true);
@@ -162,6 +156,10 @@ export default function AdminAbuseAlerts({ subscribe, refreshCount }) {
     runFlagAction(flag, () => adminAPI.dismissFlag(flag.id), "Alert dismissed", "Failed to dismiss alert");
 
   const openConfirm = (action, flag) => {
+    if (action === "deactivate") {
+      setBanTarget(flag);
+      return;
+    }
     setConfirm({ action, flag });
     setConfirmText("");
   };
@@ -184,21 +182,26 @@ export default function AdminAbuseAlerts({ subscribe, refreshCount }) {
         "Message removed",
         "Failed to remove message",
       );
-    } else if (action === "deactivate") {
-      setBusyId(flag.id);
-      try {
-        await adminAPI.deactivateUser(flag.sender_id, text);
-        toast.success("User deactivated");
-        // Reflect the new status on every alert from this sender.
-        setRows((prev) =>
-          prev.map((r) => (r.sender_id === flag.sender_id ? { ...r, sender_status: "Deactivate" } : r)),
-        );
-      } catch (err) {
-        console.error("Failed to deactivate user", err);
-        toast.error(err.response?.data?.message || "Failed to deactivate user");
-      } finally {
-        setBusyId(null);
-      }
+    }
+  };
+
+  // Suspend the sender; the ban is linked to this alert via flag_id
+  const confirmBan = async ({ reason, durationDays, permanent }) => {
+    const flag = banTarget;
+    setBusyId(flag.id);
+    try {
+      await adminAPI.deactivateUser(flag.sender_id, { reason, durationDays, permanent, flagId: flag.id });
+      setBanTarget(null);
+      toast.success(permanent ? "Sender suspended permanently" : `Sender suspended for ${durationDays} day(s)`);
+      // Reflect the new status on every alert from this sender.
+      setRows((prev) =>
+        prev.map((r) => (r.sender_id === flag.sender_id ? { ...r, sender_status: "Deactivate" } : r)),
+      );
+    } catch (err) {
+      console.error("Failed to suspend user", err);
+      toast.error(err.response?.data?.message || "Failed to suspend user");
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -405,6 +408,14 @@ export default function AdminAbuseAlerts({ subscribe, refreshCount }) {
           </div>
         )}
       </div>
+
+      <BanUserModal
+        isOpen={!!banTarget}
+        userName={banTarget?.sender_name || (banTarget ? `User #${banTarget.sender_id}` : "")}
+        submitting={busyId === banTarget?.id}
+        onClose={() => setBanTarget(null)}
+        onConfirm={confirmBan}
+      />
 
       {/* Confirm dialog */}
       {confirm && (
