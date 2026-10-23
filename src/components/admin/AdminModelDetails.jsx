@@ -5,6 +5,29 @@ import ImageModal from "../comman/ImageModal";
 import BanUserModal, { ReactivateUserModal } from "./BanUserModal";
 import { toast } from "react-toastify";
 
+// Helper to safely format any value into a displayable string (prevents React child object errors)
+export const toDisplayString = (val) => {
+  if (val === undefined || val === null || val === "") return "";
+  if (typeof val === "object") {
+    if (Array.isArray(val)) {
+      return val.map(toDisplayString).filter(Boolean).join(", ");
+    }
+    const entries = Object.entries(val);
+    if (entries.length === 0) return "";
+    // If it's a map of booleans (e.g. { reading: true, music: false })
+    const truthyKeys = entries.filter(([, v]) => v === true).map(([k]) => k);
+    if (truthyKeys.length > 0) return truthyKeys.join(", ");
+    const parts = entries
+      .map(([k, v]) => {
+        if (v === null || v === undefined || v === "") return null;
+        return typeof v === "object" ? `${k}: ${JSON.stringify(v)}` : `${k}: ${v}`;
+      })
+      .filter(Boolean);
+    return parts.join(", ");
+  }
+  return String(val);
+};
+
 // LifeRhythmsDisplay Component
 function LifeRhythmsDisplay({ data }) {
   if (!data || typeof data !== "object") {
@@ -48,7 +71,7 @@ function LifeRhythmsDisplay({ data }) {
     <div className="space-y-4">
       {Object.entries(rhythmSections).map(([key, section]) => {
         const rhythmData = rhythmsData[key];
-        if (!rhythmData) return null;
+        if (!rhythmData || (typeof rhythmData === "object" && Object.keys(rhythmData).length === 0)) return null;
 
         return (
           <div
@@ -66,18 +89,18 @@ function LifeRhythmsDisplay({ data }) {
               {rhythmData.combination ? (
                 <div>
                   <p className="text-xs font-bold text-slate-800">
-                    {rhythmData.combination}
+                    {toDisplayString(rhythmData.combination)}
                   </p>
                   {rhythmData.statement && (
                     <p className="text-[11px] text-slate-500 mt-1 italic font-medium">
-                      "{rhythmData.statement}"
+                      "{toDisplayString(rhythmData.statement)}"
                     </p>
                   )}
                 </div>
               ) : (
                 <div>
                   <p className="text-[11px] font-bold text-slate-600">
-                    {rhythmData.type || rhythmData.style || "Standard"}
+                    {toDisplayString(rhythmData.type || rhythmData.style) || "Standard"}
                   </p>
                 </div>
               )}
@@ -187,7 +210,9 @@ function InterestsDisplay({ data, type = "simple" }) {
     const allInterests = [];
     Object.values(interestsObj).forEach(items => {
       if (Array.isArray(items)) {
-        allInterests.push(...items);
+        allInterests.push(...items.map(toDisplayString).filter(Boolean));
+      } else if (items && typeof items === "object") {
+        allInterests.push(...Object.keys(items).filter(k => items[k] === true));
       }
     });
 
@@ -203,7 +228,11 @@ function InterestsDisplay({ data, type = "simple" }) {
       <div className="space-y-4">
         {Object.entries(interestsObj).map(([category, items]) => {
           const config = categoriesConfig[category];
-          if (!items || !Array.isArray(items) || items.length === 0) return null;
+          const rawList = Array.isArray(items)
+            ? items
+            : (items && typeof items === "object" ? Object.keys(items).filter(k => items[k] === true) : []);
+          const list = rawList.map(toDisplayString).filter(Boolean);
+          if (list.length === 0) return null;
 
           return (
             <div key={category} className="mb-4">
@@ -212,11 +241,11 @@ function InterestsDisplay({ data, type = "simple" }) {
                   {config?.label || category.replace(/_/g, " ").toUpperCase()}
                 </h4>
                 <span className="text-[9px] font-black uppercase text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
-                  {items.length} Selected
+                  {list.length} Selected
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {items.map((interest, index) => (
+                {list.map((interest, index) => (
                   <span
                     key={index}
                     className={`px-3 py-1.5 text-xs font-bold rounded-xl border ${
@@ -277,9 +306,11 @@ function ProfileQuestionsDisplay({ data }) {
     profileQuestions = data.profile_questions;
   }
 
-  const answeredQuestions = Object.keys(profileQuestions).filter(
-    key => profileQuestions[key] && profileQuestions[key].trim()
-  );
+  const answeredQuestions = Object.keys(profileQuestions).filter(key => {
+    const val = profileQuestions[key];
+    const displayStr = toDisplayString(val);
+    return Boolean(displayStr && displayStr.trim());
+  });
 
   if (answeredQuestions.length === 0) {
     return (
@@ -327,7 +358,8 @@ function ProfileQuestionsDisplay({ data }) {
   return (
     <div className="space-y-4">
       {Object.entries(questionsConfig).map(([questionKey, config]) => {
-        const answer = profileQuestions[questionKey] || '';
+        const rawAnswer = profileQuestions[questionKey];
+        const answer = toDisplayString(rawAnswer);
         const hasAnswer = answer && answer.trim() !== '';
         if (!hasAnswer) return null;
         
@@ -360,13 +392,14 @@ function ProfileQuestionsDisplay({ data }) {
 
 // InfoItem Component
 function InfoItem({ label, value, full = false, type = "text" }) {
-  if (value === undefined || value === null || value === "") {
+  const displayValue = toDisplayString(value);
+  if (!displayValue) {
     return null;
   }
   return (
     <div className={`p-3.5 bg-slate-50 rounded-xl border border-slate-100/50 ${full ? "col-span-1 sm:col-span-2" : ""}`}>
       <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{label}</span>
-      <span className="text-xs font-bold text-slate-800 break-words">{value}</span>
+      <span className="text-xs font-bold text-slate-800 break-words">{displayValue}</span>
     </div>
   );
 }
@@ -552,7 +585,9 @@ export default function AdminModelDetails() {
   }
 
   // Suspended accounts can only be restored through Reactivate (keeps ban history consistent)
-  const isSuspended = model.status === "deactivate";
+  const isSuspended =
+    String(model.status || "").toLowerCase() === "deactivate" ||
+    String(model.current_status || "").toLowerCase() === "deactivate";
   const displayName = model.first_name || model.last_name
     ? `${model.first_name || ""} ${model.last_name || ""}`.trim()
     : model.email;
@@ -680,10 +715,10 @@ export default function AdminModelDetails() {
             <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4">
               <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2">Currently suspended</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
-                <div><span className="font-bold text-slate-500">Reason:</span> {model.ban?.reason || model.status_reason || "—"}</div>
+                <div><span className="font-bold text-slate-500">Reason:</span> {toDisplayString(model.ban?.reason || model.status_reason) || "—"}</div>
                 <div><span className="font-bold text-slate-500">Until:</span> {model.ban ? (model.ban.is_permanent ? "Permanent" : formatDateTime(model.ban.banned_until)) : "Ended — awaiting automatic lift"}</div>
                 <div><span className="font-bold text-slate-500">Since:</span> {formatDateTime(model.ban?.banned_at) || "—"}</div>
-                <div><span className="font-bold text-slate-500">By:</span> {model.ban?.banned_by_name || (model.ban?.banned_by ? `Admin #${model.ban.banned_by}` : "—")}</div>
+                <div><span className="font-bold text-slate-500">By:</span> {toDisplayString(model.ban?.banned_by_name || (model.ban?.banned_by ? `Admin #${model.ban.banned_by}` : "")) || "—"}</div>
               </div>
             </div>
           )}
@@ -697,14 +732,14 @@ export default function AdminModelDetails() {
                   <div key={b.id} className="p-3 text-xs text-slate-600 flex flex-col sm:flex-row sm:justify-between gap-1">
                     <div className="min-w-0">
                       <span className="font-bold text-slate-800">{b.banned_until ? `Until ${formatDateTime(b.banned_until)}` : "Permanent"}</span>
-                      <span className="text-slate-400"> · {formatDateTime(b.banned_at)} by {b.banned_by_name || (b.banned_by ? `Admin #${b.banned_by}` : "system")}</span>
-                      <div className="break-words">{b.reason}</div>
+                      <span className="text-slate-400"> · {formatDateTime(b.banned_at)} by {toDisplayString(b.banned_by_name || (b.banned_by ? `Admin #${b.banned_by}` : "system"))}</span>
+                      <div className="break-words">{toDisplayString(b.reason) || "—"}</div>
                     </div>
                     <div className="shrink-0 font-semibold">
                       {b.lifted_at
-                        ? `${LIFT_LABELS[b.lift_reason] || "Lifted"} ${formatDateTime(b.lifted_at)}${b.lifted_by_name ? ` by ${b.lifted_by_name}` : ""}`
+                        ? `${LIFT_LABELS[b.lift_reason] || "Lifted"} ${formatDateTime(b.lifted_at)}${b.lifted_by_name ? ` by ${toDisplayString(b.lifted_by_name)}` : ""}`
                         : <span className="text-rose-600">Active</span>}
-                      {b.lift_note && <div className="italic text-slate-400">“{b.lift_note}”</div>}
+                      {b.lift_note && <div className="italic text-slate-400">“{toDisplayString(b.lift_note)}”</div>}
                     </div>
                   </div>
                 ))}
@@ -813,11 +848,7 @@ export default function AdminModelDetails() {
             <InfoItem label="Zodiac Sign" value={model.zodiac_sign} />
             <InfoItem
               label="Languages Spoken"
-              value={
-                Array.isArray(model.languages_spoken)
-                  ? model.languages_spoken.join(", ")
-                  : model.languages_spoken
-              }
+              value={model.languages_spoken}
             />
           </Section>
 
@@ -861,33 +892,19 @@ export default function AdminModelDetails() {
             <InfoItem label="About" value={model.about_me} full />
             <InfoItem
               label="Hobbies"
-              value={
-                Array.isArray(model.hobbies)
-                  ? model.hobbies.join(", ")
-                  : model.hobbies
-              }
+              value={model.hobbies}
             />
           </Section>
 
           <Section title="Skills & Interests Summary">
             <InfoItem
               label="Skills"
-              value={
-                Array.isArray(model.skills)
-                  ? model.skills.join(", ")
-                  : typeof model.skills === "object"
-                  ? Object.keys(model.skills || {}).join(", ")
-                  : model.skills
-              }
+              value={model.skills}
               full
             />
             <InfoItem
               label="Interests"
-              value={
-                Array.isArray(model.interests)
-                  ? model.interests.join(", ")
-                  : model.interests
-              }
+              value={model.interests}
               full
             />
           </Section>
