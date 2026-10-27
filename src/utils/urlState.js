@@ -12,7 +12,7 @@ import { MODE_FIELDS, SURFACE_LIMITS } from "../validations/searchSchemas.js";
 /** Fixed key order, so identical state always serialises to an identical URL. */
 const KEY_ORDER = [
   "tab", "q", "first_name", "last_name", "gender", "marital_status",
-  "profession", "skills", "interests", "city", "state",
+  "profession", "skills", "interests", "hobbies", "city", "state",
   "min_age", "max_age", "radius", "page",
 ];
 
