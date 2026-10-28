@@ -121,6 +121,7 @@ export default function AdvancedSearch() {
   const stateField = useDebouncedUrlField("state", state.state, setParams);
   const skills = useDebouncedUrlField("skills", state.skills, setParams);
   const interests = useDebouncedUrlField("interests", state.interests, setParams);
+  const hobbies = useDebouncedUrlField("hobbies", state.hobbies, setParams);
 
   const setFilter = (key, value) => setParams({ [key]: value === "" ? undefined : value });
 
@@ -311,6 +312,10 @@ export default function AdvancedSearch() {
                         <div>
                           <label className={labelClass}>Interests</label>
                           <input type="text" placeholder="e.g. Traveling, Music, Sports" {...interests} className={inputClass} />
+                        </div>
+                        <div>
+                          <label className={labelClass}>Hobbies</label>
+                          <input type="text" placeholder="e.g. Painting, Gaming, Cooking" {...hobbies} className={inputClass} />
                         </div>
                       </div>
                     </div>
