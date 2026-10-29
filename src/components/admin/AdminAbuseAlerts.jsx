@@ -39,6 +39,9 @@ const CONFIRM_COPY = {
   },
 };
 
+// Mirrors decideAutoAction in the backend's utils/moderationRules.js (5+ strikes → ban review).
+const BAN_REVIEW_STRIKES = 5;
+
 const isDeactivated = (status) => String(status || "").toLowerCase().startsWith("deactiv");
 
 const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -225,6 +228,45 @@ export default function AdminAbuseAlerts({ subscribe, refreshCount }) {
       {flag.warning_count > 0 && (
         <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-orange-50 text-orange-600 border-orange-100">
           {flag.warning_count} prior warning{flag.warning_count === 1 ? "" : "s"}
+        </span>
+      )}
+      {flag.severity === "severe" ? (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-rose-600 text-white border-rose-600">
+          Severe{flag.is_strike ? " · strike" : ""}
+        </span>
+      ) : (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-slate-50 text-slate-500 border-slate-200">
+          Mild
+        </span>
+      )}
+      {flag.active_strikes > 0 && (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-rose-50 text-rose-600 border-rose-100">
+          {flag.active_strikes} strike{flag.active_strikes === 1 ? "" : "s"} / 30 days
+        </span>
+      )}
+      {flag.auto_action === "warned" && (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-amber-50 text-amber-700 border-amber-100">
+          Auto-warned
+        </span>
+      )}
+      {flag.auto_action === "muted" && (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-amber-50 text-amber-700 border-amber-100">
+          Auto-muted
+        </span>
+      )}
+      {flag.sender_muted_until && (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-indigo-50 text-indigo-600 border-indigo-100">
+          Muted until {formatDate(flag.sender_muted_until)}
+        </span>
+      )}
+      {flag.active_strikes >= BAN_REVIEW_STRIKES && !isDeactivated(flag.sender_status) && (
+        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border bg-slate-950 text-rose-300 border-rose-500 animate-pulse">
+          Ban review suggested
+        </span>
+      )}
+      {flag.matched_words?.length > 0 && (
+        <span className="px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+          Matched: {flag.matched_words.join(", ")}
         </span>
       )}
     </div>

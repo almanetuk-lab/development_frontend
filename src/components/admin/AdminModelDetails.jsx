@@ -421,6 +421,7 @@ function Section({ title, children }) {
 
 // MAIN COMPONENT
 const LIFT_LABELS = { expired: "Expired", reactivated: "Reactivated", replaced: "Replaced" };
+const MUTE_LIFT_LABELS = { admin: "Unmuted", flag_dismissed: "Lifted (alert dismissed)", replaced: "Replaced by longer mute" };
 
 const formatDateTime = (value) =>
   value
@@ -544,6 +545,22 @@ export default function AdminModelDetails() {
       toast.error(error.response?.data?.message || "Failed to reactivate member");
       if (error.response?.status === 409) await fetchModelDetails();
     } finally {
+      setStatusBusy(false);
+    }
+  };
+
+  const handleUnmute = async () => {
+    const note = prompt("Unmute this member? Optional note:");
+    if (note === null) return;
+    setStatusBusy(true);
+    try {
+      await adminAPI.unmuteUser(userId, note.trim());
+      toast.success("Member unmuted");
+    } catch (error) {
+      console.error("Unmute error:", error);
+      toast.error(error.response?.data?.message || "Failed to unmute member");
+    } finally {
+      await fetchModelDetails();
       setStatusBusy(false);
     }
   };
@@ -743,6 +760,65 @@ export default function AdminModelDetails() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Chat moderation: strikes, active mute + mute history */}
+      {(model.moderation?.active_strikes > 0 || model.moderation?.active_mute || model.moderation?.mute_history?.length > 0) && (
+        <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xs p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Chat moderation · {model.moderation.active_strikes} strike{model.moderation.active_strikes === 1 ? "" : "s"} in the last 30 days
+            </p>
+            {model.moderation.active_mute && (
+              <button
+                onClick={handleUnmute}
+                disabled={statusBusy}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer disabled:opacity-50"
+              >
+                Unmute
+              </button>
+            )}
+          </div>
+          {model.moderation.active_mute && (
+            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-xs text-slate-700">
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">Currently muted (can&apos;t send messages)</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div><span className="font-bold text-slate-500">Until:</span> {formatDateTime(model.moderation.active_mute.muted_until)}</div>
+                <div><span className="font-bold text-slate-500">Since:</span> {formatDateTime(model.moderation.active_mute.muted_at)}</div>
+                <div><span className="font-bold text-slate-500">Strikes at mute:</span> {model.moderation.active_mute.strike_count}</div>
+                <div><span className="font-bold text-slate-500">By:</span> Automatic moderation</div>
+              </div>
+            </div>
+          )}
+          {model.moderation.mute_history?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                Mute history ({model.moderation.mute_history.length})
+              </p>
+              <div className="divide-y divide-slate-100 border border-slate-100 rounded-2xl">
+                {model.moderation.mute_history.map((m) => {
+                  const active = !m.lifted_at && new Date(m.muted_until) > new Date();
+                  return (
+                    <div key={m.id} className="p-3 text-xs text-slate-600 flex flex-col sm:flex-row sm:justify-between gap-1">
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-800">Until {formatDateTime(m.muted_until)}</span>
+                        <span className="text-slate-400"> · {formatDateTime(m.muted_at)} · {m.strike_count} strikes</span>
+                      </div>
+                      <div className="shrink-0 font-semibold">
+                        {m.lifted_at
+                          ? `${MUTE_LIFT_LABELS[m.lift_reason] || "Lifted"} ${formatDateTime(m.lifted_at)}${m.lifted_by_name ? ` by ${toDisplayString(m.lifted_by_name)}` : ""}`
+                          : active
+                            ? <span className="text-indigo-600">Active</span>
+                            : "Expired"}
+                        {m.lift_note && <div className="italic text-slate-400">“{toDisplayString(m.lift_note)}”</div>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

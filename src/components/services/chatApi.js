@@ -51,6 +51,9 @@ export const chatApi = {
     return api.post("/api/messages", messageData);
   },
 
+  // Auto-moderation mute state → { muted, muted_until }
+  getMuteStatus: () => api.get("/api/chat/mute-status"),
+
   // for recent message
   getRecentChats: (myUserId) => {
     return api.get(`/api/chats/recent/${myUserId}`);
