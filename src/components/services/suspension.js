@@ -6,6 +6,8 @@
 
 export const SUSPENDED_CODE = "ACCOUNT_SUSPENDED";
 export const RECIPIENT_UNAVAILABLE_CODE = "RECIPIENT_UNAVAILABLE";
+// Auto-moderation chat mute: the user can read chats but not send (no logout)
+export const MUTED_CODE = "CHAT_MUTED";
 export const SUSPENDED_EVENT = "account-suspended";
 
 const STORAGE_KEY = "accountSuspension";
