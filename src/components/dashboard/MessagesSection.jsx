@@ -6,7 +6,7 @@ import EmojiPicker from "emoji-picker-react";
 import { useUserProfile } from "../context/UseProfileContext";
 import { toast } from "react-toastify";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
-import { RECIPIENT_UNAVAILABLE_CODE } from "../services/suspension";
+import { MUTED_CODE, RECIPIENT_UNAVAILABLE_CODE } from "../services/suspension";
 import {
   FiArrowLeft,
   FiPaperclip,
@@ -44,6 +44,7 @@ export default function MessagesSection() {
   const [showDeleteOption, setShowDeleteOption] = useState(null);
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [messageLimitReached, setMessageLimitReached] = useState(false);
+  const [mutedUntil, setMutedUntil] = useState(null); // ISO string while auto-moderation has muted this user
   const [aiTyping, setAiTyping] = useState(false);  // AI typing indicator
   // API-driven incompatibility state (replaces unreliable socket-only approach)
   const [isIncompatibleWithSelected, setIsIncompatibleWithSelected] = useState(false);
@@ -529,6 +530,39 @@ export default function MessagesSection() {
     };
   }, [currentUserId, selectedUser, socket]);
 
+  // 🔇 Auto-moderation mute: load the current state, then follow live updates
+  useEffect(() => {
+    if (!currentUserId) return;
+    chatApi
+      .getMuteStatus()
+      .then((res) => setMutedUntil(res.data?.muted ? res.data.muted_until : null))
+      .catch(() => {});
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleChatMuted = (data) => setMutedUntil(data?.muted_until || null);
+    const handleChatUnmuted = () => setMutedUntil(null);
+    socket.on("chat_muted", handleChatMuted);
+    socket.on("chat_unmuted", handleChatUnmuted);
+    return () => {
+      socket.off("chat_muted", handleChatMuted);
+      socket.off("chat_unmuted", handleChatUnmuted);
+    };
+  }, [socket]);
+
+  // Unlock the composer when the mute runs out
+  useEffect(() => {
+    if (!mutedUntil) return;
+    const remaining = new Date(mutedUntil).getTime() - Date.now();
+    if (remaining <= 0) {
+      setMutedUntil(null);
+      return;
+    }
+    const timer = setTimeout(() => setMutedUntil(null), Math.min(remaining, 2 ** 31 - 1));
+    return () => clearTimeout(timer);
+  }, [mutedUntil]);
+
   // Keep the ref in sync with the latest currentUserId on every render.
   // This lets the socket handler below always read the correct value without
   // being listed as a dependency (which would cause re-registration races).
@@ -854,6 +888,7 @@ export default function MessagesSection() {
   // SEND MESSAGE
   // Conversations with suspended members are read-only
   const isChatReadOnly = selectedUser?.is_available === false;
+  const isMuted = !!mutedUntil;
 
   const markChatUnavailable = (userId) => {
     setSelectedUser((prev) =>
@@ -867,8 +902,15 @@ export default function MessagesSection() {
   const isRecipientUnavailableError = (error) =>
     error.response?.status === 403 && error.response?.data?.code === RECIPIENT_UNAVAILABLE_CODE;
 
+  // Returns true (and locks the composer) when the send failed because the user is muted
+  const handleMutedError = (error) => {
+    if (error.response?.status !== 403 || error.response?.data?.code !== MUTED_CODE) return false;
+    setMutedUntil(error.response.data.muted_until || null);
+    return true;
+  };
+
   const handleSendMessage = async () => {
-    if (isChatReadOnly) return;
+    if (isChatReadOnly || isMuted) return;
 
     // phale status check karega yha pr
     if (!planStatus.active) {
@@ -941,7 +983,9 @@ export default function MessagesSection() {
       console.error("❌ Send failed:", error);
       setMessages((prev) => prev.filter((msg) => msg.id !== tempMsg.id));
 
-      if (isRecipientUnavailableError(error)) {
+      if (handleMutedError(error)) {
+        setNewMessage(messageContent); // keep the draft
+      } else if (isRecipientUnavailableError(error)) {
         markChatUnavailable(selectedUser.id);
         toast.info("This member is no longer available.");
       } else if (
@@ -1035,7 +1079,7 @@ export default function MessagesSection() {
 
   // FILE UPLOAD
   const handleFileUpload = async (file) => {
-    if (isChatReadOnly) return;
+    if (isChatReadOnly || isMuted) return;
 
     // 🔒 PLAN EXPIRED
     if (!planStatus.active) {
@@ -1081,6 +1125,7 @@ export default function MessagesSection() {
     } catch (err) {
       console.error("Upload failed:", err);
       setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+      handleMutedError(err);
     } finally {
       setFileUploading(false);
     }
@@ -1942,7 +1987,17 @@ export default function MessagesSection() {
                     This member is no longer available. You can read your conversation, but not send new messages.
                   </div>
                 )}
-                <div className={`flex items-center gap-1.5 sm:gap-2 ${isChatReadOnly ? "hidden" : ""}`}>
+                {!isChatReadOnly && isMuted && (
+                  <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-xl px-4 py-3 text-xs font-semibold text-rose-700">
+                    <span aria-hidden="true">🔇</span>
+                    <span>
+                      You can&apos;t send messages until{" "}
+                      {new Date(mutedUntil).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}{" "}
+                      because of repeated community guidelines violations. You can still read your conversations.
+                    </span>
+                  </div>
+                )}
+                <div className={`flex items-center gap-1.5 sm:gap-2 ${isChatReadOnly || isMuted ? "hidden" : ""}`}>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={fileUploading || !planStatus.active}
