@@ -252,7 +252,14 @@ export default function AISuggestions() {
       setHandshakeModal({ match, session });
     } catch (err) {
       console.error("❌ Handshake failed:", err);
-      setHandshakeError(err?.response?.data?.message || "Unable to generate compatibility report. Please try again.");
+      const data = err?.response?.data || {};
+      // 503 + AI_* code: the AI service is out of quota or down, not a bug in the request.
+      const aiUnavailable = err?.response?.status === 503 && String(data.code || "").startsWith("AI_");
+      setHandshakeError({
+        title: aiUnavailable ? "AI temporarily unavailable" : "Compatibility Report",
+        message: data.message || "Unable to generate compatibility report. Please try again.",
+        tone: aiUnavailable ? "warning" : "error",
+      });
     } finally {
       setHandshakeLoadingId(null);
     }
@@ -898,11 +905,11 @@ export default function AISuggestions() {
            Module 3 — Handshake / Stress Synchronization Modal
           ══════════════════════════════════════════════════════ */}
       {handshakeError && (
-        <div className="fixed bottom-6 right-6 z-[99999] max-w-sm bg-rose-600 text-white px-5 py-4 rounded-2xl shadow-xl flex items-start gap-3 animate-slide-up">
+        <div className={`fixed bottom-6 right-6 z-[99999] max-w-sm ${handshakeError.tone === "warning" ? "bg-amber-500" : "bg-rose-600"} text-white px-5 py-4 rounded-2xl shadow-xl flex items-start gap-3 animate-slide-up`}>
           <HiExclamationCircle className="w-6 h-6 flex-shrink-0 text-white" />
           <div className="flex-1 space-y-1">
-            <p className="font-bold text-sm">Compatibility Report</p>
-            <p className="text-xs opacity-90">{handshakeError}</p>
+            <p className="font-bold text-sm">{handshakeError.title}</p>
+            <p className="text-xs opacity-90">{handshakeError.message}</p>
           </div>
           <button onClick={() => setHandshakeError(null)} className="text-white/70 hover:text-white text-lg leading-none">&times;</button>
         </div>
