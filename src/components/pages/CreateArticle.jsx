@@ -3,6 +3,7 @@ import api from "../services/axiosConfig.js";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import TiptapEditor from "../blog/TiptapEditor.jsx";
+import { validateArticle, validateCoverFile, apiErrorMessage } from "../blog/articleValidation.js";
 
 export default function CreateArticle({ user }) {
   const [title, setTitle] = useState("");
@@ -13,9 +14,10 @@ export default function CreateArticle({ user }) {
   const navigate = useNavigate();
 
   const handleSave = async () => {
-    if (!title || !contentHtml) { 
-      toast.error("Title and content required"); 
-      return; 
+    const invalid = validateArticle({ title, subtitle, contentHtml, coverFile });
+    if (invalid) {
+      toast.error(invalid);
+      return;
     }
     setLoading(true);
     try {
@@ -32,7 +34,7 @@ export default function CreateArticle({ user }) {
       navigate("/admin-dashboard");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create article");
+      toast.error(apiErrorMessage(err, "Failed to create article"));
     } finally {
       setLoading(false);
     }
@@ -100,9 +102,17 @@ export default function CreateArticle({ user }) {
           <div className="border-2 border-dashed border-slate-200 hover:border-[#FF2A6D]/40 rounded-2xl p-6 text-center transition bg-slate-50/50 cursor-pointer relative group">
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               onChange={(e) => {
-                if (e.target.files?.[0]) setCoverFile(e.target.files[0]);
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const fileError = validateCoverFile(file);
+                if (fileError) {
+                  toast.error(fileError);
+                  e.target.value = "";
+                  return;
+                }
+                setCoverFile(file);
               }}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
