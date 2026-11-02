@@ -81,6 +81,13 @@ export default function useAdminSocket(onToastClick) {
     socket.on("abuse_alert", (payload) => {
       setPendingCount((n) => n + 1);
       queueToast(payload);
+      // Repeat offenders are never coalesced: an admin should decide on a ban.
+      if (payload?.needs_ban_review) {
+        toast.error(
+          `⛔ Ban review suggested: ${payload.sender_name || `user #${payload.sender_id}`} has ${payload.strike_count} strikes in 30 days and was auto-muted for 7 days`,
+          { autoClose: false, onClick: () => onToastClickRef.current?.("/admin/abuse-alerts") },
+        );
+      }
       emit({ type: "abuse_alert", payload });
     });
 

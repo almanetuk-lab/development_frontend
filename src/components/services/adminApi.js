@@ -66,6 +66,10 @@ export const adminAPI = {
   reactivateUser: (userId, note) =>
     api.post('/api/admin/reactivate', { user_id: userId, note }),
 
+  // Lift an auto-moderation chat mute - POST /api/admin/users/:id/unmute
+  unmuteUser: (userId, note) =>
+    api.post(`/api/admin/users/${userId}/unmute`, { note: note || null }),
+
       // SEARCH PROFILES - Add this line only
 
    // NOTIFICATION APIS ADDED
