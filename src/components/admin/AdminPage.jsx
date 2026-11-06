@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { adminAPI } from "../services/adminApi";
 import AdminPlans from "./AdminAllPlan.jsx";
 import AdminBlog from "../pages/AdminBlog.jsx";
@@ -14,6 +14,7 @@ import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader.jsx";
 import AdminModelDetails from "./AdminModelDetails.jsx";
 import AdminAbuseAlerts from "./AdminAbuseAlerts.jsx";
+import AdminPendingErasure from "./AdminPendingErasure.jsx";
 import useAdminSocket from "./useAdminSocket.js";
 import { toast } from "react-toastify";
 
@@ -47,12 +48,24 @@ const AdminDashboard = () => {
     if (path.includes("/admin/contacts")) return "contacts";
     if (path.includes("/admin/newsletter")) return "newsletter";
     if (path.includes("/admin/abuse-alerts")) return "abuse-alerts";
+    if (path.includes("/admin/pending-erasure")) return "pending-erasure";
     return "dashboard";
   };
 
   const [activeSection, setActiveSection] = useState(getActiveSectionFromURL());
   const { pendingCount: abuseAlertCount, refreshCount: refreshAbuseAlertCount, subscribe: subscribeAbuseAlerts } =
     useAdminSocket(navigate);
+  // Deleted accounts in their last week before the erasure deadline (or overdue)
+  const [urgentErasureCount, setUrgentErasureCount] = useState(0);
+  const updateErasureCount = useCallback((accounts, warningDaysLeft) => {
+    setUrgentErasureCount(accounts.filter((a) => a.days_left <= warningDaysLeft).length);
+  }, []);
+  useEffect(() => {
+    adminAPI
+      .getDeletedAccounts()
+      .then(({ data }) => updateErasureCount(data.accounts || [], data.warning_days_left ?? 7))
+      .catch(() => {});
+  }, [updateErasureCount]);
   const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [userPage, setUserPage] = useState(1);
   const userItemsPerPage = 25;
@@ -396,7 +409,12 @@ const AdminDashboard = () => {
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden font-sans text-slate-800">
       {/* Use your new AdminSidebar */}
-      <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} abuseAlertCount={abuseAlertCount} />
+      <AdminSidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        abuseAlertCount={abuseAlertCount}
+        urgentErasureCount={urgentErasureCount}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 relative">
@@ -1261,6 +1279,8 @@ const AdminDashboard = () => {
         {activeSection === "abuse-alerts" && (
           <AdminAbuseAlerts subscribe={subscribeAbuseAlerts} refreshCount={refreshAbuseAlertCount} />
         )}
+
+        {activeSection === "pending-erasure" && <AdminPendingErasure onCountChange={updateErasureCount} />}
 
         {activeSection === "contacts" && (
           <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
