@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 
-const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOpen, abuseAlertCount = 0 }) => {
+const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOpen, abuseAlertCount = 0, urgentErasureCount = 0 }) => {
   const [localOpen, setLocalOpen] = useState(false);
   const sidebarOpen = externalOpen !== undefined ? externalOpen : localOpen;
   const setSidebarOpen = setExternalOpen !== undefined ? setExternalOpen : setLocalOpen;
@@ -15,6 +15,8 @@ const AdminSidebar = ({ sidebarOpen: externalOpen, setSidebarOpen: setExternalOp
     { path: '/admin/blogs', label: 'Blogs', icon: 'fa-solid fa-blog' },
     { path: '/admin/reports', label: 'Reports', icon: 'fa-solid fa-flag' },
     { path: '/admin/abuse-alerts', label: 'Abuse Alerts', icon: 'fa-solid fa-triangle-exclamation', badge: abuseAlertCount },
+    // Badge = deleted accounts in their last week before the erasure deadline
+    { path: '/admin/pending-erasure', label: 'Pending Erasure', icon: 'fa-solid fa-user-xmark', badge: urgentErasureCount },
     { path: '/admin/contacts', label: 'Contacts', icon: 'fa-solid fa-envelope' },
     { path: '/admin/newsletter', label: 'Newsletter', icon: 'fa-solid fa-paper-plane' },
   ];

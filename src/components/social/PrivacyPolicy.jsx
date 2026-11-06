@@ -236,7 +236,7 @@ const PrivacyPolicy = () => {
                   <strong>Revoking Google Access:</strong> You can disconnect and revoke Intentional Connections' access to your Google account at any time via your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-medium">Google Account Security Permissions</a>.
                 </li>
                 <li>
-                  <strong>Deleting Your Account & Data:</strong> You can delete your account directly inside the app by going to <em>Settings &gt; Account &gt; Delete Account</em>, or by submitting a deletion request to <a href="mailto:support@intentionalconnections.app" className="text-blue-600 underline font-medium">support@intentionalconnections.app</a>. Upon deletion, all associated Google authentication identifiers and profile records are permanently purged or anonymized within 30 days.
+                  <strong>Deleting Your Account & Data:</strong> You can delete your account directly inside the app by going to <em>Settings &gt; Account &gt; Delete Account</em>, or by submitting a deletion request to <a href="mailto:support@intentionalconnections.app" className="text-blue-600 underline font-medium">support@intentionalconnections.app</a>. Upon deletion, your account is hidden immediately, and all associated Google authentication identifiers and profile records are permanently purged or anonymized within one month.
                 </li>
               </ul>
             </div>
@@ -477,8 +477,12 @@ const PrivacyPolicy = () => {
                 <li><strong>Retention Schedule:</strong>
                   <ul className="list-circle list-inside ml-4 mt-1 space-y-1 text-slate-500">
                     <li>Active account records: Retained while your account remains active.</li>
-                    <li>Deleted accounts: Profile data, photos, and messages are permanently deleted within 30 days of an account closure request.</li>
-                    <li>Financial transaction logs: Retained for 6 years strictly to fulfill UK statutory tax and accounting obligations.</li>
+                    <li>Deleted accounts: When you delete your account it is hidden immediately and you are signed out. You can restore it by signing up or logging in with the same email until it is erased. Your profile data, photos, messages, and match and AI data are then permanently erased within one month of your deletion request.</li>
+                    <li>Financial transaction logs: Retained for 6 years strictly to fulfill UK statutory tax and accounting obligations, without your other profile details.</li>
+                    <li>Safety records: If an account was suspended for breaking our guidelines, the suspension record, the related evidence and a one-way hash of the email are kept so the account can't simply be re-created. These are reviewed every 2 years.</li>
+                    <li>Security logs: Records of account actions are kept for security; IP addresses and browser details are removed after 12 months.</li>
+                    <li>Anonymous statistics: We keep a small set of anonymous figures (for example age range, country and how long an account was used) that cannot identify you.</li>
+                    <li>Backups and processors: Erased data may remain in encrypted backups until they expire on their normal schedule; we never restore it. Text sent to our AI provider (Google Gemini) may be kept by them for up to 55 days for abuse monitoring.</li>
                   </ul>
                 </li>
               </ul>

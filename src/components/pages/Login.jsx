@@ -8,7 +8,8 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import Logo from "../comman/Logo";
 import { loginSchema, validateForm } from "../../validations/authSchemas";
 import AccountSuspendedModal from "../comman/AccountSuspendedModal";
-import { isSuspendedError, takeSuspension, SUSPENDED_EVENT } from "../services/suspension";
+import AccountRecoveryModal from "../comman/AccountRecoveryModal";
+import { isSuspendedError, takeSuspension, SUSPENDED_EVENT, isRestorableError, takeRecovery } from "../services/suspension";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -22,12 +23,16 @@ export default function Login() {
   const [googleLoading, setGoogleLoading] = useState(false);
   // Suspension payload from a login attempt, a redirect, or a live event
   const [suspension, setSuspension] = useState(null);
+  // Deleted account: "restore or start fresh" payload from the backend
+  const [recovery, setRecovery] = useState(null);
 
   useEffect(() => {
     // Read in an effect (not the state initializer) so StrictMode's double
     // initializer call can't consume the payload and lose it.
     const stored = takeSuspension();
     if (stored) setSuspension(stored);
+    const storedRecovery = takeRecovery();
+    if (storedRecovery) setRecovery(storedRecovery);
 
     const onSuspended = (e) => setSuspension(e.detail);
     window.addEventListener(SUSPENDED_EVENT, onSuspended);
@@ -57,6 +62,10 @@ export default function Login() {
       console.error("Google login error:", err);
       if (isSuspendedError(err)) {
         setSuspension(err.response.data);
+        return;
+      }
+      if (isRestorableError(err)) {
+        setRecovery(err.response.data);
         return;
       }
       const msg =
@@ -132,6 +141,10 @@ export default function Login() {
         setSuspension(err.response.data);
         return;
       }
+      if (isRestorableError(err)) {
+        setRecovery({ ...err.response.data, email: err.response.data.email || result.data.email });
+        return;
+      }
       const msg =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
@@ -171,6 +184,25 @@ export default function Login() {
     } finally {
       setLinkedinLoading(false);
     }
+  };
+
+  const handleRestored = (user) => {
+    setRecovery(null);
+    if (user) {
+      updateProfile(user);
+      localStorage.setItem("currentUser", JSON.stringify(user));
+    }
+    setTimeout(() => {
+      refreshProfile();
+    }, 500);
+    navigate("/dashboard");
+  };
+
+  // Old account set aside: continue on the sign-up page with the same email
+  const handleStartFresh = () => {
+    const freshEmail = recovery?.email;
+    setRecovery(null);
+    navigate("/register", { state: { email: freshEmail } });
   };
 
   useEffect(() => {
@@ -343,6 +375,16 @@ export default function Login() {
         reason={suspension?.reason}
         bannedUntil={suspension?.banned_until}
         isPermanent={suspension?.is_permanent}
+      />
+
+      <AccountRecoveryModal
+        isOpen={!!recovery}
+        onClose={() => setRecovery(null)}
+        email={recovery?.email}
+        emailMasked={recovery?.email_masked}
+        canStartFresh={recovery?.can_start_fresh}
+        onRestored={handleRestored}
+        onStartFresh={handleStartFresh}
       />
     </div>
   );
