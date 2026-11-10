@@ -5,7 +5,7 @@ import api from "../services/api";
 import io from "socket.io-client";
 import { chatApi } from "../services/chatApi";
 import { userAPI } from "../services/userApi";
-import { handleSuspendedSession } from "../services/suspension";
+import { handleSuspendedSession, handleDeletedSession } from "../services/suspension";
 
 const UserProfileContext = createContext();
 
@@ -365,6 +365,13 @@ export const UserProfileProvider = ({ children }) => {
       console.warn("🚫 Account suspended — ending session");
       newSocket.disconnect();
       handleSuspendedSession(payload);
+    });
+
+    // Account deleted (here or on another device): every open tab is logged out
+    newSocket.on("account_deleted", () => {
+      console.warn("🗑️ Account deleted — ending session");
+      newSocket.disconnect();
+      handleDeletedSession();
     });
 
     setSocket(newSocket);

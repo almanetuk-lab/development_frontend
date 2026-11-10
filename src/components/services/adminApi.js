@@ -62,6 +62,16 @@ export const adminAPI = {
       ...(flagId ? { flag_id: flagId } : {}),
     }),
 
+  // Deleted accounts waiting for permanent erasure - GET /api/admin/deleted-accounts
+  getDeletedAccounts: () => api.get('/api/admin/deleted-accounts'),
+
+  // Restore a user-deleted account - POST /api/admin/users/:id/restore-deletion
+  restoreDeletedAccount: (userId) => api.post(`/api/admin/users/${userId}/restore-deletion`),
+
+  // Permanently erase a deleted account - POST /api/admin/users/:id/erase
+  eraseAccount: (userId, confirmUserId, reason) =>
+    api.post(`/api/admin/users/${userId}/erase`, { confirm_user_id: confirmUserId, reason }),
+
   // Reactivate (unsuspend) User - POST /api/admin/reactivate
   reactivateUser: (userId, note) =>
     api.post('/api/admin/reactivate', { user_id: userId, note }),

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useRef, useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import { registerUser, googleAuth } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
@@ -8,10 +8,13 @@ import { FaLinkedin, FaGoogle } from "react-icons/fa";
 import Logo from "../comman/Logo";
 import { toast } from "react-toastify";
 import { registerSchema, validateForm } from "../../validations/authSchemas";
+import AccountRecoveryModal from "../comman/AccountRecoveryModal";
+import { isRestorableError } from "../services/suspension";
 
 
 export default function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { updateProfile, refreshProfile } = useUserProfile() || {
     updateProfile: () => {},
     refreshProfile: () => {},
@@ -20,7 +23,8 @@ export default function Register() {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
-    email: "",
+    // Prefilled when coming from "Start fresh" on the login page
+    email: location.state?.email || "",
     password: "",
     profession: "",
     username: "",
@@ -35,6 +39,10 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [linkedinLoading, setLinkedinLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  // Deleted account with this email: "restore or start fresh" payload
+  const [recovery, setRecovery] = useState(null);
+  // The sign-up to resubmit after "Start fresh" (null for Google sign-up)
+  const pendingPayload = useRef(null);
 
   const handleLinkedInLogin = async () => {
     setLinkedinLoading(true);
@@ -87,6 +95,11 @@ export default function Register() {
       navigate("/dashboard");
     } catch (err) {
       console.error("Google sign-up error:", err);
+      if (isRestorableError(err)) {
+        pendingPayload.current = null;
+        setRecovery(err.response.data);
+        return;
+      }
       const msg =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
@@ -128,6 +141,53 @@ export default function Register() {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
     setError("");
+  };
+
+  const submitRegistration = async (payload) => {
+    await registerUser(payload);
+    toast.success("Registration successful! Please login with your new account.");
+
+    localStorage.removeItem("user");
+
+    if (updateProfile) {
+      updateProfile(null);
+    }
+
+    navigate("/login", { replace: true });
+  };
+
+  const handleRestored = (user) => {
+    setRecovery(null);
+    if (user) {
+      updateProfile(user);
+      localStorage.setItem("currentUser", JSON.stringify(user));
+    }
+    setTimeout(() => {
+      refreshProfile();
+    }, 500);
+    toast.success("Welcome back! Your account has been restored.");
+    navigate("/dashboard");
+  };
+
+  // Old account set aside: finish the sign-up the user started
+  const handleStartFresh = async () => {
+    setRecovery(null);
+    const payload = pendingPayload.current;
+    pendingPayload.current = null;
+    if (!payload) {
+      toast.success("Your old account has been set aside. Continue with Google to create your new account.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await submitRegistration(payload);
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.response?.data?.message || "Registration failed";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -173,18 +233,14 @@ export default function Register() {
         consent_given: true, // Send confirmation of consent to backend
       };
 
-      await registerUser(payload);
-      toast.success("Registration successful! Please login with your new account.");
-
-      localStorage.removeItem("user");
-
-      if (updateProfile) {
-        updateProfile(null);
-      }
-
-      navigate("/login", { replace: true });
+      pendingPayload.current = payload;
+      await submitRegistration(payload);
     } catch (err) {
       console.error("Register error:", err);
+      if (isRestorableError(err)) {
+        setRecovery({ ...err.response.data, email: pendingPayload.current?.email });
+        return;
+      }
       const msg =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
@@ -446,6 +502,16 @@ export default function Register() {
           </p>
         </div>
       </div>
+
+      <AccountRecoveryModal
+        isOpen={!!recovery}
+        onClose={() => setRecovery(null)}
+        email={recovery?.email}
+        emailMasked={recovery?.email_masked}
+        canStartFresh={recovery?.can_start_fresh}
+        onRestored={handleRestored}
+        onStartFresh={handleStartFresh}
+      />
     </div>
   );
 }

@@ -16,6 +16,7 @@ import MemberPage from "../pages/MemberPage";
 import AdvancedSearch from "./SearchSection";
 import UserPlans from "../pages/UserPlans";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
+import GhostingAlertModal from "./GhostingAlertModal";
 
 export default function UserDashboard() {
   const { profile, loading, isFeatureAllowed, isAuthenticated } = useUserProfile();
@@ -62,6 +63,9 @@ export default function UserDashboard() {
   }
 
   return (
+    <>
+    {/* Module 8: shown on every dashboard page, including AI Suggestions */}
+    <GhostingAlertModal />
     <Routes>
       <Route index element={isFeatureAllowed("dashboard") ? <DashboardHome profile={profile} /> : <PlanRestrictionModal feature="dashboard" />} />
       <Route path="profile/:userId?" element={<ProfilePage />} />
@@ -74,5 +78,6 @@ export default function UserDashboard() {
       <Route path="plans" element={<UserPlans />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </>
   );
 }

@@ -241,7 +241,9 @@ export default function MessagesSection() {
       // Keep read-only state in step with the server (suspended / reactivated)
       const available = match ? match.is_available !== false : undefined;
       if (available !== undefined && available !== (selectedUser.is_available !== false)) {
-        setSelectedUser((prev) => (prev ? { ...prev, is_available: available } : prev));
+        setSelectedUser((prev) =>
+          prev ? { ...prev, is_available: available, partner_deleted: match.partner_deleted === true } : prev,
+        );
       }
     }
   }, [recentChats, selectedUser]);
@@ -312,6 +314,7 @@ export default function MessagesSection() {
       last_seen: chat.last_seen,
       profile_picture_url: chat.profile_picture_url,
       is_available: chat.is_available !== false,
+      partner_deleted: chat.partner_deleted === true,
     };
     handleUserSelect(user);
     setShowSidebar(false);
@@ -1511,7 +1514,7 @@ export default function MessagesSection() {
                             {cleanUserName(chat.name)}
                             {chat.is_available === false && (
                               <span className="ml-1.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                                Unavailable
+                                {chat.partner_deleted ? "Deleted" : "Unavailable"}
                               </span>
                             )}
                           </p>
@@ -1984,7 +1987,9 @@ export default function MessagesSection() {
                 {isChatReadOnly && (
                   <div className="flex items-center justify-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs font-semibold text-slate-500">
                     <span aria-hidden="true">🚫</span>
-                    This member is no longer available. You can read your conversation, but not send new messages.
+                    {selectedUser?.partner_deleted
+                      ? "This member deleted their account. You can read your conversation, but not send new messages."
+                      : "This member is no longer available. You can read your conversation, but not send new messages."}
                   </div>
                 )}
                 {!isChatReadOnly && isMuted && (

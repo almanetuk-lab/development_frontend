@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { getDeletionMethod, requestDeletionCode, deleteMyAccount } from "../services/api";
 
 export default function PrivacySettings() {
-  const navigate = useNavigate();
   const [cookieConsent, setCookieConsent] = useState({
     essential: true,
     analytical: false,
@@ -12,6 +11,10 @@ export default function PrivacySettings() {
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [password, setPassword] = useState("");
+  // Google/LinkedIn accounts confirm with an emailed code instead of a password
+  const [deleteMethod, setDeleteMethod] = useState("password");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
@@ -84,42 +87,60 @@ export default function PrivacySettings() {
     }
   };
 
-  // Handle Delete Account
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setPassword("");
+    setCode("");
+    setCodeSent(false);
+  };
+
+  const openDeleteModal = async () => {
+    setShowDeleteModal(true);
+    try {
+      setDeleteMethod(await getDeletionMethod());
+    } catch {
+      setDeleteMethod("password");
+    }
+  };
+
+  const handleSendCode = async () => {
+    setLoading(true);
+    try {
+      await requestDeletionCode();
+      setCodeSent(true);
+      toast.success("We've emailed you a 6-digit code.");
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Couldn't send the code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Delete Account (soft delete: hidden now, restorable by signing up or logging in again)
   const handleDeleteAccount = async (e) => {
     e.preventDefault();
-    if (!password) {
-      toast.error("Please enter your password to confirm deletion.");
+    const usesCode = deleteMethod === "code";
+    if (usesCode ? !/^\d{6}$/.test(code.trim()) : !password) {
+      toast.error(usesCode ? "Enter the 6-digit code from the email." : "Please enter your password to confirm deletion.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/privacy/delete-account`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ password }),
-      });
+      await deleteMyAccount(usesCode ? { code: code.trim() } : { password });
 
-      const data = await res.json();
+      toast.success("Your account has been deleted. Sign up or log in with the same email to restore it.");
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to delete account.");
-      }
-
-      toast.success("Account permanently deleted. Hope to see you again.");
-      
-      // Clean up token and local storage
+      // Session cookies are already cleared by the server; drop the local cache too
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Redirect to landing
-      navigate("/");
+
+      // Full reload so the profile context and socket reset
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1500);
     } catch (err) {
-      toast.error(err.message || "Password verification failed.");
-    } finally {
+      toast.error(err?.response?.data?.error || "Failed to delete account.");
       setLoading(false);
     }
   };
@@ -225,13 +246,13 @@ export default function PrivacySettings() {
       <div className="bg-red-50 p-6 rounded-xl border border-red-200 shadow-sm space-y-4">
         <h3 className="text-lg font-medium text-red-800 border-b border-red-200 pb-3">Right to Erasure ("Right to be Forgotten")</h3>
         <p className="text-xs text-red-700 font-medium">
-          ⚠️ WARNING: Permanent account deletion is final and cannot be undone. All your details, profile images, conversation history, and psychological match metrics will be deleted from our systems.
+          ⚠️ Deleting your account hides your profile and signs you out everywhere. You can restore it by signing up or logging in with the same email. Our team then permanently erases your personal data (profile, photos, chats and match data) within one month. Payment records are kept for 6 years as required by tax law.
         </p>
         <button
-          onClick={() => setShowDeleteModal(true)}
+          onClick={openDeleteModal}
           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition"
         >
-          Permanently Delete My Account
+          Delete My Account
         </button>
       </div>
 
@@ -240,32 +261,57 @@ export default function PrivacySettings() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">Confirm Account Erasure</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">Confirm Account Deletion</h3>
               <p className="text-xs text-gray-600">
-                To confirm permanent deletion of all your data under UK GDPR, please verify your account password. This action cannot be reversed.
+                {deleteMethod === "code"
+                  ? "You signed up with Google or LinkedIn, so we'll email you a code to confirm."
+                  : "Please verify your account password to confirm."}
               </p>
             </div>
 
             <form onSubmit={handleDeleteAccount} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Your Password</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your account password"
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-              </div>
+              {deleteMethod === "code" ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Code from the email</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                      placeholder="6-digit code"
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendCode}
+                      disabled={loading}
+                      className="px-3 py-2 border rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      {codeSent ? "Resend" : "Email me a code"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Your Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your account password"
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              )}
 
               <div className="flex gap-3 justify-end pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setPassword("");
-                  }}
+                  onClick={closeDeleteModal}
                   className="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
@@ -275,7 +321,7 @@ export default function PrivacySettings() {
                   disabled={loading}
                   className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition disabled:opacity-50"
                 >
-                  {loading ? "Deleting Permanent..." : "Permanently Delete Data"}
+                  {loading ? "Deleting..." : "Delete My Account"}
                 </button>
               </div>
             </form>

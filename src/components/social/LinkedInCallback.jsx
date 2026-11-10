@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useUserProfile } from '../context/UseProfileContext';
-import { isSuspendedPayload, storeSuspension } from '../services/suspension';
+import { isSuspendedPayload, storeSuspension, isRestorablePayload, storeRecovery } from '../services/suspension';
 const LinkedInCallback = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -42,6 +42,12 @@ useEffect(() => {
                 const body = await response.json().catch(() => null);
                 if (isSuspendedPayload(body)) {
                     storeSuspension(body);
+                    navigate('/login');
+                    return;
+                }
+                // A deleted account goes to /login, which offers restore / start fresh
+                if (isRestorablePayload(body)) {
+                    storeRecovery(body);
                     navigate('/login');
                     return;
                 }
