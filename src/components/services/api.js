@@ -1,5 +1,5 @@
 import axios from "axios";
-import { installSuspensionHandler, isSuspendedError, handleSuspendedSession } from "./suspension";
+import { installSuspensionHandler, isSuspendedError, handleSuspendedSession, isDeletedError, handleDeletedSession } from "./suspension";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3435";
 
@@ -92,6 +92,12 @@ api.interceptors.response.use(
         return Promise.reject(refreshError);
       }
 
+      // Refresh refused because the account was deleted (e.g. from another device)
+      if (isDeletedError(refreshError)) {
+        handleDeletedSession();
+        return Promise.reject(refreshError);
+      }
+
       // Don't reload /login repeatedly
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
@@ -154,6 +160,28 @@ export const googleAuth = async (code) => {
     throw err;
   }
 };
+
+// ─── Account deletion & recovery ─────────────────────────────────────────────
+
+// "password" or "code" (Google/LinkedIn accounts)
+export const getDeletionMethod = async () => (await api.get("/api/privacy/delete-account/method")).data.method;
+
+// Google/LinkedIn accounts confirm deletion with an emailed code
+export const requestDeletionCode = () => api.post("/api/privacy/delete-account/code");
+
+// Soft delete: { password } for password accounts, { code } for Google/LinkedIn
+export const deleteMyAccount = (body) => api.post("/api/privacy/delete-account", body);
+
+// purpose: "restore" | "start_fresh"
+export const requestRecoveryCode = (email, purpose) =>
+  api.post("/api/account/recover/code", { email, purpose });
+
+export const restoreDeletedAccount = async (email, code) => {
+  const res = await api.post("/api/account/restore", { email, code });
+  return normalizeAuthResponse(res.data);
+};
+
+export const startFreshAccount = (email, code) => api.post("/api/account/start-fresh", { email, code });
 
 // Update Profile API - SAME (Already correct)
 export const updateUserProfile = async (profileData) => {
