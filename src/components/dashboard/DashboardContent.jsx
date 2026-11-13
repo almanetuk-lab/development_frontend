@@ -9,6 +9,8 @@ import profileViewApi from "../services/profileViewApi";
 import api, { updateUserLocation } from "../services/api";
 import { useUserProfile } from "../context/UseProfileContext";
 import ImageModal from "../comman/ImageModal";
+import ProfileCompletenessBar from "../comman/ProfileCompletenessBar";
+import ProfileIncompleteBanner from "./ProfileIncompleteBanner";
 import {
   FiEye,
   FiHeart,
@@ -27,7 +29,7 @@ import {
 export default function DashboardHome({ profile }) {
   const [displayProfile, setDisplayProfile] = useState(null);
   const navigate = useNavigate();
-  const { updateProfile } = useUserProfile();
+  const { updateProfile, isProfileReady } = useUserProfile();
   const isLocationSavingRef = useRef(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -423,7 +425,10 @@ export default function DashboardHome({ profile }) {
   return (
     <div className="min-h-screen bg-slate-50/60 py-4 px-3 sm:py-6 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
-        
+
+        {/* Shown until the profile is complete enough to appear in suggestions */}
+        <ProfileIncompleteBanner />
+
         {/* SECTION 1: Top Header Banner */}
         <div className="bg-white rounded-3xl p-4 sm:p-6 lg:p-8 border border-slate-100/90 shadow-sm relative z-20">
           {/* Subtle Ambient Background Gradient */}
@@ -543,7 +548,9 @@ export default function DashboardHome({ profile }) {
           
           {/* Main Left Column (Profile Summary & Activity) */}
           <div className="lg:col-span-2 space-y-5 sm:space-y-6">
-            
+
+            {!isProfileReady && <ProfileCompletenessBar />}
+
             {/* Profile Overview Card (Contains Stat Cards inside) */}
             <div className="bg-white rounded-3xl border border-slate-100 shadow-xs p-5 sm:p-7 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
