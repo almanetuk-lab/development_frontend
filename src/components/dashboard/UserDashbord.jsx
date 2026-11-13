@@ -17,6 +17,7 @@ import AdvancedSearch from "./SearchSection";
 import UserPlans from "../pages/UserPlans";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 import GhostingAlertModal from "./GhostingAlertModal";
+import ProfileCompletionModal from "./ProfileCompletionModal";
 
 export default function UserDashboard() {
   const { profile, loading, isFeatureAllowed, isAuthenticated } = useUserProfile();
@@ -66,6 +67,8 @@ export default function UserDashboard() {
     <>
     {/* Module 8: shown on every dashboard page, including AI Suggestions */}
     <GhostingAlertModal />
+    {/* Once per login while the profile isn't complete enough to be discoverable */}
+    <ProfileCompletionModal />
     <Routes>
       <Route index element={isFeatureAllowed("dashboard") ? <DashboardHome profile={profile} /> : <PlanRestrictionModal feature="dashboard" />} />
       <Route path="profile/:userId?" element={<ProfilePage />} />

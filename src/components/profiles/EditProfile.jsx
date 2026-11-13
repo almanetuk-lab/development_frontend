@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useUserProfile } from "../context/UseProfileContext";
@@ -9,6 +9,21 @@ import InterestsForm from "./InterestsForm";
 import ProfileQuestions from "./ProfileQuestions";
 import { theme } from "../comman/theme";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
+import ProfileCompletenessBar from "../comman/ProfileCompletenessBar";
+import { evaluateProfileCompleteness } from "../../utils/profileCompleteness";
+
+// Which Edit Profile step holds each must-have field (keys from utils/profileCompleteness.js),
+// so a blocked final save can jump the user straight to the first missing one.
+const MUST_HAVE_STEP = {
+  photo: 1,
+  first_name: 2,
+  age: 2,
+  gender: 2,
+  city: 2,
+  about_me: 4,
+  interested_in: 5,
+  relationship_goal: 5,
+};
 import { checkImageSafety } from "../services/nsfwFilter";
 
 const labelClass = "block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2";
@@ -1071,7 +1086,9 @@ export default function EditProfilePage() {
   };
 
   // ================== Reusable Save Logic ==================
-  const saveProfileData = async (silently = true, step = currentStep) => {
+  // finalSubmit: only the final "Save" button sets it — the server then rejects the
+  // save unless every must-have is filled. Step auto-saves leave it off.
+  const saveProfileData = async (silently = true, step = currentStep, finalSubmit = false) => {
     if (!validateProfileFields(silently, step)) {
       return false;
     }
@@ -1214,6 +1231,7 @@ export default function EditProfilePage() {
           formData.preference_of_closeness,
         ),
         love_language_affection: formData.love_language_affection,
+        ...(finalSubmit ? { final_submit: true } : {}),
       };
 
       console.log("💾 Auto-saving profile payload:", payload);
@@ -1234,10 +1252,29 @@ export default function EditProfilePage() {
       console.error("❌ Auto-save profile error:", err);
       if (!silently) {
         toast.error(err?.response?.data?.error || "Save failed");
+        // Server-side must-have check failed — take the user to the first missing field
+        const firstMissing = err?.response?.data?.missing?.[0]?.key;
+        if (err?.response?.data?.code === "PROFILE_INCOMPLETE" && MUST_HAVE_STEP[firstMissing]) {
+          setCurrentStep(MUST_HAVE_STEP[firstMissing]);
+        }
       }
       return false;
     }
   };
+
+  // Live readiness from what's in the form right now (same rules as the server).
+  const liveCompleteness = useMemo(
+    () =>
+      evaluateProfileCompleteness(
+        {
+          ...formData,
+          ways_i_spend_time: formData.interests_categories,
+          image_url: finalProfileImage,
+        },
+        formData.prompts
+      ),
+    [formData, finalProfileImage]
+  );
 
   // ================== PROGRESS & STEP HANDLING ==================
   const progressPercentage = (currentStep / totalSteps) * 100;
@@ -1293,7 +1330,17 @@ export default function EditProfilePage() {
       return;
     }
 
-    const success = await saveProfileData(false, null);
+    // Must-haves are required for the final save (auto-saves between steps still work).
+    const missing = liveCompleteness.mustHaves.missing;
+    if (missing.length > 0) {
+      toast.error(`Please complete: ${missing.map((m) => m.label).join(", ")}.`);
+      const step = MUST_HAVE_STEP[missing[0].key];
+      if (step) setCurrentStep(step);
+      setLoading(false);
+      return;
+    }
+
+    const success = await saveProfileData(false, null, true);
     setLoading(false);
     if (success) {
       navigate("/dashboard");
@@ -1650,6 +1697,9 @@ export default function EditProfilePage() {
               );
             })}
           </div>
+
+          {/* Live progress toward appearing in suggestions */}
+          <ProfileCompletenessBar completeness={liveCompleteness} showAction={false} />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8 edit-profile-form">

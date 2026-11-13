@@ -4,12 +4,13 @@ import { useUserProfile } from "../context/UseProfileContext";
 import NotificationBell from "../notifybell/NotificationBell";
 import Logo from "../comman/Logo";
 import ComingSoonModal from "../comman/ComingSoonModal";
+import ProfileCompletenessBar from "../comman/ProfileCompletenessBar";
 
 export default function Header({ sidebarOpen, setSidebarOpen }) {
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, logout, isAuthenticated } = useUserProfile();
+  const { profile, logout, isAuthenticated, completeness, isProfileReady } = useUserProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isComingSoonOpen, setIsComingSoonOpen] = useState(false);
@@ -263,6 +264,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
 
                 {/* Notification Bell */}
                 {isAuthenticated && <NotificationBell />}
+
+                {/* Profile progress ring — only until the profile is complete */}
+                {isAuthenticated && completeness && !isProfileReady && (
+                  <ProfileCompletenessBar variant="compact" />
+                )}
 
                 {/* Profile Icon / Avatar Dropdown */}
                 <div ref={desktopProfileDropdownRef} className="relative">
