@@ -5,6 +5,7 @@ import api from "../services/api";
 import profileViewApi from "../services/profileViewApi";
 import ImageModal from "../comman/ImageModal";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
+import ProfileCompletenessBar from "../comman/ProfileCompletenessBar";
 
 // Error boundary to prevent full white page on render crash
 class ProfileErrorBoundary extends Component {
@@ -489,6 +490,9 @@ function ProfilePage() {
             </button>
           </div>
         </div>
+
+        {/* Own profile only: progress toward appearing in suggestions */}
+        {isCurrentUser && <ProfileCompletenessBar />}
 
         {/* Profile Hero Card */}
         <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 p-6 sm:p-8 bg-white rounded-3xl border border-slate-100 shadow-xs relative z-20">

@@ -11,6 +11,7 @@ import api from "../services/api";
 import SpiderGraph from "./SpiderGraph";
 import { useUserProfile } from "../context/UseProfileContext";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
+import ProfileCompletenessBar from "../comman/ProfileCompletenessBar";
 import { GHOSTING_OPEN_EVENT, GHOSTING_RESOLVED_EVENT } from "../dashboard/GhostingAlertModal";
 import { 
   HiHeart, 
@@ -63,6 +64,8 @@ export default function AISuggestions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingProfileId, setLoadingProfileId] = useState(null);
+  // Set when the server says this user's profile isn't complete enough for suggestions
+  const [incompleteProfile, setIncompleteProfile] = useState(null);
 
   // ── Pagination state ────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,6 +97,8 @@ export default function AISuggestions() {
 
       const data = await getAISuggestions();
       console.log("✅ AI suggestions loaded:", data);
+
+      setIncompleteProfile(data?.profile_incomplete ? data.completeness || {} : null);
 
       if (data && data.suggestions && Array.isArray(data.suggestions)) {
         setSuggestions(data.suggestions);
@@ -618,8 +623,36 @@ export default function AISuggestions() {
             </div>
           )}
 
+          {/* ══════ Incomplete Profile State (readiness gate) ══════ */}
+          {!loading && !error && incompleteProfile && (
+            <div className="p-8 sm:p-10 bg-white border border-slate-200 rounded-3xl text-center max-w-2xl mx-auto shadow-sm space-y-6">
+              <div className="w-20 h-20 bg-rose-50 border border-rose-100 rounded-3xl flex items-center justify-center mx-auto">
+                <HiUser className="w-10 h-10 text-[#FF2A6D]" />
+              </div>
+              <div className="space-y-2 max-w-md mx-auto">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-800">Complete your profile to see suggestions</h3>
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                  Our AI needs a bit more about you to find good matches. Finishing your profile also makes you visible
+                  to other members.
+                </p>
+              </div>
+              <div className="text-left">
+                <ProfileCompletenessBar
+                  completeness={incompleteProfile.mustHaves ? incompleteProfile : undefined}
+                  showAction={false}
+                />
+              </div>
+              <button
+                onClick={() => navigate("/dashboard/edit-profile")}
+                className="px-6 py-3.5 bg-[#002060] hover:bg-[#001a4d] text-white text-xs sm:text-sm font-bold rounded-2xl shadow-sm transition duration-200"
+              >
+                Complete my profile
+              </button>
+            </div>
+          )}
+
           {/* ══════ Empty State (Profile Optimization Trigger) ══════ */}
-          {!loading && !error && suggestions.length === 0 && (
+          {!loading && !error && !incompleteProfile && suggestions.length === 0 && (
             <div className="p-10 bg-white border border-slate-200 rounded-3xl text-center max-w-2xl mx-auto shadow-sm space-y-6">
               <div className="w-20 h-20 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center text-indigo-500 mx-auto">
                 <HiSparkles className="w-10 h-10 text-indigo-600" />

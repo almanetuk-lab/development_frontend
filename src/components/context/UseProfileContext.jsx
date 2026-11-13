@@ -1,11 +1,13 @@
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { getUserProfile } from "../services/api";
 import api from "../services/api";
 import io from "socket.io-client";
 import { chatApi } from "../services/chatApi";
 import { userAPI } from "../services/userApi";
 import { handleSuspendedSession, handleDeletedSession } from "../services/suspension";
+import { evaluateProfileCompleteness } from "../../utils/profileCompleteness";
+import { PROFILE_POPUP_DISMISSED_KEY } from "../../utils/profilePopup";
 
 const UserProfileContext = createContext();
 
@@ -412,6 +414,11 @@ export const UserProfileProvider = ({ children }) => {
     localStorage.removeItem("userProfile");
     localStorage.removeItem("user_id");
     localStorage.removeItem("currentUser");
+    try {
+      sessionStorage.removeItem(PROFILE_POPUP_DISMISSED_KEY);
+    } catch {
+      /* storage unavailable — nothing to clear */
+    }
   };
 
   const refreshProfile = async () => {
@@ -422,14 +429,13 @@ export const UserProfileProvider = ({ children }) => {
     await fetchPlanStatus();
   };
 
-  const hasCompleteProfile = () => {
-    return (
-      profile &&
-      profile.is_submitted &&
-      (profile.first_name || profile.full_name) &&
-      profile.email
-    );
-  };
+  // Readiness to appear in AI suggestions / Near Me / search. Computed from the
+  // current profile with the same rules the server uses (server enforces it).
+  const completeness = useMemo(
+    () => (profile ? evaluateProfileCompleteness(profile, profile.prompts) : null),
+    [profile]
+  );
+  const isProfileReady = !!completeness?.isReady;
 
   const isFeatureAllowed = (featureKey) => {
     if (planLoading) return true; // prevent flashing while loading plan
@@ -495,7 +501,8 @@ export const UserProfileProvider = ({ children }) => {
     updateProfile,
     clearProfile,
     refreshProfile,
-    hasCompleteProfile: hasCompleteProfile(),
+    completeness,
+    isProfileReady,
     // Plan state
     activePlan,
     planLoading,
