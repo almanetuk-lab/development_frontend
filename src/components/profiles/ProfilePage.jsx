@@ -695,6 +695,12 @@ function ProfilePage() {
 
               <Section title="Relationship Preferences" icon={FiHeart}>
                 <InfoItem label="Interested In" value={displayProfile.interested_in} />
+                {isCurrentUser && ["Man", "Woman", "Non-Binary"].includes(displayProfile.interested_in) && (
+                  <InfoItem
+                    label="Preferred Gender Only"
+                    value={displayProfile.show_only_preferred_gender !== false ? "On" : "Off"}
+                  />
+                )}
                 <InfoItem label="Relationship Goal" value={displayProfile.relationship_goal} />
                 <InfoItem label="Children Preference" value={displayProfile.children_preference} />
               </Section>

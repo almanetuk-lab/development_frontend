@@ -10,6 +10,7 @@ import {
 import api from "../services/api";
 import SpiderGraph from "./SpiderGraph";
 import { useUserProfile } from "../context/UseProfileContext";
+import { genderFilterNote } from "../../utils/genderPreference";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 import ProfileCompletenessBar from "../comman/ProfileCompletenessBar";
 import { GHOSTING_OPEN_EVENT, GHOSTING_RESOLVED_EVENT } from "../dashboard/GhostingAlertModal";
@@ -56,7 +57,8 @@ const PRIORITY_CHIPS = [
 
 export default function AISuggestions() {
   const navigate = useNavigate();
-  const { activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const { profile, activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const filterNote = genderFilterNote(profile);
   const planActive = isFeatureAllowed("ai_suggestion");
 
   // ── Suggestion state ────────────────────────────────────────
@@ -662,6 +664,9 @@ export default function AISuggestions() {
                 <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
                   Our semantic engine searches using your profile bio text. Write a rich, multi-paragraph description in your edit section to enable high-accuracy calculations.
                 </p>
+                {filterNote && (
+                  <p className="text-xs text-slate-400 leading-relaxed">{filterNote}</p>
+                )}
               </div>
               <button
                 onClick={() => navigate("/edit-profile")}

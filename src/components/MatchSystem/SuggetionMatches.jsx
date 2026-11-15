@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSuggestedMatches } from "../services/chatApi";
+import { useUserProfile } from "../context/UseProfileContext";
+import { genderFilterNote } from "../../utils/genderPreference";
 import api from "../services/api"; 
 import { FiMapPin, FiRefreshCw, FiArrowRight } from "react-icons/fi"; 
 
 const SuggestedMatches = () => {
   const navigate = useNavigate();
+  const { profile } = useUserProfile();
+  const filterNote = genderFilterNote(profile);
 
   // State
   const [suggestedMatches, setSuggestedMatches] = useState([]);
@@ -17,7 +21,7 @@ const SuggestedMatches = () => {
   useEffect(() => {
     console.log("🔄 Component mounted");
     fetchMatches();
-  }, []);
+  }, [profile?.user_id]);
 
   //  Fetch matches function
   const fetchMatches = async () => {
@@ -29,7 +33,7 @@ const SuggestedMatches = () => {
 
       // Option 1: Use getSuggestedMatches
       try {
-        const matches = await getSuggestedMatches();
+        const matches = await getSuggestedMatches(profile?.user_id);
         console.log("📦 getSuggestedMatches Response:", matches);
 
         if (matches && Array.isArray(matches)) {
@@ -296,6 +300,7 @@ const SuggestedMatches = () => {
           /* No Matches State */
           <div className="text-center py-8 bg-slate-50/50 rounded-2xl p-4">
             <p className="text-slate-500 text-sm mb-3">No suggested matches available right now.</p>
+            {filterNote && <p className="text-slate-400 text-xs mb-3">{filterNote}</p>}
             <button
               onClick={fetchMatches}
               className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition cursor-pointer"

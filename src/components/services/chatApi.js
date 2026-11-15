@@ -136,20 +136,22 @@ export const chatApi = {
 
 // ==================== HELPER FUNCTIONS ====================
 
+// Legacy fallback only: prefer profile.user_id from useUserProfile().
 export const getCurrentUserId = () => {
-  let user = localStorage.getItem("currentUser") || '{"user_id": "10"}';
   try {
-    const userData = JSON.parse(user);
-    return userData.user_id || userData.id || "10";
+    const userData = JSON.parse(localStorage.getItem("currentUser") || "null");
+    return userData?.user_id || userData?.id || null;
   } catch {
-    return "10";
+    return null;
   }
 };
 
-export const getSuggestedMatches = async () => {
+// The server only serves the authenticated user's own matches, so pass profile.user_id.
+export const getSuggestedMatches = async (userId) => {
   try {
-    const userId = getCurrentUserId();
-    const response = await api.get(`/api/my_matches/${userId}`);
+    const id = userId || getCurrentUserId();
+    if (!id) throw new Error("User ID is required to load matches");
+    const response = await api.get(`/api/my_matches/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching suggested matches:", error);
