@@ -148,6 +148,7 @@ export const UserProfileProvider = ({ children }) => {
           smoking: userProfile.smoking || "",
           drinking: userProfile.drinking || "",
           interested_in: userProfile.interested_in || "",
+          show_only_preferred_gender: userProfile.show_only_preferred_gender !== false,
           relationship_goal: userProfile.relationship_goal || "",
           children_preference: userProfile.children_preference || "",
 

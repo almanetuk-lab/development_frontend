@@ -4,11 +4,13 @@ import { getSuggestedMatches } from "../services/chatApi";
 import api from "../services/api"; 
 import ImageModal from "../comman/ImageModal";
 import { useUserProfile } from "../context/UseProfileContext";
+import { genderFilterNote } from "../../utils/genderPreference";
 import PlanRestrictionModal from "../comman/PlanRestrictionModal";
 
 export default function MatchesPage() {
   const navigate = useNavigate();
-  const { activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const { profile, activePlan, planLoading, isFeatureAllowed } = useUserProfile();
+  const filterNote = genderFilterNote(profile);
   const planActive = isFeatureAllowed("my_matches");
 
   const [matches, setMatches] = useState([]);
@@ -35,7 +37,7 @@ export default function MatchesPage() {
       setLoading(true);
       setError(null);
       console.log("🔄 Fetching normal matches...");
-      const apiData = await getSuggestedMatches();
+      const apiData = await getSuggestedMatches(profile?.user_id);
       let matchesData = [];
 
       if (apiData && Array.isArray(apiData)) {
@@ -217,7 +219,7 @@ export default function MatchesPage() {
     if (!planLoading && planActive) {
       fetchMatches();
     }
-  }, [planLoading, planActive]);
+  }, [planLoading, planActive, profile?.user_id]);
 
   // Reset page to 1 when filters are changed
   useEffect(() => {
@@ -480,6 +482,14 @@ export default function MatchesPage() {
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
               We couldn't find any match records aligning with your active parameters.
             </p>
+            {filterNote && (
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                {filterNote}{" "}
+                <button onClick={() => navigate("/edit-profile")} className="font-semibold text-[#002060] underline">
+                  Edit Profile
+                </button>
+              </p>
+            )}
             <button
               onClick={fetchMatches}
               className="px-6 py-3 text-white rounded-xl text-xs uppercase tracking-wider font-bold transition shadow-sm hover:opacity-95"
