@@ -576,6 +576,7 @@ export default function EditProfilePage() {
     religious_belief: "",
     zodiac_sign: "",
     interested_in: "",
+    show_only_preferred_gender: true,
     relationship_goal: "",
     children_preference: "",
     self_expression: "",
@@ -852,6 +853,7 @@ export default function EditProfilePage() {
       religious_belief: profile.religious_belief || "",
       zodiac_sign: profile.zodiac_sign || "",
       interested_in: profile.interested_in || "",
+      show_only_preferred_gender: profile.show_only_preferred_gender !== false,
       relationship_goal: profile.relationship_goal || "",
 
       children_preference: mapToUIEnum(
@@ -1185,6 +1187,8 @@ export default function EditProfilePage() {
         ),
         zodiac_sign: formData.zodiac_sign || null,
         interested_in: mapToDBEnum("interested_in", formData.interested_in),
+        // Always sent so the server never has to guess; it keeps the stored value if absent.
+        show_only_preferred_gender: formData.show_only_preferred_gender !== false,
         relationship_goal: mapToDBEnum(
           "relationship_goal",
           formData.relationship_goal,
@@ -2675,6 +2679,48 @@ export default function EditProfilePage() {
                         <option value="Non-Binary">Non-Binary</option>
                         <option value="Everyone">Everyone</option>
                       </select>
+
+                      {(() => {
+                        // Filtering needs a specific gender; Everyone/empty has nothing to filter by.
+                        const canFilter = ["Man", "Woman", "Non-Binary"].includes(formData.interested_in);
+                        const isOn = formData.show_only_preferred_gender !== false;
+                        return (
+                          <div className={`mt-3 flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 ${canFilter ? "" : "opacity-60"}`}>
+                            <div className="flex-1">
+                              <p id="pref-gender-label" className="text-sm font-semibold text-slate-800">
+                                Only show me people of my preferred gender
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {canFilter
+                                  ? "Applies to AI Suggestions, My Matches and Suggested Matches."
+                                  : "Choose Man, Woman or Non-Binary above to use this."}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={canFilter && isOn}
+                              aria-labelledby="pref-gender-label"
+                              disabled={!canFilter}
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  show_only_preferred_gender: prev.show_only_preferred_gender === false,
+                                }))
+                              }
+                              className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                                canFilter ? "cursor-pointer" : "cursor-not-allowed"
+                              } ${canFilter && isOn ? "bg-indigo-600" : "bg-gray-200"}`}
+                            >
+                              <span
+                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                  canFilter && isOn ? "translate-x-5" : "translate-x-0"
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div>

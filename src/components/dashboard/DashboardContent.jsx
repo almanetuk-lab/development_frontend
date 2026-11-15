@@ -341,7 +341,7 @@ export default function DashboardHome({ profile }) {
 
   const fetchMatchesCount = async () => {
     try {
-      const matchesData = await getSuggestedMatches();
+      const matchesData = await getSuggestedMatches(profile?.user_id);
       let matchesArray = [];
 
       if (Array.isArray(matchesData)) {
