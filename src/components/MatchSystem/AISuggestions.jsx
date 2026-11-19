@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
+import { toast } from "react-toastify";
+import {
   getAISuggestions, 
   setRefinedQuery, 
   getActiveRefinedQuery, 
@@ -44,6 +45,9 @@ import {
   HiExclamation,
   HiTrendingUp
 } from "react-icons/hi";
+
+// Keep in sync with MIN_QUERY_LENGTH in development_backend/services/queryRefinementService.js
+const MIN_QUERY_LENGTH = 3;
 
 // ── Priority chip data (Vibrant color tags & custom icon colors) ──────────────
 const PRIORITY_CHIPS = [
@@ -175,19 +179,27 @@ export default function AISuggestions() {
     });
   };
 
+  // A search needs at least one pillar or a description (mirrors the backend's MIN_QUERY_LENGTH).
+  const trimmedQuery = rawQuery.trim();
+  const canApplyRefinement = selectedPriorities.length > 0 || trimmedQuery.length >= MIN_QUERY_LENGTH;
+
   // ── Apply refinement ──────────────────────────────────────────
   const handleApplyRefinement = async () => {
-    if (selectedPriorities.length === 0) return;
+    if (!canApplyRefinement) return;
     try {
       setRefinementLoading(true);
-      console.log("🔮 Applying refinement:", selectedPriorities);
-      const result = await setRefinedQuery(selectedPriorities, rawQuery);
+      console.log("🔮 Applying refinement:", selectedPriorities, trimmedQuery);
+      const result = await setRefinedQuery(selectedPriorities, trimmedQuery);
       console.log("✅ Refinement session created:", result);
       setActiveSession(result.session);
       setShowCard(false);
+      if (result.embedding_applied === false) {
+        toast.info("Your description couldn't be processed right now, so only the selected pillars were applied.");
+      }
       await fetchSuggestions();
     } catch (err) {
       console.error("❌ Refinement error:", err);
+      toast.error(err.response?.data?.message || "Couldn't apply your search. Please try again.");
     } finally {
       setRefinementLoading(false);
     }
@@ -515,12 +527,15 @@ export default function AISuggestions() {
 
                   {/* Optional Free-text query input */}
                   <div className="space-y-1.5">
-                    <label className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Context Enrichment (Optional)</label>
+                    <label className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Describe Who You're Looking For</label>
                     <div className="relative">
                       <input
                         type="text"
                         value={rawQuery}
                         onChange={(e) => setRawQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && canApplyRefinement && !refinementLoading) handleApplyRefinement();
+                        }}
                         placeholder="Describe specific qualities, e.g., 'Looking for a quiet weekend lover who respects high-paced careers'"
                         maxLength={200}
                         className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-700 placeholder:text-slate-350 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-slate-50/50"
@@ -532,10 +547,10 @@ export default function AISuggestions() {
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                     <button
                       onClick={handleApplyRefinement}
-                      disabled={selectedPriorities.length === 0 || refinementLoading}
+                      disabled={!canApplyRefinement || refinementLoading}
                       className={`
                         flex-1 py-3.5 px-6 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-300 flex items-center justify-center gap-2
-                        ${selectedPriorities.length > 0
+                        ${canApplyRefinement
                           ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:scale-[1.01]"
                           : "bg-slate-100 text-slate-400 cursor-not-allowed"
                         }
@@ -549,7 +564,11 @@ export default function AISuggestions() {
                       ) : (
                         <>
                           <HiLightningBolt className="w-4 h-4 text-amber-300" />
-                          <span>Apply Priority Filter ({selectedPriorities.length}/3)</span>
+                          <span>
+                            {selectedPriorities.length > 0
+                              ? `Apply Priority Filter (${selectedPriorities.length}/3)`
+                              : "Search"}
+                          </span>
                         </>
                       )}
                     </button>
@@ -653,8 +672,33 @@ export default function AISuggestions() {
             </div>
           )}
 
+          {/* ══════ Empty State: refined search found nothing ══════ */}
+          {!loading && !error && !incompleteProfile && suggestions.length === 0 && refinementMeta?.is_refined && (
+            <div className="p-10 bg-white border border-slate-200 rounded-3xl text-center max-w-2xl mx-auto shadow-sm space-y-6">
+              <div className="w-20 h-20 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center text-indigo-500 mx-auto">
+                <HiSparkles className="w-10 h-10 text-indigo-600" />
+              </div>
+              <div className="space-y-2 max-w-md mx-auto">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-800">No close matches for this search</h3>
+                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                  Try fewer pillars or broader words, or reset to see your regular suggestions.
+                </p>
+                {filterNote && (
+                  <p className="text-xs text-slate-400 leading-relaxed">{filterNote}</p>
+                )}
+              </div>
+              <button
+                onClick={handleClearRefinement}
+                disabled={refinementLoading}
+                className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-2xl shadow-sm transition duration-200"
+              >
+                Reset Search
+              </button>
+            </div>
+          )}
+
           {/* ══════ Empty State (Profile Optimization Trigger) ══════ */}
-          {!loading && !error && !incompleteProfile && suggestions.length === 0 && (
+          {!loading && !error && !incompleteProfile && suggestions.length === 0 && !refinementMeta?.is_refined && (
             <div className="p-10 bg-white border border-slate-200 rounded-3xl text-center max-w-2xl mx-auto shadow-sm space-y-6">
               <div className="w-20 h-20 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center justify-center text-indigo-500 mx-auto">
                 <HiSparkles className="w-10 h-10 text-indigo-600" />
